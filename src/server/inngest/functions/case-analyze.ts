@@ -136,7 +136,11 @@ export const caseAnalyze = inngest.createFunction(
     }
 
     // Synthesize case brief with Opus (only if multiple docs)
-    if (analyses.length >= 1) {
+    if (analyses.length === 1) {
+      await step.run("mark-ready-single", async () => {
+        await db.update(cases).set({ status: "ready" }).where(eq(cases.id, caseId));
+      });
+    } else if (analyses.length > 1) {
       await step.run("synthesize-brief", async () => {
         try {
           const { brief } = await synthesizeCaseBrief(
@@ -153,6 +157,6 @@ export const caseAnalyze = inngest.createFunction(
       });
     }
 
-    return { caseId, documentsAnalyzed: analyses.length };
+    return { caseId, documentsAnalyzed: analyses.length, hasBrief: analyses.length > 1 };
   },
 );

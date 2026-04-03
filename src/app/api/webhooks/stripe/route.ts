@@ -71,6 +71,9 @@ function getSubscriptionIdFromInvoice(invoice: Stripe.Invoice): string | null {
 
 function getPlanFromSubscription(subscription: Stripe.Subscription): string {
   const priceId = subscription.items.data[0]?.price?.id;
+  if (priceId && !PLAN_FROM_PRICE[priceId]) {
+    console.warn(`[stripe] Unknown price ID: ${priceId}, defaulting to "solo"`);
+  }
   return priceId ? (PLAN_FROM_PRICE[priceId] ?? "solo") : "solo";
 }
 

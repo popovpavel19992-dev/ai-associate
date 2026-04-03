@@ -67,3 +67,21 @@ export async function decrementCredits(
 
   return !!updated;
 }
+
+export async function refundCredits(userId: string, cost: number): Promise<void> {
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) return;
+
+  if (user.orgId) {
+    await db
+      .update(organizations)
+      .set({ creditsUsedThisMonth: sql`GREATEST(0, ${organizations.creditsUsedThisMonth} - ${cost})` })
+      .where(eq(organizations.id, user.orgId));
+    return;
+  }
+
+  await db
+    .update(users)
+    .set({ creditsUsedThisMonth: sql`GREATEST(0, ${users.creditsUsedThisMonth} - ${cost})` })
+    .where(eq(users.id, userId));
+}

@@ -229,19 +229,7 @@ export const chatRouter = router({
       // Add current user message
       conversationHistory.push({ role: "user", content: input.content });
 
-      // Save user message
-      const [userMsg] = await ctx.db
-        .insert(chatMessages)
-        .values({
-          userId: ctx.user.id,
-          caseId: input.caseId,
-          documentId: input.documentId ?? null,
-          role: "user",
-          content: input.content,
-        })
-        .returning();
-
-      // Call Claude
+      // Call Claude first — only persist messages on success
       const response = await getClient().messages.create({
         model: "claude-sonnet-4-20250514",
         max_tokens: 4096,
@@ -257,6 +245,18 @@ export const chatRouter = router({
       const tokensUsed =
         (response.usage?.input_tokens ?? 0) +
         (response.usage?.output_tokens ?? 0);
+
+      // Save user message after successful Claude response
+      const [userMsg] = await ctx.db
+        .insert(chatMessages)
+        .values({
+          userId: ctx.user.id,
+          caseId: input.caseId,
+          documentId: input.documentId ?? null,
+          role: "user",
+          content: input.content,
+        })
+        .returning();
 
       // Save assistant message
       const [assistantMsg] = await ctx.db
@@ -325,7 +325,7 @@ export const chatRouter = router({
         const [cursorMsg] = await ctx.db
           .select({ createdAt: chatMessages.createdAt })
           .from(chatMessages)
-          .where(eq(chatMessages.id, input.cursor))
+          .where(and(eq(chatMessages.id, input.cursor), eq(chatMessages.caseId, input.caseId)))
           .limit(1);
 
         if (cursorMsg) {

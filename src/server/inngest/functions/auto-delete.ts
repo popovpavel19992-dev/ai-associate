@@ -35,7 +35,9 @@ export const autoDelete = inngest.createFunction(
         .where(eq(documents.caseId, expiredCase.id));
 
       for (const doc of docs) {
-        await deleteObject(doc.s3Key).catch(() => {});
+        await deleteObject(doc.s3Key).catch((err) => {
+          console.error(`[auto-delete] Failed to delete S3 object ${doc.s3Key}:`, err);
+        });
       }
 
       await db.delete(cases).where(eq(cases.id, expiredCase.id));

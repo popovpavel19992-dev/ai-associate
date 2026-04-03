@@ -33,6 +33,15 @@ export const documentsRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
       }
 
+      // Validate s3Key belongs to the authenticated user (prevents key injection)
+      const expectedPrefix = `documents/${ctx.user.id}/`;
+      if (!input.s3Key.startsWith(expectedPrefix)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Invalid storage key",
+        });
+      }
+
       // Check for duplicate checksum within the same case
       const [existing] = await ctx.db
         .select({ id: documents.id })
@@ -209,7 +218,10 @@ export const documentsRouter = router({
       z.object({
         analysisId: z.string().uuid(),
         sectionName: z.string().min(1),
-        edits: z.unknown(),
+        edits: z.unknown().refine(
+          (val) => JSON.stringify(val).length <= 500_000,
+          "Edit payload too large (max 500KB)",
+        ),
       }),
     )
     .mutation(async ({ ctx, input }) => {

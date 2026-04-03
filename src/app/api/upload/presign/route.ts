@@ -47,7 +47,20 @@ export async function POST(req: Request) {
     );
   }
 
-  const { filename, contentType, fileSize } = parsed.data;
+  const { filename, contentType, fileSize, caseId } = parsed.data;
+
+  // Verify case ownership
+  const { cases } = await import("@/server/db/schema/cases");
+  const { and: andOp, eq: eqOp } = await import("drizzle-orm");
+  const [caseRecord] = await db
+    .select({ id: cases.id })
+    .from(cases)
+    .where(andOp(eqOp(cases.id, caseId), eqOp(cases.userId, user.id)))
+    .limit(1);
+
+  if (!caseRecord) {
+    return Response.json({ error: "Case not found" }, { status: 404 });
+  }
 
   try {
     validateFileForUpload(contentType, fileSize);

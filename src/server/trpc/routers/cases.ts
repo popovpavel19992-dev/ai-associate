@@ -5,7 +5,7 @@ import { router, protectedProcedure } from "../trpc";
 import { cases } from "../../db/schema/cases";
 import { documents } from "../../db/schema/documents";
 import { documentAnalyses } from "../../db/schema/document-analyses";
-import { calculateCredits, checkCredits, decrementCredits } from "../../services/credits";
+import { calculateCredits, checkCredits, decrementCredits, refundCredits } from "../../services/credits";
 import { generateDocx, generatePlainTextReport } from "../../services/export";
 import { inngest } from "../../inngest/client";
 import { CASE_TYPES, AUTO_DELETE_DAYS, CASE_TYPE_LABELS } from "@/lib/constants";
@@ -135,10 +135,19 @@ export const casesRouter = router({
         throw new TRPCError({ code: "FORBIDDEN", message: "Credit limit reached" });
       }
 
-      await inngest.send({
-        name: "case/analyze",
-        data: { caseId: input.caseId },
-      });
+      try {
+        await inngest.send({
+          name: "case/analyze",
+          data: { caseId: input.caseId },
+        });
+      } catch (err) {
+        // Refund credits if Inngest dispatch fails
+        await refundCredits(ctx.user.id, cost);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to start analysis. Credits have been refunded.",
+        });
+      }
 
       return { creditsUsed: cost };
     }),
@@ -171,7 +180,7 @@ export const casesRouter = router({
       const [updated] = await ctx.db
         .update(cases)
         .set({ selectedSections: input.selectedSections, updatedAt: new Date() })
-        .where(eq(cases.id, input.caseId))
+        .where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)))
         .returning();
 
       return updated;
@@ -206,7 +215,7 @@ export const casesRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
       }
 
-      await ctx.db.delete(cases).where(eq(cases.id, input.caseId));
+      await ctx.db.delete(cases).where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)));
       return { success: true };
     }),
 });

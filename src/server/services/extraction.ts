@@ -23,13 +23,11 @@ export async function extractText(
 }
 
 async function extractPdf(buffer: Buffer): Promise<ExtractionResult> {
-  const pdf = new PDFParse({ data: new Uint8Array(buffer) });
+  const pdf = new PDFParse(new Uint8Array(buffer));
   const result = await pdf.getText();
   const pageCount = result.pages.length;
   let text = result.text;
 
-  // Detect hybrid/scanned pages: if avg chars per page is below threshold,
-  // the PDF likely contains scanned images — fallback to OCR
   if (pageCount > 0) {
     const avgCharsPerPage = text.length / pageCount;
     if (avgCharsPerPage < HYBRID_PDF_MIN_CHARS_PER_PAGE) {
@@ -46,7 +44,6 @@ async function extractPdf(buffer: Buffer): Promise<ExtractionResult> {
 async function extractDocx(buffer: Buffer): Promise<ExtractionResult> {
   const result = await mammoth.extractRawText({ buffer });
   const text = result.value;
-  // DOCX doesn't have a native page count — estimate from content length
   const estimatedPages = Math.max(1, Math.ceil(text.length / 3000));
   return { text, pageCount: estimatedPages };
 }

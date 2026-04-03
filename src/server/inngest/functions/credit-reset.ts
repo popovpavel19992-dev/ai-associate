@@ -7,7 +7,8 @@ import { sql } from "drizzle-orm";
 export const creditReset = inngest.createFunction(
   {
     id: "credit-reset",
-    triggers: [{ cron: "0 0 * * *" }],
+    retries: 3,
+    triggers: [{ cron: "0 0 1 * *" }],
   },
   async () => {
     await db
