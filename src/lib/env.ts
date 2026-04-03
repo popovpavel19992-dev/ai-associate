@@ -14,7 +14,7 @@ const envSchema = z.object({
   AWS_S3_BUCKET: z.string().min(1),
   AWS_KMS_KEY_ID: z.string().min(1),
   ANTHROPIC_API_KEY: z.string().min(1),
-  GOOGLE_CLOUD_VISION_KEY: z.string().min(1),
+  GOOGLE_CLOUD_VISION_KEY: z.string().optional(),
   STRIPE_SECRET_KEY: z.string().min(1),
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1),
