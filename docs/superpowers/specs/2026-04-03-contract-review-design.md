@@ -33,6 +33,14 @@ Auto-detect (no hard limit). Preset section configurations for top-10 types:
 
 Generic fallback for unlisted types.
 
+### Limits
+
+Same as Case Summarization:
+- Max 50 pages per contract document
+- Max 25MB file size per file
+- Password-protected PDFs: rejected with "Please upload an unprotected PDF"
+- Duplicate detection: SHA-256 checksum, reject if same contract already uploaded by user
+
 ### Analysis Sections (Single Review)
 
 1. **Executive Summary** — contract type, parties, purpose, effective date
@@ -55,7 +63,8 @@ Generic fallback for unlisted types.
 
 Shared credit pool with Case Summarization, different cost:
 - Single contract review: 2 credits
-- Comparison: 3 credits if both contracts are new; 1 credit if one is already analyzed (pay only for the diff)
+- Comparison diff step: 1 credit
+- Total comparison cost: analysis (2 per unanalyzed contract) + diff (1) — e.g., both new = 5, one analyzed = 3, both analyzed = 1
 - Credit decrement before pipeline start, refund on Inngest dispatch failure (same pattern as cases.ts)
 
 ---
@@ -81,7 +90,7 @@ Shared credit pool with Case Summarization, different cost:
 
 - **Left panel:** Original contract text with clause highlighting. Clauses are color-coded by risk level (red=critical, yellow=warning, green=ok). Click a clause to jump to its analysis.
 - **Center panel:** AI analysis with tabs — Summary, Key Terms, Clauses, Red Flags, Missing, Negotiate, Law, Glossary. Risk score badge at top.
-- **Right panel:** Persistent collapsible chat. Context-aware: click a clause → chat knows which clause you're asking about.
+- **Right panel:** Persistent collapsible chat. Context-aware: click a clause → chat knows which clause you're asking about. Reuses existing `chat_messages` table with a new `contract_id` column (nullable FK → contracts). When `contract_id` is set and `document_id` is null, chat scopes to the full contract analysis. Chat includes `clause_ref` context when user clicks a specific clause. Same rate limits as Case Summarization: 30 messages/hour, plan-based caps (trial=10, solo=50, firm=unlimited).
 
 ### Comparison Flow
 
@@ -115,7 +124,7 @@ Single-column feed of changes, sorted by severity (negative first):
 | user_id | uuid | FK → users, not null |
 | org_id | uuid | FK → organizations, nullable |
 | name | text | not null |
-| status | enum | draft/processing/ready/failed |
+| status | enum | draft/uploading/extracting/analyzing/ready/failed |
 | detected_contract_type | text | AI-detected |
 | override_contract_type | text | user override |
 | linked_case_id | uuid | FK → cases, nullable |
@@ -130,7 +139,7 @@ Single-column feed of changes, sorted by severity (negative first):
 | risk_score | integer | 1-10, nullable until analyzed |
 | selected_sections | jsonb | string[] |
 | sections_locked | boolean | default false |
-| executive_summary | jsonb | analysis result |
+| analysis_sections | jsonb | full analysis output (all sections from Zod schema: key_terms, obligations, risk_assessment, red_flags, missing_clauses, negotiation_points, governing_law, defined_terms). Clauses stored separately in contract_clauses table. |
 | credits_consumed | integer | default 2 |
 | delete_at | timestamp | auto-delete based on plan |
 | created_at | timestamp | not null |
@@ -150,6 +159,7 @@ Single-column feed of changes, sorted by severity (negative first):
 | annotation | text | detailed AI comment |
 | suggested_edit | text | nullable, negotiation suggestion |
 | sort_order | integer | display order |
+| created_at | timestamp | not null |
 
 ### contract_comparisons
 | Column | Type | Notes |
@@ -160,16 +170,18 @@ Single-column feed of changes, sorted by severity (negative first):
 | user_id | uuid | FK → users, not null |
 | status | enum | draft/processing/ready/failed |
 | summary | jsonb | risk delta, overall assessment, recommendation |
-| credits_consumed | integer | 1-3 |
+| org_id | uuid | FK → organizations, nullable |
+| credits_consumed | integer | 1 (diff only) — analysis credits are charged on each contract separately |
 | created_at | timestamp | not null |
+| updated_at | timestamp | not null |
 
 ### contract_clause_diffs
 | Column | Type | Notes |
 |--------|------|-------|
 | id | uuid | PK |
 | comparison_id | uuid | FK → contract_comparisons, not null |
-| clause_a_id | uuid | FK → contract_clauses, nullable |
-| clause_b_id | uuid | FK → contract_clauses, nullable |
+| clause_a_id | uuid | FK → contract_clauses, nullable (null when diff_type = "added") |
+| clause_b_id | uuid | FK → contract_clauses, nullable (null when diff_type = "removed") |
 | diff_type | enum | added/removed/modified/unchanged |
 | impact | enum | positive/negative/neutral |
 | title | text | clause title |
@@ -235,9 +247,13 @@ Inngest: contract/compare
 
 ### Credit Flow
 
-- Single review: 2 credits decremented atomically before pipeline start
-- Comparison (both new): 3 credits (2 + 2 for analyses - 1 discount for comparison bundling)
-- Comparison (one analyzed): 1 credit (just the diff)
+- **Single review:** 2 credits decremented atomically before pipeline start
+- **Comparison credit breakdown:**
+  - Analysis cost: 2 credits per unanalyzed contract
+  - Comparison (diff) cost: 1 credit
+  - Both new: 2 + 2 + 1 = 5 credits total
+  - One already analyzed: 2 + 1 = 3 credits total
+  - Both already analyzed: 1 credit (diff only)
 - Refund on Inngest dispatch failure (same pattern as cases.ts)
 
 ### Error Handling
@@ -256,7 +272,7 @@ Identical to Case Summarization:
 
 | Procedure | Type | Input | Description |
 |-----------|------|-------|-------------|
-| create | mutation | name, contractType?, linkedCaseId?, selectedSections? | Create contract, returns contract record |
+| create | mutation | name, s3Key, filename, fileType, fileSize, checksum, contractType?, linkedCaseId?, selectedSections? | Create contract record after successful S3 upload |
 | list | query | limit?, offset? | Paginated list with clause count, risk score |
 | getById | query | contractId | Full contract + clauses + linked case name |
 | analyze | mutation | contractId | Trigger Inngest, decrement 2 credits, refund on failure |
@@ -271,7 +287,7 @@ Identical to Case Summarization:
 
 | Procedure | Type | Input | Description |
 |-----------|------|-------|-------------|
-| create | mutation | contractAId, contractBId | Trigger comparison, 1-3 credits |
+| create | mutation | contractAId, contractBId | Trigger comparison, 1-5 credits depending on analysis state |
 | getById | query | comparisonId | Full comparison + clause diffs |
 | list | query | limit?, offset? | User's comparisons with status |
 | delete | mutation | comparisonId | Remove comparison + diffs |
@@ -279,7 +295,25 @@ Identical to Case Summarization:
 ### Existing router changes
 
 - `cases.getById` — add `linkedContracts` field to response (contracts linked to this case)
+- `chat_messages` schema — add nullable `contract_id` column (FK → contracts)
+- `chat.ts` router — extend to support `contract_id` scope (same rate limits and compliance as case chat)
 - No other changes to Case Summarization routers
+
+### Export Format
+
+Contract review DOCX/text export includes sections in order:
+1. Executive Summary (contract type, parties, purpose)
+2. Risk Assessment (score, factors)
+3. Red Flags (highlighted, with recommendations)
+4. Key Terms grid
+5. Clause-by-Clause Breakdown (each clause with annotation and suggested edits)
+6. Missing Clauses
+7. Negotiation Points (with suggested language)
+8. Governing Law
+9. Defined Terms Glossary
+10. Compliance disclaimer footer
+
+DOCX uses red/yellow highlighting for critical/warning clauses. "AI-assisted" label on all exported documents.
 
 ---
 
