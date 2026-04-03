@@ -24,6 +24,65 @@ export const SECTION_LABELS: Record<string, string> = {
   obligations: "Obligations & Deadlines",
 };
 
+export const PRACTICE_AREAS = [
+  "personal_injury",
+  "family_law",
+  "criminal_defense",
+  "traffic_defense",
+  "contract_dispute",
+  "employment_law",
+  "real_estate",
+  "immigration",
+  "bankruptcy",
+  "intellectual_property",
+  "corporate",
+  "other",
+] as const;
+
+export const PRACTICE_AREA_LABELS: Record<string, string> = {
+  personal_injury: "Personal Injury",
+  family_law: "Family Law",
+  criminal_defense: "Criminal Defense",
+  traffic_defense: "Traffic Defense",
+  contract_dispute: "Contract Disputes",
+  employment_law: "Employment Law",
+  real_estate: "Real Estate",
+  immigration: "Immigration",
+  bankruptcy: "Bankruptcy",
+  intellectual_property: "Intellectual Property",
+  corporate: "Corporate Law",
+  other: "Other",
+};
+
+export const CASE_TYPES = [
+  "personal_injury",
+  "family_law",
+  "traffic_defense",
+  "contract_dispute",
+  "criminal_defense",
+  "employment_law",
+  "general",
+] as const;
+
+export const CASE_TYPE_LABELS: Record<string, string> = {
+  personal_injury: "Personal Injury",
+  family_law: "Family Law",
+  traffic_defense: "Traffic Defense",
+  contract_dispute: "Contract Dispute",
+  criminal_defense: "Criminal Defense",
+  employment_law: "Employment Law",
+  general: "General",
+};
+
+export const US_STATES = [
+  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+  "DC",
+] as const;
+
 export const MAX_FILE_SIZE = 25 * 1024 * 1024;
 export const MAX_PAGES_PER_DOC = 50;
 export const CASE_BRIEF_FREE_DOCS = 5;
