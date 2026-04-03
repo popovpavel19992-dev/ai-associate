@@ -17,13 +17,17 @@ Case Summarization is the first core module of AI Associate — an AI-powered le
 - **Single document** (Quick Analysis): drag & drop one file → instant analysis
 - **Multi-document Case** (Full Case): name case → upload multiple docs → organize → analyze
 - **Formats:** PDF (pdf-parse), DOCX (mammoth.js), photos/scans (Google Vision OCR)
-- **Limits:** up to 50 pages per document, up to 15 documents per case (plan-dependent)
+- **Limits:**
+  - Max 50 pages per document, max 25MB file size per file
+  - Max docs per case: Trial=3, Solo=10, Small Firm=15, Firm+=25
+  - Password-protected PDFs: rejected with message "Please upload an unprotected PDF"
+  - Hybrid PDFs (mixed native text + scanned pages): detect via pdf-parse text length per page, route low-text pages to OCR
 
 ### Processing
 - Hybrid parallel pipeline: Inngest orchestration + Supabase Realtime
-- Sonnet for individual document analysis, Opus for Case Brief synthesis
-- Concurrency: up to 5 parallel extractions/analyses
-- Live progress updates via Supabase Realtime subscriptions
+- Sonnet for individual document analysis, Opus for Case Brief synthesis (summarize-then-synthesize: Opus receives Sonnet summaries, not raw extracted text — bounds token usage)
+- Concurrency: up to 5 parallel extractions/analyses **per case** (not global — each case gets its own concurrency pool)
+- Live progress updates via Supabase Realtime subscriptions + polling fallback (client polls /api/case/[id]/status every 10s if WebSocket disconnects)
 
 ### Output
 - Per-document reports (each document analyzed separately)
@@ -75,48 +79,127 @@ Case Summarization is the first core module of AI Associate — an AI-powered le
 - PDF download (structured report)
 - DOCX download (editable)
 - Email share ("Send to client" with branded report)
-- Edit report before export
+- Edit report before export: inline text editing per section (contentEditable fields). Edits saved as user overrides in `document_analyses.user_edits` (jsonb), original AI output preserved. Export uses user edits when present.
 
 ---
 
 ## 3. Data Model
 
+### organizations
+- id, name, clerk_org_id, owner_user_id
+- plan (small_firm/firm_plus), max_seats
+- stripe_customer_id, subscription_status
+- credits_used_this_month, credits_limit
+- created_at
+
 ### users
 - id, clerk_id, email, name, created_at
+- org_id (nullable — null for solo users, FK to organizations)
+- role (owner/admin/member) — within org
 - practice_areas (jsonb) — from onboarding wizard
 - state, jurisdiction — from onboarding wizard
 - case_types (jsonb) — typical case types
-- plan (solo/small_firm/firm_plus/trial), subscription_status
-- stripe_customer_id, documents_used_this_month
+- plan (solo/trial — only for non-org users), subscription_status
+- stripe_customer_id (null if org-managed)
+- credits_used_this_month (for solo/trial users; org users share org quota)
 
 ### cases
-- id, user_id, name, status (draft/processing/ready/failed)
+- id, user_id, org_id (nullable), name, status (draft/processing/ready/failed)
 - detected_case_type, override_case_type — auto-detect + manual override
+- jurisdiction_override (nullable — per-case override of user's default state)
 - selected_sections (jsonb) — which sections enabled
+- sections_locked (boolean, default false) — true once analysis starts, prevents mid-flight changes
 - case_brief (jsonb) — Opus synthesis result
+- delete_at (timestamp) — auto-delete date, set on creation based on plan (30/60/90 days)
 - created_at, updated_at
 
 ### documents
-- id, case_id, user_id, filename, s3_key
+- id, case_id, user_id, filename, s3_key, checksum_sha256
 - file_type (pdf/docx/image), page_count, file_size
 - status (uploading/extracting/analyzing/ready/failed)
 - extracted_text (text) — for chat context
+- credits_consumed (integer, default 1) — tracks actual credit cost including case brief surcharge
 - created_at
+
+Deduplication: on upload, compute SHA-256 checksum. If same checksum exists in same case → reject with "This document has already been uploaded."
 
 ### document_analyses
 - id, document_id, case_id
-- sections (jsonb) — all report sections (timeline, facts, parties, etc.)
+- sections (jsonb) — structured per-section data (see Zod schema below)
 - risk_score (1-10)
 - model_used (sonnet/opus), tokens_used, processing_time_ms
 - created_at
+
+#### Sections JSON Schema (Zod-validated)
+```typescript
+z.object({
+  timeline: z.array(z.object({
+    date: z.string(),
+    event: z.string(),
+    source_doc: z.string().optional(),
+    significance: z.enum(["high", "medium", "low"]).optional()
+  })).optional(),
+  key_facts: z.array(z.object({
+    fact: z.string(),
+    source: z.string().optional(),
+    disputed: z.boolean().default(false)
+  })).optional(),
+  parties: z.array(z.object({
+    name: z.string(),
+    role: z.string(),
+    description: z.string().optional()
+  })).optional(),
+  legal_arguments: z.object({
+    plaintiff: z.array(z.object({ argument: z.string(), strength: z.enum(["strong", "moderate", "weak"]) })),
+    defendant: z.array(z.object({ argument: z.string(), strength: z.enum(["strong", "moderate", "weak"]) }))
+  }).optional(),
+  weak_points: z.array(z.object({
+    point: z.string(),
+    severity: z.enum(["high", "medium", "low"]),
+    recommendation: z.string()
+  })).optional(),
+  risk_assessment: z.object({
+    score: z.number().min(1).max(10),
+    factors: z.array(z.string())
+  }).optional(),
+  evidence_inventory: z.array(z.object({
+    item: z.string(),
+    type: z.string(),
+    status: z.enum(["available", "missing", "contested"])
+  })).optional(),
+  applicable_laws: z.array(z.object({
+    statute: z.string(),
+    relevance: z.string()
+  })).optional(),
+  deposition_questions: z.array(z.object({
+    question: z.string(),
+    target: z.string(),
+    purpose: z.string()
+  })).optional(),
+  obligations: z.array(z.object({
+    description: z.string(),
+    deadline: z.string().optional(),
+    recurring: z.boolean().default(false)
+  })).optional()
+})
+```
+Each section is optional — only enabled sections are populated based on `case.selected_sections`.
 
 ### chat_messages
 - id, user_id, case_id, document_id (nullable — null for case-level chat)
 - role (user/assistant), content
 - tokens_used, created_at
 
+#### Chat Subsystem Details
+- **Model:** Sonnet for all chat (cost-effective, fast response)
+- **Context strategy:** system prompt + case/document summary (from analysis sections, not raw text) + last 20 messages. Keeps context under 30K tokens.
+- **Rate limit:** 30 messages per hour per user (via Vercel middleware counter)
+- **Message cap:** Trial=10/case, Solo=50/case, Small Firm/Firm+=unlimited
+- **Scope:** document_id set → chat sees that document's analysis + extracted text. document_id null → chat sees case_brief + all document summaries.
+
 ### subscriptions
-- id, user_id, stripe_subscription_id, stripe_customer_id
+- id, user_id (nullable), org_id (nullable) — one of the two
+- stripe_subscription_id, stripe_customer_id
 - plan, status (active/past_due/cancelled)
 - current_period_start, current_period_end
 - created_at
@@ -163,11 +246,26 @@ inngest/case.analyze
        → Email notification: "Your case analysis is ready"
 ```
 
+### Analysis Flow Control
+- **Auto-detect timing:** runs after first document extraction completes. If multiple docs, uses first extracted doc for initial suggestion; refines after all docs extracted if confidence < 0.7.
+- **Section locking:** when user clicks "Analyze" → `sections_locked = true`. Sections cannot be changed mid-flight. To change sections after analysis → "Re-analyze" button (costs credits again).
+- **Adding docs post-brief:** if user adds a document to a completed case → individual doc analyzed automatically → user sees prompt: "Case Brief is outdated. Regenerate?" → manual trigger, costs extra credits.
+- **Per-case jurisdiction override:** each case can set a jurisdiction different from user's default (for multi-state practice). Compliance engine uses case jurisdiction when set.
+- **Move document between cases:** supported via UI. Document re-associated, old case brief invalidated with regeneration prompt.
+
+### Quota Enforcement
+- Credit decrement: atomic `UPDATE ... SET credits_used = credits_used + $cost WHERE credits_used + $cost <= credits_limit` — prevents race conditions on concurrent submissions.
+- For org users: decrement on `organizations.credits_used_this_month`.
+- For solo users: decrement on `users.credits_used_this_month`.
+- Reset: Inngest cron job on billing cycle date (from Stripe webhook).
+
 ### Error Handling
 - Per-document retry: 1 automatic retry on extraction/analysis failure
-- If retry fails: document marked "failed", other docs continue
+- If retry fails: document marked "failed", other docs continue. User sees "Retry" button → re-triggers Inngest step for that document only (not entire case)
 - If all docs fail: case marked "failed", email notification
 - Opus synthesis retry: 1 retry, if fails — case_brief left empty, individual doc reports still available
+- Zod validation retry: max 2 re-generation attempts with stricter prompt, then mark document "failed"
+- Password-protected PDF: immediate reject, no retry
 
 ### Cost Estimation
 - Single doc (Sonnet): ~$0.30-1.00
@@ -182,7 +280,7 @@ inngest/case.analyze
 ### Document Credit System
 - Quota counted in document credits
 - 1 file = 1 credit (regardless of single or in case)
-- Case Brief synthesis: free up to 5 docs in case; after 5 — each additional file = +1 extra credit
+- Case Brief synthesis: free for cases with up to 5 docs. For cases with 6+ docs, each document beyond 5 costs 2 credits instead of 1 (1 base + 1 synthesis surcharge)
 - Overage: $3-5 per credit after quota exhausted
 
 ### Credit Examples
