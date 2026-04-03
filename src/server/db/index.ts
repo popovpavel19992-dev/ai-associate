@@ -5,6 +5,9 @@ import * as users from "./schema/users";
 import * as cases from "./schema/cases";
 import * as documents from "./schema/documents";
 import * as documentAnalyses from "./schema/document-analyses";
+import * as chatMessages from "./schema/chat-messages";
+import * as subscriptions from "./schema/subscriptions";
+import * as sectionPresets from "./schema/section-presets";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -15,5 +18,8 @@ export const db = drizzle(client, {
     ...cases,
     ...documents,
     ...documentAnalyses,
+    ...chatMessages,
+    ...subscriptions,
+    ...sectionPresets,
   },
 });
