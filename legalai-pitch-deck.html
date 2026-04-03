@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Associate — Pitch Deck</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg-card: rgba(15, 17, 25, 0.9);
+    --bg-subtle: rgba(30, 35, 50, 0.6);
+    --border: rgba(255,255,255,0.06);
+    --text: #e8eaf0;
+    --text-secondary: #8b90a0;
+    --text-dim: #555a6e;
+    --accent: #818cf8;
+    --accent-indigo: #6366f1;
+    --accent-violet: #8b5cf6;
+    --accent-blue: #60a5fa;
+    --accent-orange: #fb923c;
+    --accent-red: #f87171;
+    --accent-green: #34d399;
+    --accent-cyan: #22d3ee;
+    --accent-pink: #f472b6;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+  }
+
+  .slide {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 80px;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .slide-number {
+    position: absolute;
+    top: 32px;
+    right: 40px;
+    font-size: 13px;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  .slide-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-size: 56px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1.1;
+    margin-bottom: 20px;
+  }
+
+  h2 {
+    font-size: 40px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+
+  h3 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .subtitle {
+    font-size: 20px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    max-width: 700px;
+  }
+
+  .subtitle-sm {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+  }
+
+  .card-accent {
+    border: 1px solid rgba(129, 140, 248, 0.3);
+    background: rgba(129, 140, 248, 0.03);
+  }
+
+  .stat-big {
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+
+  .stat-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .tag-indigo { background: rgba(99,102,241,0.15); color: var(--accent-indigo); }
+  .tag-red { background: rgba(248,113,113,0.15); color: var(--accent-red); }
+  .tag-orange { background: rgba(251,146,60,0.15); color: var(--accent-orange); }
+  .tag-blue { background: rgba(96,165,250,0.15); color: var(--accent-blue); }
+  .tag-violet { background: rgba(139,92,246,0.15); color: var(--accent-violet); }
+  .tag-green { background: rgba(52,211,153,0.15); color: var(--accent-green); }
+
+  ul { list-style: none; padding: 0; }
+  ul li {
+    padding: 6px 0;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  ul li::before {
+    content: "→ ";
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 24px 0;
+  }
+
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .flow-step {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    color: var(--text-dim);
+    font-size: 20px;
+  }
+
+  .pricing-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 28px;
+    text-align: center;
+    position: relative;
+  }
+  .pricing-card.featured {
+    border: 2px solid rgba(129, 140, 248, 0.4);
+    background: rgba(129, 140, 248, 0.03);
+  }
+  .pricing-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .price {
+    font-size: 48px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    margin: 12px 0 4px;
+  }
+  .price-period {
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+
+  .funnel-bar {
+    padding: 14px 24px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  th {
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+  td {
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  tr.us-row { background: rgba(129,140,248,0.05); }
+  tr.us-row td { color: var(--text); font-weight: 500; }
+
+  .nav-dots {
+    position: fixed;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+  }
+  .nav-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    opacity: 0.3;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .nav-dot:hover, .nav-dot.active {
+    opacity: 1;
+    background: var(--accent);
+    transform: scale(1.3);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-violet) 50%, var(--accent-blue) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .icon-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+
+  .timeline-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  .timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+  .timeline-line {
+    border-left: 2px solid var(--border);
+    padding-left: 20px;
+    margin-left: 5px;
+  }
+
+  @media print {
+    .slide { page-break-after: always; min-height: auto; padding: 40px; }
+    .nav-dots { display: none; }
+    body { background: white; color: #1a1a1a; }
+  }
+</style>
+</head>
+<body>
+
+<div class="nav-dots" id="navDots"></div>
+
+<!-- ==================== SLIDE 1: TITLE ==================== -->
+<div class="slide" id="slide-1" style="justify-content: center; align-items: center; text-align: center;">
+  <div class="slide-number">01 / 12</div>
+  <div style="margin-bottom: 32px;">
+    <div style="font-size: 64px; margin-bottom: 8px;">&#9878;</div>
+  </div>
+  <h1 class="gradient-text" style="font-size: 72px; letter-spacing: -3px;">AI Associate</h1>
+  <p style="font-size: 24px; color: var(--text-secondary); margin-bottom: 16px; max-width: 600px;">Your Virtual Junior Lawyer</p>
+  <p style="font-size: 18px; color: var(--accent); margin-bottom: 48px;">The capabilities of a BigLaw associate for $99/month</p>
+  <div style="display: flex; gap: 20px; font-size: 13px; color: var(--text-dim);">
+    <span>AI-Powered Legal Platform</span>
+    <span>|</span>
+    <span>April 2026</span>
+    <span>|</span>
+    <span>Bootstrapped</span>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 2: PROBLEM ==================== -->
+<div class="slide" id="slide-2">
+  <div class="slide-number">02 / 12</div>
+  <div class="slide-label">The Problem</div>
+  <h2>Solo lawyers are drowning in admin work <br>they can't afford to delegate</h2>
+  <p class="subtitle" style="margin-bottom: 40px;">480K+ solo practitioners in the US spend half their time on non-billable work — and can't afford a junior associate to help.</p>
+
+  <div class="grid-4" style="margin-bottom: 32px;">
+    <div class="card">
+      <div class="stat-big" style="color: var(--accent-red);">40-50%</div>
+      <div class="stat-label">Time spent on non-billable admin work</div>
+    </div>
+    <div class="card">
+      <div class="stat-big" style="color: var(--accent-orange);">$225K</div>
+      <div class="stat-label">Junior associate salary at BigLaw (unaffordable)</div>
+    </div>
+    <div class="card">
+      <div class="stat-big" style="color: var(--accent);">15-20h</div>
+      <div class="stat-label">Per week on document review &amp; research</div>
+    </div>
+    <div class="card">
+      <div class="stat-big" style="color: var(--accent-violet);">$30K</div>
+      <div class="stat-label">Lost per year in unbilled time per lawyer</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Who suffers most?</h3>
+      <ul>
+        <li>Solo practitioners (35% of all US lawyers — ~480K people)</li>
+        <li>Small firms with ≤6 attorneys (75% of all US law firms)</li>
+        <li>Average solo income: $70K-$120K/year</li>
+        <li>Average billing rate: $288/hr but only 65% utilization</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>The daily grind</h3>
+      <ul>
+        <li>3-8 hours per contract drafted manually</li>
+        <li>5-10 hours legal research per case (often repetitive)</li>
+        <li>59% of lawyers report burnout (ABA wellness study)</li>
+        <li>Missing deadlines = #1 cause of malpractice claims</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 3: SOLUTION ==================== -->
+<div class="slide" id="slide-3">
+  <div class="slide-number">03 / 12</div>
+  <div class="slide-label">The Solution</div>
+  <h2>An AI associate that handles the routine work <br><span style="color: var(--accent);">so lawyers can focus on lawyering</span></h2>
+  <p class="subtitle" style="margin-bottom: 40px;">Two powerful tools in Phase 1, expanding to a full practice suite.</p>
+
+  <div class="grid-2" style="margin-bottom: 24px;">
+    <div class="card card-accent" style="border-color: rgba(129,140,248,0.3);">
+      <div class="icon-circle" style="background: rgba(129,140,248,0.15);">&#128209;</div>
+      <h3>Case Summarization</h3>
+      <p class="subtitle-sm">Upload case materials — PDFs, DOCX, photos — and get a structured report in 2 minutes: timeline, key facts, participants, legal arguments, and weak points to exploit.</p>
+      <div style="margin-top: 16px;">
+        <span class="tag tag-indigo">MVP — Phase 1</span>
+      </div>
+    </div>
+    <div class="card card-accent" style="border-color: rgba(139,92,246,0.3);">
+      <div class="icon-circle" style="background: rgba(139,92,246,0.15);">&#128221;</div>
+      <h3>Contract Generation</h3>
+      <p class="subtitle-sm">Choose from templates, customize per client and jurisdiction. AI suggests clauses, flags risks, handles redlining. From blank page to signed contract, 10x faster.</p>
+      <div style="margin-top: 16px;">
+        <span class="tag tag-violet">MVP — Phase 1</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-4">
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 24px; margin-bottom: 8px;">&#128218;</div>
+      <div style="font-size: 13px; font-weight: 600;">Case Management</div>
+      <div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">Phase 2</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 24px; margin-bottom: 8px;">&#128269;</div>
+      <div style="font-size: 13px; font-weight: 600;">Legal Research</div>
+      <div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">Phase 2</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 24px; margin-bottom: 8px;">&#9993;</div>
+      <div style="font-size: 13px; font-weight: 600;">Client Comms</div>
+      <div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">Phase 2</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 24px; margin-bottom: 8px;">&#9878;</div>
+      <div style="font-size: 13px; font-weight: 600;">Court Filing Prep</div>
+      <div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">Phase 2</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 4: MARKET SIZE ==================== -->
+<div class="slide" id="slide-4">
+  <div class="slide-number">04 / 12</div>
+  <div class="slide-label">Market Opportunity</div>
+  <h2>A $10.8B market growing at <span style="color: var(--accent);">28.3% CAGR</span></h2>
+  <p class="subtitle" style="margin-bottom: 40px;">AI legal tech is the fastest-growing segment in a $350B industry. Solo/small firms are massively underserved.</p>
+
+  <div class="grid-2">
+    <div>
+      <div class="card" style="margin-bottom: 20px;">
+        <h3>TAM / SAM / SOM</h3>
+        <div style="margin-top: 20px;">
+          <div class="funnel-bar" style="background: rgba(129,140,248,0.08); width: 100%;">
+            <span style="font-weight: 600;">TAM — US Legal Services</span>
+            <span style="font-weight: 800; color: var(--accent);">$350B</span>
+          </div>
+          <div class="funnel-bar" style="background: rgba(139,92,246,0.08); width: 75%; margin-left: 12%;">
+            <span style="font-weight: 600;">SAM — Solo/Small Firm AI Tools</span>
+            <span style="font-weight: 800; color: var(--accent-violet);">$2.5B</span>
+          </div>
+          <div class="funnel-bar" style="background: rgba(96,165,250,0.08); width: 50%; margin-left: 25%;">
+            <span style="font-weight: 600;">SOM — Year 1 Bootstrap Target</span>
+            <span style="font-weight: 800; color: var(--accent-blue);">$600K</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="grid-2" style="margin-bottom: 20px;">
+        <div class="card">
+          <div class="stat-big" style="color: var(--accent);">$36B</div>
+          <div class="stat-label">Legal tech market 2026</div>
+        </div>
+        <div class="card">
+          <div class="stat-big" style="color: var(--accent-violet);">28.3%</div>
+          <div class="stat-label">AI legal tech CAGR</div>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-bottom: 20px;">
+        <div class="card">
+          <div class="stat-big" style="color: var(--accent-blue);">$4.3B</div>
+          <div class="stat-label">Legal tech funding 2025 (+54% YoY)</div>
+        </div>
+        <div class="card">
+          <div class="stat-big" style="color: var(--accent-green);">53%</div>
+          <div class="stat-label">Small firms using gen AI (was 27% in 2023)</div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size: 14px; color: var(--text-secondary);">
+          <strong style="color: var(--text);">1.37M</strong> lawyers in US &nbsp;·&nbsp;
+          <strong style="color: var(--text);">480K+</strong> solo practitioners &nbsp;·&nbsp;
+          <strong style="color: var(--text);">463K+</strong> law firms
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 5: COMPETITORS ==================== -->
+<div class="slide" id="slide-5">
+  <div class="slide-number">05 / 12</div>
+  <div class="slide-label">Competitive Landscape</div>
+  <h2>Big players target BigLaw. <span style="color: var(--accent);">Solo lawyers are left behind.</span></h2>
+  <p class="subtitle" style="margin-bottom: 32px;">$16B+ in competitor valuations — yet no affordable, deep-quality AI for solo practitioners. LegalAI.com is closest but trades depth for breadth.</p>
+
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Competitor</th>
+          <th>Valuation</th>
+          <th>Target</th>
+          <th>Pricing</th>
+          <th>Focus</th>
+          <th>Solo Gap</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-weight: 600; color: var(--text);">Harvey AI</td>
+          <td style="color: var(--accent-orange);">$11B</td>
+          <td>AmLaw 100, Enterprise</td>
+          <td>$1,200/user/mo (20-seat min)</td>
+          <td>Full-stack legal AI</td>
+          <td><span class="tag tag-red">$288K/yr min</span></td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600; color: var(--text);">CoCounsel</td>
+          <td style="color: var(--text-dim);">Thomson Reuters</td>
+          <td>All sizes</td>
+          <td>$75-$500/user/mo</td>
+          <td>Research + Westlaw</td>
+          <td><span class="tag tag-orange">Complex, ecosystem lock</span></td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600; color: var(--text);">Legora</td>
+          <td style="color: var(--accent-orange);">$5.5B</td>
+          <td>Law firms, corporate</td>
+          <td>€1-3K/user/year</td>
+          <td>Multi-jurisdiction research</td>
+          <td><span class="tag tag-orange">Europe-focused</span></td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600; color: var(--text);">Spellbook</td>
+          <td style="color: var(--accent-blue);">$350M</td>
+          <td>Transactional lawyers</td>
+          <td>$20-$179/user/mo</td>
+          <td>Contract drafting only</td>
+          <td><span class="tag tag-orange">Contracts only</span></td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600; color: var(--text);">Clio</td>
+          <td style="color: var(--text-dim);">Public</td>
+          <td>Solo-mid firms</td>
+          <td>From $49/mo</td>
+          <td>Practice management + AI</td>
+          <td><span class="tag tag-orange">PM-first, AI bolted on</span></td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600; color: var(--text);">EvenUp</td>
+          <td style="color: var(--accent-orange);">$2B</td>
+          <td>PI lawyers only</td>
+          <td>Custom</td>
+          <td>Personal injury vertical</td>
+          <td><span class="tag tag-red">PI only</span></td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600; color: var(--text);">Smokeball</td>
+          <td style="color: var(--text-dim);">Private</td>
+          <td>Small firms</td>
+          <td>~$139/user/mo</td>
+          <td>PM + (CoCounsel AI)</td>
+          <td><span class="tag tag-orange">No own AI</span></td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600; color: var(--text);">LawDroid</td>
+          <td style="color: var(--text-dim);">Startup</td>
+          <td>Solo-small</td>
+          <td>$25-$99/mo</td>
+          <td>Chatbots + basic AI</td>
+          <td><span class="tag tag-orange">Too basic</span></td>
+        </tr>
+        <tr style="background: rgba(248,113,113,0.05);">
+          <td style="font-weight: 600; color: var(--accent-red);">LegalAI.com</td>
+          <td style="color: var(--text-dim);">Startup</td>
+          <td>Solo + Small firms</td>
+          <td>$39-$179/mo</td>
+          <td>9 tools, broad but shallow</td>
+          <td><span class="tag tag-red">Direct competitor</span></td>
+        </tr>
+        <tr class="us-row">
+          <td style="font-weight: 700; color: var(--accent);">AI Associate</td>
+          <td style="color: var(--accent);">—</td>
+          <td style="color: var(--accent);">Solo + Small firms</td>
+          <td style="color: var(--accent);">$99-$399/mo</td>
+          <td style="color: var(--accent);">All-in-one AI-first</td>
+          <td><span class="tag tag-indigo">Built for solo</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 6: WHITE SPACE ==================== -->
+<div class="slide" id="slide-6">
+  <div class="slide-number">06 / 12</div>
+  <div class="slide-label">Differentiation</div>
+  <h2>The gap nobody fills</h2>
+  <p class="subtitle" style="margin-bottom: 40px;">Every competitor either costs too much, does too little, or treats AI as an afterthought. Including LegalAI — our closest competitor.</p>
+
+  <div class="grid-2" style="margin-bottom: 24px;">
+    <div>
+      <div class="card" style="margin-bottom: 16px; border-left: 3px solid var(--accent-red);">
+        <h3 style="color: var(--accent-red);">Too Expensive</h3>
+        <p class="subtitle-sm">Harvey ($1,200/mo), CoCounsel ($225-500/mo), Legora (€1-3K/yr), Luminance (custom enterprise) — all priced for BigLaw budgets, not solo practitioners earning $70-120K.</p>
+      </div>
+      <div class="card" style="margin-bottom: 16px; border-left: 3px solid var(--accent-orange);">
+        <h3 style="color: var(--accent-orange);">Too Narrow</h3>
+        <p class="subtitle-sm">Spellbook = contracts only. EvenUp = PI only. CaseMark = summarization only. No single platform combines core tasks a solo lawyer needs daily.</p>
+      </div>
+      <div class="card" style="margin-bottom: 16px; border-left: 3px solid var(--text-dim);">
+        <h3 style="color: var(--text-dim);">AI as Afterthought</h3>
+        <p class="subtitle-sm">Clio and Smokeball are practice management first — AI is a bolt-on feature, not the core. Smokeball just partnered with CoCounsel instead of building own AI.</p>
+      </div>
+      <div class="card" style="border-left: 3px solid var(--accent-red);">
+        <h3 style="color: var(--accent-red);">LegalAI.com — Closest Rival</h3>
+        <p class="subtitle-sm">Same target (solo/small firms), $39-179/mo, 9 tools. But: breadth over depth, no practice area specialization, no adaptive learning, generic output — a "checkbox AI" that does many things poorly.</p>
+      </div>
+    </div>
+    <div>
+      <div class="card card-accent" style="height: 100%; display: flex; flex-direction: column; justify-content: center; border-color: rgba(129,140,248,0.4);">
+        <div style="font-size: 14px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;">Our Position</div>
+        <h3 style="font-size: 28px; margin-bottom: 20px;">AI-First. All-in-One. <br>Affordable.</h3>
+        <ul>
+          <li><strong style="color: var(--text);">10x cheaper</strong> than Harvey ($99 vs $1,200/mo)</li>
+          <li><strong style="color: var(--text);">AI-native</strong> architecture, not a PM with AI bolted on</li>
+          <li><strong style="color: var(--text);">Case summarization + contracts</strong> in one platform</li>
+          <li><strong style="color: var(--text);">Solo-first UX</strong> — designed for one-person workflow</li>
+          <li><strong style="color: var(--text);">Growth path</strong> — scales from solo to small firm to mid firm</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 8px;">
+    <div style="font-size: 14px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;">How We Win vs LegalAI</div>
+    <div class="grid-3">
+      <div class="card" style="border-top: 3px solid var(--accent);">
+        <h3 style="font-size: 16px;">&#127919; Deep Practice Intelligence</h3>
+        <p class="subtitle-sm">Vertical modules per practice area (traffic, PI, family, real estate) with state-specific rules, local court standards, and jurisdiction awareness. LegalAI is generic across all areas.</p>
+      </div>
+      <div class="card" style="border-top: 3px solid var(--accent-violet);">
+        <h3 style="font-size: 16px;">&#129504; "Learn My Practice"</h3>
+        <p class="subtitle-sm">AI adapts to each lawyer's style — templates, clause preferences, tone, case types. After a month, it drafts contracts in their voice. LegalAI treats every user identically.</p>
+      </div>
+      <div class="card" style="border-top: 3px solid var(--accent-blue);">
+        <h3 style="font-size: 16px;">&#9878; Courtroom-Ready Output</h3>
+        <p class="subtitle-sm">Documents formatted to the exact standards of the specific court — margins, citation style, filing requirements by jurisdiction. Not generic templates.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 7: BUSINESS MODEL ==================== -->
+<div class="slide" id="slide-7">
+  <div class="slide-number">07 / 12</div>
+  <div class="slide-label">Business Model</div>
+  <h2>Hybrid pricing that grows with the practice</h2>
+  <p class="subtitle" style="margin-bottom: 40px;">Subscription + per-document overage. Start at $99, expand as the firm grows.</p>
+
+  <div class="grid-3" style="margin-bottom: 32px;">
+    <div class="pricing-card">
+      <h3 style="color: var(--accent-blue);">Solo</h3>
+      <div class="price" style="color: var(--accent-blue);">$99</div>
+      <div class="price-period">/month</div>
+      <div class="divider"></div>
+      <ul>
+        <li>50 documents/month</li>
+        <li>Case summarization</li>
+        <li>Contract generation</li>
+        <li>AI chat with docs</li>
+        <li>All templates</li>
+      </ul>
+    </div>
+    <div class="pricing-card featured">
+      <div class="pricing-badge">Most Popular</div>
+      <h3 style="color: var(--accent);">Small Firm</h3>
+      <div class="price" style="color: var(--accent);">$199</div>
+      <div class="price-period">/seat/month</div>
+      <div class="divider"></div>
+      <ul>
+        <li>200 documents/month</li>
+        <li>Everything in Solo</li>
+        <li>Team collaboration</li>
+        <li>Shared templates</li>
+        <li>Priority support</li>
+      </ul>
+    </div>
+    <div class="pricing-card">
+      <h3 style="color: var(--accent-violet);">Firm+</h3>
+      <div class="price" style="color: var(--accent-violet);">$399</div>
+      <div class="price-period">/seat/month</div>
+      <div class="divider"></div>
+      <ul>
+        <li>Unlimited documents</li>
+        <li>Everything in Small Firm</li>
+        <li>Custom workflows</li>
+        <li>API access</li>
+        <li>Dedicated support</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--accent-green);">$3-5</div>
+      <div class="stat-label">Per document overage</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--accent);">3 docs</div>
+      <div class="stat-label">Free trial — no credit card</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--accent-violet);">~78%</div>
+      <div class="stat-label">Target gross margin</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 8: HOW IT WORKS ==================== -->
+<div class="slide" id="slide-8">
+  <div class="slide-number">08 / 12</div>
+  <div class="slide-label">Product</div>
+  <h2>From document to insight in <span style="color: var(--accent);">2 minutes</span></h2>
+  <p class="subtitle" style="margin-bottom: 48px;">Simple, powerful workflow designed for how solo lawyers actually work.</p>
+
+  <div class="flow" style="margin-bottom: 48px;">
+    <div class="flow-step">
+      <div style="font-size: 32px; margin-bottom: 12px;">&#128228;</div>
+      <h3 style="font-size: 16px;">Upload</h3>
+      <p style="font-size: 13px; color: var(--text-dim);">PDF, DOCX, or photo. Drag & drop or snap with phone.</p>
+    </div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-step">
+      <div style="font-size: 32px; margin-bottom: 12px;">&#9881;</div>
+      <h3 style="font-size: 16px;">AI Analysis</h3>
+      <p style="font-size: 13px; color: var(--text-dim);">Claude AI processes in ~2 min. OCR for photos.</p>
+    </div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-step">
+      <div style="font-size: 32px; margin-bottom: 12px;">&#128202;</div>
+      <h3 style="font-size: 16px;">Report</h3>
+      <p style="font-size: 13px; color: var(--text-dim);">Structured summary, timeline, key facts, risks flagged.</p>
+    </div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-step">
+      <div style="font-size: 32px; margin-bottom: 12px;">&#128172;</div>
+      <h3 style="font-size: 16px;">Chat & Edit</h3>
+      <p style="font-size: 13px; color: var(--text-dim);">Ask questions, drill into details, refine output.</p>
+    </div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-step">
+      <div style="font-size: 32px; margin-bottom: 12px;">&#128190;</div>
+      <h3 style="font-size: 16px;">Export</h3>
+      <p style="font-size: 13px; color: var(--text-dim);">Download PDF/DOCX. Share with clients or file.</p>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Case Summarization Output</h3>
+      <ul>
+        <li>Chronological timeline of events</li>
+        <li>Key facts & evidence inventory</li>
+        <li>Parties & their roles mapped</li>
+        <li>Legal arguments for each side</li>
+        <li>Weak points & vulnerabilities identified</li>
+        <li>Suggested questions for depositions</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Contract Generation Flow</h3>
+      <ul>
+        <li>Choose from 50+ templates by practice area</li>
+        <li>AI customizes per client & jurisdiction</li>
+        <li>Clause library with risk scoring</li>
+        <li>Side-by-side redlining</li>
+        <li>Version history & change tracking</li>
+        <li>E-signature ready export</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 9: GO-TO-MARKET ==================== -->
+<div class="slide" id="slide-9">
+  <div class="slide-number">09 / 12</div>
+  <div class="slide-label">Go-To-Market</div>
+  <h2>Meet lawyers where they already are</h2>
+  <p class="subtitle" style="margin-bottom: 40px;">Multi-channel acquisition focused on trust-building in a conservative profession.</p>
+
+  <div class="grid-3" style="margin-bottom: 24px;">
+    <div class="card">
+      <div class="icon-circle" style="background: rgba(129,140,248,0.15); color: var(--accent);">&#128221;</div>
+      <h3>Content & SEO</h3>
+      <p class="subtitle-sm">Guides, comparisons, tutorials targeting "AI for solo lawyers", "contract drafting automation". Own the long-tail.</p>
+    </div>
+    <div class="card">
+      <div class="icon-circle" style="background: rgba(139,92,246,0.15); color: var(--accent-violet);">&#127891;</div>
+      <h3>Bar Associations</h3>
+      <p class="subtitle-sm">CLE credit partnerships, conference sponsorships, webinars. Built-in trust channel. ABA TECHSHOW presence.</p>
+    </div>
+    <div class="card">
+      <div class="icon-circle" style="background: rgba(96,165,250,0.15); color: var(--accent-blue);">&#128101;</div>
+      <h3>Legal Communities</h3>
+      <p class="subtitle-sm">AbovetheLaw, Lawyerist, Reddit r/lawyers, Facebook groups, legal tech podcasts. Organic word-of-mouth.</p>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="icon-circle" style="background: rgba(52,211,153,0.15); color: var(--accent-green);">&#128279;</div>
+      <h3>Referral Program</h3>
+      <p class="subtitle-sm">30-day free extension for both parties. Lawyers trust peer recommendations above all else.</p>
+    </div>
+    <div class="card">
+      <div class="icon-circle" style="background: rgba(251,146,60,0.15); color: var(--accent-orange);">&#128268;</div>
+      <h3>Marketplace Integrations</h3>
+      <p class="subtitle-sm">Clio App Directory, Smokeball Marketplace, PracticePanther. Meet users inside their existing tools.</p>
+    </div>
+    <div class="card">
+      <div class="icon-circle" style="background: rgba(34,211,238,0.15); color: var(--accent-cyan);">&#127873;</div>
+      <h3>Free Tools as Lead Gen</h3>
+      <p class="subtitle-sm">Free NDA template generator, clause checker, contract risk scanner. Capture emails, convert to paid.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 10: TECH & COMPLIANCE ==================== -->
+<div class="slide" id="slide-10">
+  <div class="slide-number">10 / 12</div>
+  <div class="slide-label">Technology &amp; Compliance</div>
+  <h2>Built for trust. <span style="color: var(--accent);">Designed for ethics.</span></h2>
+  <p class="subtitle" style="margin-bottom: 40px;">Security and ABA compliance aren't features — they're the foundation.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Tech Stack</h3>
+      <ul>
+        <li><strong style="color: var(--text);">AI Engine:</strong> Claude API (Anthropic) — best-in-class reasoning</li>
+        <li><strong style="color: var(--text);">Frontend:</strong> Next.js 15, TypeScript, React</li>
+        <li><strong style="color: var(--text);">Backend:</strong> tRPC, Supabase, Drizzle ORM</li>
+        <li><strong style="color: var(--text);">OCR:</strong> Google Vision API for photo uploads</li>
+        <li><strong style="color: var(--text);">Payments:</strong> Stripe</li>
+        <li><strong style="color: var(--text);">Hosting:</strong> Vercel + AWS (S3 + KMS)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Security & Compliance</h3>
+      <ul>
+        <li><strong style="color: var(--text);">ABA Opinion 512</strong> compliant — competence, confidentiality, candor</li>
+        <li><strong style="color: var(--text);">30+ state bar</strong> AI guidances tracked & built-in</li>
+        <li><strong style="color: var(--text);">SOC 2 Type II</strong> certification roadmap</li>
+        <li><strong style="color: var(--text);">AES-256</strong> encryption at rest, TLS in transit</li>
+        <li><strong style="color: var(--text);">Zero training:</strong> user data never used for AI training</li>
+        <li><strong style="color: var(--text);">Auto-delete</strong> option for sensitive documents</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 11: MILESTONES ==================== -->
+<div class="slide" id="slide-11">
+  <div class="slide-number">11 / 12</div>
+  <div class="slide-label">Roadmap</div>
+  <h2>From MVP to market leader in <span style="color: var(--accent);">12 months</span></h2>
+
+  <div class="grid-2" style="margin-top: 32px;">
+    <div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background: var(--accent);"></div>
+        <div>
+          <div style="font-size: 12px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Q2 2026 — Phase 1 MVP (8 weeks)</div>
+          <p class="subtitle-sm" style="margin-top: 4px;">Case summarization + contract generation. Core platform, auth, billing.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background: var(--accent-violet);"></div>
+        <div>
+          <div style="font-size: 12px; color: var(--accent-violet); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Q3 2026 — Beta Launch</div>
+          <p class="subtitle-sm" style="margin-top: 4px;">100 beta users from bar association partnerships. Feedback loop. Iterate.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background: var(--accent-blue);"></div>
+        <div>
+          <div style="font-size: 12px; color: var(--accent-blue); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Q4 2026 — Public Launch</div>
+          <p class="subtitle-sm" style="margin-top: 4px;">500+ users. PR push. Content marketing ramp. Referral program live.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background: var(--accent-green);"></div>
+        <div>
+          <div style="font-size: 12px; color: var(--accent-green); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Q1 2027 — Phase 2</div>
+          <p class="subtitle-sm" style="margin-top: 4px;">Case management, legal research, client comms. 2K+ users.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background: var(--accent-orange);"></div>
+        <div>
+          <div style="font-size: 12px; color: var(--accent-orange); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Q2-Q4 2027 — Phase 3 & Scale</div>
+          <p class="subtitle-sm" style="margin-top: 4px;">Vertical modules (traffic, PI, family law). Court DB integrations. iOS app. Revenue-funded growth.</p>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom: 20px;">
+        <h3>Revenue Targets (Bootstrap)</h3>
+        <div style="margin-top: 16px;">
+          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+            <div style="width: 80px; font-size: 14px; font-weight: 600; color: var(--accent);">Year 1</div>
+            <div style="flex: 1; height: 32px; background: rgba(129,140,248,0.1); border-radius: 8px; position: relative; overflow: hidden;">
+              <div style="position: absolute; left: 0; top: 0; height: 100%; width: 12%; background: linear-gradient(90deg, var(--accent), var(--accent-violet)); border-radius: 8px;"></div>
+            </div>
+            <div style="width: 80px; text-align: right; font-weight: 700;">$600K</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+            <div style="width: 80px; font-size: 14px; font-weight: 600; color: var(--accent-violet);">Year 2</div>
+            <div style="flex: 1; height: 32px; background: rgba(129,140,248,0.1); border-radius: 8px; position: relative; overflow: hidden;">
+              <div style="position: absolute; left: 0; top: 0; height: 100%; width: 40%; background: linear-gradient(90deg, var(--accent-violet), var(--accent-blue)); border-radius: 8px;"></div>
+            </div>
+            <div style="width: 80px; text-align: right; font-weight: 700;">$2M</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="width: 80px; font-size: 14px; font-weight: 600; color: var(--accent-blue);">Year 3</div>
+            <div style="flex: 1; height: 32px; background: rgba(129,140,248,0.1); border-radius: 8px; position: relative; overflow: hidden;">
+              <div style="position: absolute; left: 0; top: 0; height: 100%; width: 100%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-green)); border-radius: 8px;"></div>
+            </div>
+            <div style="width: 80px; text-align: right; font-weight: 700;">$5M</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card" style="text-align: center;">
+          <div class="stat-big" style="color: var(--accent); font-size: 36px;">500+</div>
+          <div class="stat-label">Paying users Year 1</div>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div class="stat-big" style="color: var(--accent-green); font-size: 36px;">Month 1</div>
+          <div class="stat-label">Profitable (5 users cover costs)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 12: BOOTSTRAP PLAN ==================== -->
+<div class="slide" id="slide-12" style="justify-content: center; align-items: center; text-align: center;">
+  <div class="slide-number">12 / 12</div>
+  <div class="slide-label">Bootstrap Plan</div>
+  <h1 class="gradient-text" style="font-size: 64px; margin-bottom: 16px;">Built Lean. Shipped Fast.</h1>
+  <p class="subtitle" style="text-align: center; margin: 0 auto 48px; max-width: 600px;">Zero outside funding. Minimal costs. Revenue from day one. The way great companies start.</p>
+
+  <div class="grid-4" style="max-width: 900px; margin: 0 auto 48px;">
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--accent-green); font-size: 32px;">$0</div>
+      <div style="font-size: 15px; font-weight: 600; margin-top: 4px;">Vercel Hosting</div>
+      <div class="stat-label">Free tier</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--accent); font-size: 32px;">~$200</div>
+      <div style="font-size: 15px; font-weight: 600; margin-top: 4px;">Claude API</div>
+      <div class="stat-label">/month estimated</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--accent-violet); font-size: 32px;">$0</div>
+      <div style="font-size: 15px; font-weight: 600; margin-top: 4px;">Supabase</div>
+      <div class="stat-label">Free tier</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--accent-blue); font-size: 32px;">~$15</div>
+      <div style="font-size: 15px; font-weight: 600; margin-top: 4px;">Domain</div>
+      <div class="stat-label">/year</div>
+    </div>
+  </div>
+
+  <div class="card card-accent" style="max-width: 700px; margin: 0 auto 48px; text-align: center; border-color: rgba(52,211,153,0.3);">
+    <div style="font-size: 16px; color: var(--accent-green); font-weight: 600; margin-bottom: 8px;">Total Cost to First Paying Customer</div>
+    <div style="font-size: 48px; font-weight: 800; color: var(--accent-green); letter-spacing: -2px;">< $500</div>
+    <div style="font-size: 14px; color: var(--text-dim); margin-top: 8px;">Just 5 solo subscribers cover all infrastructure costs</div>
+  </div>
+
+  <div style="display: flex; gap: 32px; justify-content: center; margin-bottom: 48px;">
+    <div>
+      <div style="font-size: 32px; font-weight: 800; color: var(--accent);">8 weeks</div>
+      <div style="font-size: 14px; color: var(--text-secondary);">MVP to market</div>
+    </div>
+    <div style="width: 1px; background: var(--border);"></div>
+    <div>
+      <div style="font-size: 32px; font-weight: 800; color: var(--accent-violet);">$99/mo</div>
+      <div style="font-size: 14px; color: var(--text-secondary);">Revenue from first user</div>
+    </div>
+    <div style="width: 1px; background: var(--border);"></div>
+    <div>
+      <div style="font-size: 32px; font-weight: 800; color: var(--accent-green);">100%</div>
+      <div style="font-size: 14px; color: var(--text-secondary);">Founder ownership</div>
+    </div>
+  </div>
+
+  <div style="font-size: 48px; margin-bottom: 16px;">&#9878;</div>
+  <p style="font-size: 18px; color: var(--accent); font-weight: 600;">AI Associate</p>
+  <p style="font-size: 14px; color: var(--text-dim); margin-top: 8px;">The capabilities of a BigLaw associate for $99/month</p>
+</div>
+
+<script>
+  // Build nav dots
+  const slides = document.querySelectorAll('.slide');
+  const navDots = document.getElementById('navDots');
+  slides.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'nav-dot';
+    dot.addEventListener('click', () => {
+      slides[i].scrollIntoView({ behavior: 'smooth' });
+    });
+    navDots.appendChild(dot);
+  });
+
+  // Update active dot on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const index = Array.from(slides).indexOf(entry.target);
+        document.querySelectorAll('.nav-dot').forEach((d, i) => {
+          d.classList.toggle('active', i === index);
+        });
+      }
+    });
+  }, { threshold: 0.5 });
+  slides.forEach(s => observer.observe(s));
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    const currentSlide = Array.from(slides).findIndex(s => {
+      const rect = s.getBoundingClientRect();
+      return rect.top >= -100 && rect.top < window.innerHeight / 2;
+    });
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      if (currentSlide < slides.length - 1) slides[currentSlide + 1].scrollIntoView({ behavior: 'smooth' });
+    }
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (currentSlide > 0) slides[currentSlide - 1].scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+</script>
+</body>
+</html>

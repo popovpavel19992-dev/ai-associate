@@ -1,0 +1,2005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Associate — Full Business Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg-page: #0e0f16;
+    --bg-card: rgba(15, 17, 25, 0.95);
+    --bg-subtle: rgba(30, 35, 50, 0.6);
+    --bg-hover: rgba(129, 140, 248, 0.04);
+    --border: rgba(255,255,255,0.06);
+    --border-accent: rgba(129, 140, 248, 0.2);
+    --text: #e8eaf0;
+    --text-secondary: #8b90a0;
+    --text-dim: #555a6e;
+    --accent: #818cf8;
+    --indigo: #6366f1;
+    --violet: #8b5cf6;
+    --blue: #60a5fa;
+    --orange: #fb923c;
+    --red: #f87171;
+    --pink: #f472b6;
+    --cyan: #22d3ee;
+    --green: #34d399;
+    --yellow: #fbbf24;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Cover */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cover h1 {
+    font-size: 64px;
+    font-weight: 800;
+    letter-spacing: -3px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--violet), var(--blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .cover .tagline {
+    font-size: 22px;
+    color: var(--accent);
+    margin-bottom: 40px;
+  }
+  .cover .meta {
+    font-size: 14px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 20px;
+  }
+
+  /* Table of Contents */
+  .toc {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 80px 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .toc h2 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    margin-bottom: 32px;
+  }
+  .toc-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+    color: var(--text);
+  }
+  .toc-item:hover { background: var(--bg-hover); }
+  .toc-num {
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+    width: 40px;
+  }
+  .toc-title {
+    flex: 1;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .toc-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  /* Sidebar Navigation */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 260px;
+    height: 100vh;
+    background: rgba(10, 10, 15, 0.95);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    overflow-y: auto;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-toggle {
+    position: fixed;
+    left: 16px;
+    top: 16px;
+    z-index: 300;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+  }
+  .sidebar-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .sidebar-link {
+    display: block;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 8px;
+    margin-bottom: 2px;
+    transition: all 0.2s;
+  }
+  .sidebar-link:hover { background: var(--bg-hover); color: var(--text); }
+  .sidebar-link.active { background: rgba(129,140,248,0.1); color: var(--accent); }
+  .sidebar-brand {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    padding: 8px 12px 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  /* Chapter */
+  .chapter {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 80px 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .chapter-num {
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+  .chapter h2 {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+  }
+  .chapter h3 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 32px 0 16px;
+  }
+  .chapter h4 {
+    font-size: 17px;
+    font-weight: 600;
+    margin: 24px 0 12px;
+    color: var(--accent);
+  }
+  .chapter p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 16px;
+    max-width: 800px;
+  }
+  .chapter-intro {
+    font-size: 18px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 32px;
+    max-width: 800px;
+  }
+
+  /* Cards & Grids */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 24px 0; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 24px 0; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .card-accent {
+    border-color: var(--border-accent);
+    background: rgba(129,140,248,0.02);
+  }
+
+  .stat-big {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+  .stat-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .tag-indigo { background: rgba(99,102,241,0.15); color: var(--indigo); }
+  .tag-red { background: rgba(248,113,113,0.15); color: var(--red); }
+  .tag-orange { background: rgba(251,146,60,0.15); color: var(--orange); }
+  .tag-blue { background: rgba(96,165,250,0.15); color: var(--blue); }
+  .tag-violet { background: rgba(139,92,246,0.15); color: var(--violet); }
+  .tag-green { background: rgba(52,211,153,0.15); color: var(--green); }
+
+  ul { list-style: none; padding: 0; }
+  ul li {
+    padding: 5px 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  ul li::before {
+    content: "→ ";
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .divider { height: 1px; background: var(--border); margin: 32px 0; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 24px 0;
+  }
+  th {
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+  td {
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  tr.highlight { background: rgba(129,140,248,0.05); }
+  tr.highlight td { color: var(--text); font-weight: 500; }
+
+  /* Bar chart */
+  .bar-chart { margin: 24px 0; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 10px;
+  }
+  .bar-label {
+    width: 140px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .bar-track {
+    flex: 1;
+    height: 28px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+  }
+  .bar-value {
+    width: 80px;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* Funnel */
+  .funnel-bar {
+    padding: 14px 24px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  /* Pricing cards */
+  .pricing-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    position: relative;
+  }
+  .pricing-card.featured {
+    border: 2px solid rgba(129,140,248,0.4);
+    background: rgba(129,140,248,0.03);
+  }
+  .pricing-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 10px;
+    text-transform: uppercase;
+  }
+  .price {
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    margin: 8px 0 4px;
+  }
+  .price-period {
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+
+  /* Competitor card */
+  .competitor-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+  .competitor-card h4 {
+    margin: 0 0 4px;
+    color: var(--text);
+    font-size: 20px;
+  }
+  .competitor-meta {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+  .competitor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .competitor-section h5 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  /* Timeline */
+  .timeline-item {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .timeline-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+
+  /* Callout */
+  .callout {
+    background: rgba(129,140,248,0.06);
+    border: 1px solid rgba(129,140,248,0.2);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 24px 0;
+  }
+  .callout-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .callout p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  /* Print */
+  @media print {
+    .sidebar, .sidebar-toggle { display: none; }
+    .cover { min-height: auto; padding: 60px; }
+    .chapter { page-break-before: always; }
+    body { background: white; color: #1a1a1a; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Sidebar Toggle -->
+<button class="sidebar-toggle" id="sidebarToggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+
+<!-- Sidebar Navigation -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand">&#9878; AI Associate</div>
+  <a href="#cover" class="sidebar-link">Cover</a>
+  <a href="#toc" class="sidebar-link">Table of Contents</a>
+  <a href="#ch1" class="sidebar-link">1. Executive Summary</a>
+  <a href="#ch2" class="sidebar-link">2. Market Analysis</a>
+  <a href="#ch3" class="sidebar-link">3. Problem Deep Dive</a>
+  <a href="#ch4" class="sidebar-link">4. Competitive Landscape</a>
+  <a href="#ch5" class="sidebar-link">5. White Space & Differentiation</a>
+  <a href="#ch6" class="sidebar-link">6. Product Vision</a>
+  <a href="#ch7" class="sidebar-link">7. Business Model & Financials</a>
+  <a href="#ch8" class="sidebar-link">8. Go-To-Market Strategy</a>
+  <a href="#ch9" class="sidebar-link">9. Legal & Ethics Compliance</a>
+  <a href="#ch10" class="sidebar-link">10. Roadmap & Bootstrap Plan</a>
+</nav>
+
+<!-- ==================== COVER ==================== -->
+<div class="cover" id="cover">
+  <div style="font-size: 72px; margin-bottom: 16px;">&#9878;</div>
+  <h1>AI Associate</h1>
+  <div class="tagline">Your Virtual Junior Lawyer — The capabilities of a BigLaw associate for $99/month</div>
+  <p style="font-size: 16px; color: var(--text-secondary); max-width: 600px; margin-bottom: 40px;">Comprehensive Market Analysis, Competitive Intelligence & Business Plan for an AI-powered legal platform targeting solo practitioners and small law firms in the United States.</p>
+  <div class="meta">
+    <span>Full Business Report</span>
+    <span>|</span>
+    <span>April 2026</span>
+    <span>|</span>
+    <span>Confidential</span>
+  </div>
+</div>
+
+<!-- ==================== TABLE OF CONTENTS ==================== -->
+<div class="toc" id="toc">
+  <h2>Table of Contents</h2>
+  <a href="#ch1" class="toc-item">
+    <span class="toc-num">01</span>
+    <span class="toc-title">Executive Summary</span>
+    <span class="toc-desc">The opportunity at a glance</span>
+  </a>
+  <a href="#ch2" class="toc-item">
+    <span class="toc-num">02</span>
+    <span class="toc-title">Market Analysis</span>
+    <span class="toc-desc">TAM/SAM/SOM, demographics, trends</span>
+  </a>
+  <a href="#ch3" class="toc-item">
+    <span class="toc-num">03</span>
+    <span class="toc-title">Problem Deep Dive</span>
+    <span class="toc-desc">Pain points with data</span>
+  </a>
+  <a href="#ch4" class="toc-item">
+    <span class="toc-num">04</span>
+    <span class="toc-title">Competitive Landscape</span>
+    <span class="toc-desc">12 competitors analyzed + direct rival LegalAI.com</span>
+  </a>
+  <a href="#ch5" class="toc-item">
+    <span class="toc-num">05</span>
+    <span class="toc-title">White Space & Differentiation</span>
+    <span class="toc-desc">Where we win and why</span>
+  </a>
+  <a href="#ch6" class="toc-item">
+    <span class="toc-num">06</span>
+    <span class="toc-title">Product Vision</span>
+    <span class="toc-desc">Features, phases, architecture</span>
+  </a>
+  <a href="#ch7" class="toc-item">
+    <span class="toc-num">07</span>
+    <span class="toc-title">Business Model & Financials</span>
+    <span class="toc-desc">Pricing, unit economics, projections</span>
+  </a>
+  <a href="#ch8" class="toc-item">
+    <span class="toc-num">08</span>
+    <span class="toc-title">Go-To-Market Strategy</span>
+    <span class="toc-desc">Channels, launch sequence, growth</span>
+  </a>
+  <a href="#ch9" class="toc-item">
+    <span class="toc-num">09</span>
+    <span class="toc-title">Legal & Ethics Compliance</span>
+    <span class="toc-desc">ABA, state bars, security</span>
+  </a>
+  <a href="#ch10" class="toc-item">
+    <span class="toc-num">10</span>
+    <span class="toc-title">Roadmap & Bootstrap Plan</span>
+    <span class="toc-desc">Timeline, milestones, lean economics</span>
+  </a>
+</div>
+
+<!-- ==================== CHAPTER 1: EXECUTIVE SUMMARY ==================== -->
+<div class="chapter" id="ch1">
+  <div class="chapter-num">Chapter 01</div>
+  <h2>Executive Summary</h2>
+  <p class="chapter-intro">A $10.8B market growing at 28.3% CAGR, 480K underserved solo practitioners, and no affordable all-in-one AI solution. This is our opportunity.</p>
+
+  <div class="grid-4">
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--accent);">480K+</div>
+      <div class="stat-label">Solo practitioners in US</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--violet);">40-50%</div>
+      <div class="stat-label">Time on non-billable work</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--blue);">28.3%</div>
+      <div class="stat-label">AI legal tech CAGR</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--green);">$0</div>
+      <div class="stat-label">Affordable all-in-one AI solutions today</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-title">The Thesis</div>
+    <p>The legal AI market has attracted over $16B in competitor valuations — yet every major player either targets BigLaw ($1,200+/mo), focuses on a single task (contracts OR research OR summarization), or treats AI as a bolt-on to practice management software. No one has built an affordable, AI-native, all-in-one platform for the 480K+ solo practitioners and 350K+ small firm lawyers who need it most. AI Associate fills this gap at $99/month — 10x cheaper than Harvey, broader than Spellbook, and AI-first unlike Clio.</p>
+  </div>
+
+  <h3>Key Numbers</h3>
+  <div class="grid-3">
+    <div class="card">
+      <h4 style="margin: 0 0 12px;">Market</h4>
+      <ul>
+        <li>US legal services: $350B</li>
+        <li>Legal tech: $36B (2026)</li>
+        <li>AI legal tech: $3.1B → $10.8B by 2030</li>
+        <li>Funding 2025: $4.3B (+54% YoY)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin: 0 0 12px;">Target</h4>
+      <ul>
+        <li>1.37M lawyers in US</li>
+        <li>35% solo, 75% firms ≤6 attorneys</li>
+        <li>53% small firms use gen AI</li>
+        <li>SAM: $2.5B addressable</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin: 0 0 12px;">Business</h4>
+      <ul>
+        <li>Pricing: $99-$399/mo</li>
+        <li>Gross margin: ~78%</li>
+        <li>Year 1 target: $600K ARR (bootstrapped)</li>
+        <li>Bootstrap: &lt;$500 to launch</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CHAPTER 2: MARKET ANALYSIS ==================== -->
+<div class="chapter" id="ch2">
+  <div class="chapter-num">Chapter 02</div>
+  <h2>Market Analysis</h2>
+  <p class="chapter-intro">The US legal technology market is experiencing explosive growth, driven by AI adoption that has tripled in one year. The solo and small firm segment remains massively underserved.</p>
+
+  <h3>Market Size & Growth</h3>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="margin: 0 0 16px;">Legal Tech Market</h4>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <div class="bar-label">2024</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 56%; background: linear-gradient(90deg, var(--accent), var(--violet));">$30B</div></div>
+          <div class="bar-value">$30.4B</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">2025</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 63%; background: linear-gradient(90deg, var(--accent), var(--violet));">$33B</div></div>
+          <div class="bar-value">$33.0B</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">2026</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 70%; background: linear-gradient(90deg, var(--accent), var(--violet));">$36B</div></div>
+          <div class="bar-value">$36.0B</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">2030 (est)</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 100%; background: linear-gradient(90deg, var(--violet), var(--blue));">$51B</div></div>
+          <div class="bar-value">$51.2B</div>
+        </div>
+      </div>
+      <p style="font-size: 13px; color: var(--text-dim);">CAGR: 9.2% — Source: Research & Markets, Grand View Research</p>
+    </div>
+
+    <div class="card">
+      <h4 style="margin: 0 0 16px;">AI Legal Tech Segment</h4>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <div class="bar-label">2024</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 13%; background: linear-gradient(90deg, var(--blue), var(--cyan));">$1.5B</div></div>
+          <div class="bar-value">$1.45B</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">2025</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 29%; background: linear-gradient(90deg, var(--blue), var(--cyan));">$3.1B</div></div>
+          <div class="bar-value">$3.11B</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">2028 (est)</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 60%; background: linear-gradient(90deg, var(--blue), var(--cyan));">$6.5B</div></div>
+          <div class="bar-value">~$6.5B</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">2030 (est)</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 100%; background: linear-gradient(90deg, var(--cyan), var(--green));">$10.8B</div></div>
+          <div class="bar-value">$10.8B</div>
+        </div>
+      </div>
+      <p style="font-size: 13px; color: var(--text-dim);">CAGR: 28.3% — Source: MarketsandMarkets, Grand View Research</p>
+    </div>
+  </div>
+
+  <h3>TAM / SAM / SOM</h3>
+  <div class="card">
+    <div style="max-width: 700px; margin: 0 auto;">
+      <div class="funnel-bar" style="background: rgba(129,140,248,0.08); width: 100%;">
+        <span><strong style="color: var(--text);">TAM</strong> — US Legal Services Market</span>
+        <span style="font-weight: 800; color: var(--accent); font-size: 20px;">$350B</span>
+      </div>
+      <div class="funnel-bar" style="background: rgba(139,92,246,0.08); width: 80%; margin-left: 10%;">
+        <span><strong style="color: var(--text);">SAM</strong> — Solo/Small Firm AI Tools</span>
+        <span style="font-weight: 800; color: var(--violet); font-size: 20px;">$2.5B</span>
+      </div>
+      <div class="funnel-bar" style="background: rgba(96,165,250,0.08); width: 55%; margin-left: 22%;">
+        <span><strong style="color: var(--text);">SOM</strong> — Year 1 Bootstrap Target</span>
+        <span style="font-weight: 800; color: var(--blue); font-size: 20px;">$600K</span>
+      </div>
+    </div>
+  </div>
+
+  <h3>Lawyer Demographics (US)</h3>
+  <div class="grid-4">
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--accent);">1.37M</div>
+      <div class="stat-label">Active lawyers (ABA 2025)</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--violet);">480K+</div>
+      <div class="stat-label">Solo practitioners (35%)</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--blue);">463K+</div>
+      <div class="stat-label">Total law firms</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--green);">75%</div>
+      <div class="stat-label">Firms with ≤6 attorneys</div>
+    </div>
+  </div>
+
+  <h3>AI Adoption Trends</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="margin: 0 0 16px;">Gen AI Adoption by Small Firms</h4>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <div class="bar-label">2022</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 0%; background: var(--red);"></div></div>
+          <div class="bar-value" style="color: var(--red);">~0%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">2023</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 27%; background: var(--orange);">27%</div></div>
+          <div class="bar-value">27%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">2025</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 53%; background: linear-gradient(90deg, var(--accent), var(--green));">53%</div></div>
+          <div class="bar-value" style="color: var(--green);">53%</div>
+        </div>
+      </div>
+      <p style="font-size: 13px; color: var(--text-dim);">Source: Smokeball 2025 State of Law Report</p>
+    </div>
+    <div class="card">
+      <h4 style="margin: 0 0 16px;">Key Adoption Stats</h4>
+      <ul>
+        <li>AI adoption tripled from 11% → 30% overall (2023-2024)</li>
+        <li>Solo AI adoption: 0% (2022) → 18% (2024)</li>
+        <li>Large firms: 46% adoption rate</li>
+        <li>76% use AI-powered legal research</li>
+        <li>Legal tech spending surged 9.7% in 2025</li>
+        <li>$4.3B legal tech funding in 2025 (+54% YoY)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Financial Benchmarks</h3>
+  <div class="grid-3">
+    <div class="card">
+      <h4 style="margin: 0 0 12px;">Solo Attorney</h4>
+      <ul>
+        <li>Income: $70K-$120K/year</li>
+        <li>Billing rate: $288/hr avg</li>
+        <li>Tech spend: &lt;$3K/year</li>
+        <li>Only 41% budget for tech</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin: 0 0 12px;">Small Firm (2-9)</h4>
+      <ul>
+        <li>Billing rate: $345/hr avg</li>
+        <li>Tech spend: $10-20K/year</li>
+        <li>65% budget for tech</li>
+        <li>Revenue up ~100% since 2016</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin: 0 0 12px;">Junior Associate (what we replace)</h4>
+      <ul>
+        <li>BigLaw salary: $225K/year</li>
+        <li>Mid-size: $155-200K/year</li>
+        <li>Small firm: $120K/year</li>
+        <li>Our cost: $1,188/year</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CHAPTER 3: PROBLEM DEEP DIVE ==================== -->
+<div class="chapter" id="ch3">
+  <div class="chapter-num">Chapter 03</div>
+  <h2>Problem Deep Dive</h2>
+  <p class="chapter-intro">Solo and small firm lawyers are caught in a vicious cycle: they can't afford help, so they drown in admin work, which leaves less time for billable hours, which means less revenue to hire help.</p>
+
+  <div class="grid-2">
+    <div class="card" style="border-left: 3px solid var(--red);">
+      <h4 style="color: var(--red); margin: 0 0 12px;">Time Crisis</h4>
+      <p>Solo lawyers spend <strong style="color: var(--text);">40-50% of their time</strong> on non-billable administrative work — document review, legal research, contract drafting, filing, and client communication. That's 20-25 hours per week that generates zero revenue.</p>
+      <div class="grid-2" style="margin-top: 16px;">
+        <div style="text-align: center;">
+          <div style="font-size: 28px; font-weight: 800; color: var(--red);">15-20h</div>
+          <div style="font-size: 12px; color: var(--text-dim);">Weekly on doc review & research</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 28px; font-weight: 800; color: var(--orange);">3-8h</div>
+          <div style="font-size: 12px; color: var(--text-dim);">Per contract drafted manually</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-left: 3px solid var(--orange);">
+      <h4 style="color: var(--orange); margin: 0 0 12px;">Revenue Leak</h4>
+      <p>With only <strong style="color: var(--text);">65% utilization rate</strong> (billable hours vs available hours) and an average billing rate of $288/hr, solo lawyers leave approximately <strong style="color: var(--text);">$30K per year</strong> in unbilled time on the table.</p>
+      <div class="grid-2" style="margin-top: 16px;">
+        <div style="text-align: center;">
+          <div style="font-size: 28px; font-weight: 800; color: var(--orange);">$30K</div>
+          <div style="font-size: 12px; color: var(--text-dim);">Lost per year in unbilled time</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 28px; font-weight: 800; color: var(--yellow);">65%</div>
+          <div style="font-size: 12px; color: var(--text-dim);">Utilization rate</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card" style="border-left: 3px solid var(--violet);">
+      <h4 style="color: var(--violet); margin: 0 0 12px;">The Affordability Gap</h4>
+      <p>A junior associate costs <strong style="color: var(--text);">$120K-$225K/year</strong> in salary alone — before benefits, office space, and management overhead. For a solo earning $70-120K, this is simply impossible.</p>
+      <ul>
+        <li>BigLaw first-year: $225K salary</li>
+        <li>Mid-size first-year: $155-200K salary</li>
+        <li>Small firm first-year: $120K salary</li>
+        <li>Our AI Associate: $1,188/year ($99/mo)</li>
+        <li>That's <strong style="color: var(--accent);">100-190x cheaper</strong></li>
+      </ul>
+    </div>
+
+    <div class="card" style="border-left: 3px solid var(--accent);">
+      <h4 style="color: var(--accent); margin: 0 0 12px;">Human Cost</h4>
+      <p>The problem isn't just financial. The constant administrative burden takes a real toll on lawyers' wellbeing and the quality of legal services.</p>
+      <ul>
+        <li><strong style="color: var(--text);">59%</strong> of lawyers report burnout (ABA wellness study)</li>
+        <li>Missing deadlines is a <strong style="color: var(--text);">#1 cause of malpractice</strong> claims</li>
+        <li>5-10 hours per case on repetitive legal research</li>
+        <li>Solo lawyers work 50+ hours/week on average</li>
+        <li>High attrition — many leave law entirely</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-title">The Core Insight</div>
+    <p>Solo and small firm lawyers don't need a cheaper junior associate — they need an AI that can do 80% of a junior associate's routine work (summarization, research, drafting) at 1% of the cost. That's the gap AI Associate fills.</p>
+  </div>
+</div>
+
+<!-- ==================== CHAPTER 4: COMPETITIVE LANDSCAPE ==================== -->
+<div class="chapter" id="ch4">
+  <div class="chapter-num">Chapter 04</div>
+  <h2>Competitive Landscape</h2>
+  <p class="chapter-intro">We analyzed 12 competitors across 3 tiers plus one direct rival. Combined valuation exceeds $19B — yet none adequately serves the solo/small firm segment with an affordable, all-in-one, deep-quality AI solution. Our closest competitor, LegalAI.com, targets the same segment but with breadth-over-depth "checkbox AI."</p>
+
+  <h3>Tier 1: Enterprise Giants</h3>
+  <p>These companies have raised billions and target AmLaw 100 firms and Fortune 500 legal departments. Their pricing starts where solo budgets end.</p>
+
+  <div class="competitor-card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h4>Harvey AI</h4>
+        <div class="competitor-meta">San Francisco, CA &nbsp;·&nbsp; Founded 2022 &nbsp;·&nbsp; <span style="color: var(--orange); font-weight: 600;">$11B valuation</span> &nbsp;·&nbsp; $1.2B+ raised</div>
+      </div>
+      <span class="tag tag-red">Not for solo</span>
+    </div>
+    <div class="competitor-grid">
+      <div class="competitor-section">
+        <h5>What They Do</h5>
+        <ul>
+          <li>Full-stack legal AI copilot</li>
+          <li>25,000+ custom agents for M&A, due diligence, contracts</li>
+          <li>$190M ARR (Jan 2026, up from $100M Aug 2025)</li>
+          <li>1,000+ customers including majority of AmLaw 100</li>
+          <li>LexisNexis partnership</li>
+        </ul>
+      </div>
+      <div class="competitor-section">
+        <h5>Why They Can't Serve Solo</h5>
+        <ul>
+          <li>Pricing: $1,200/user/month</li>
+          <li>20-seat minimum ($288K/year minimum contract)</li>
+          <li>Enterprise sales cycle (months)</li>
+          <li>Designed for large firm workflows</li>
+          <li>Overkill complexity for solo practitioners</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="competitor-card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h4>CoCounsel (Thomson Reuters)</h4>
+        <div class="competitor-meta">Via Casetext acquisition (2023) &nbsp;·&nbsp; <span style="color: var(--blue); font-weight: 600;">1M users, 107 countries</span></div>
+      </div>
+      <span class="tag tag-orange">Ecosystem lock-in</span>
+    </div>
+    <div class="competitor-grid">
+      <div class="competitor-section">
+        <h5>What They Do</h5>
+        <ul>
+          <li>Agentic AI research with Westlaw-grounded citations</li>
+          <li>Deep Research: multi-step plans with structured reports</li>
+          <li>Guided workflows for drafting, policy creation</li>
+          <li>Document review, deposition prep, contract analysis</li>
+          <li>1 million users reached (Feb 2026)</li>
+        </ul>
+      </div>
+      <div class="competitor-section">
+        <h5>Pricing & Gaps</h5>
+        <ul>
+          <li>On Demand: $75/task</li>
+          <li>Basic Research: $220/user/mo</li>
+          <li>Core: $225/user/mo</li>
+          <li>All Access: $500/user/mo</li>
+          <li>Tied to Westlaw ecosystem — vendor lock-in</li>
+          <li>Complex pricing, overwhelming for solos</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="competitor-card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h4>Legora (formerly Leya)</h4>
+        <div class="competitor-meta">Sweden (expanding to US 2026) &nbsp;·&nbsp; <span style="color: var(--orange); font-weight: 600;">$5.5B valuation</span> &nbsp;·&nbsp; $35M+ raised</div>
+      </div>
+      <span class="tag tag-orange">Europe-focused</span>
+    </div>
+    <div class="competitor-grid">
+      <div class="competitor-section">
+        <h5>What They Do</h5>
+        <ul>
+          <li>Agentic legal research across 15+ jurisdictions</li>
+          <li>Microsoft Word add-in for in-document work</li>
+          <li>Collaborative tabular review, DMS integration</li>
+          <li>Built on Claude (Anthropic) — same AI we use</li>
+          <li>800+ law firms and corporate legal teams</li>
+        </ul>
+      </div>
+      <div class="competitor-section">
+        <h5>Pricing & Gaps</h5>
+        <ul>
+          <li>Pricing: €1,000-3,000/user/year</li>
+          <li>Europe-focused, just starting US expansion</li>
+          <li>Opening Houston & Chicago offices in 2026</li>
+          <li>Enterprise sales approach, not self-serve</li>
+          <li>No solo-specific pricing or features</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="competitor-card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h4>Luminance</h4>
+        <div class="competitor-meta">Cambridge, UK &nbsp;·&nbsp; $75M Series C (2025) &nbsp;·&nbsp; <span style="color: var(--blue); font-weight: 600;">1,000+ orgs in 70 countries</span></div>
+      </div>
+      <span class="tag tag-red">Enterprise only</span>
+    </div>
+    <div class="competitor-grid">
+      <div class="competitor-section">
+        <h5>What They Do</h5>
+        <ul>
+          <li>"Panel of Judges" proprietary AI model</li>
+          <li>Trained on 150M+ legally verified documents</li>
+          <li>Contract intelligence: analysis, drafting, redlining</li>
+          <li>Big Four, Global Top 100 law firms, AMD, BBC, Hitachi</li>
+        </ul>
+      </div>
+      <div class="competitor-section">
+        <h5>Pricing & Gaps</h5>
+        <ul>
+          <li>Custom enterprise pricing (expensive)</li>
+          <li>High cost barrier — commonly cited by smaller firms</li>
+          <li>No self-serve, no solo-tier</li>
+          <li>Contract-focused, no case summarization</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Tier 2: Mid-Market / Specialized</h3>
+  <p>These companies either focus on practice management with AI as a secondary feature, or specialize in one narrow task.</p>
+
+  <div class="competitor-card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h4>Clio</h4>
+        <div class="competitor-meta">Market leader in practice management &nbsp;·&nbsp; <span style="color: var(--green); font-weight: 600;">80% of reviewers have 1-10 employees</span></div>
+      </div>
+      <span class="tag tag-orange">PM-first, AI secondary</span>
+    </div>
+    <div class="competitor-grid">
+      <div class="competitor-section">
+        <h5>What They Do</h5>
+        <ul>
+          <li>Practice management: billing, intake, time tracking</li>
+          <li>Manage AI (fka Clio Duo): smart recommendations</li>
+          <li>Extracts deadlines from court docs, draft invoices</li>
+          <li>Strong brand, massive user base among small firms</li>
+        </ul>
+      </div>
+      <div class="competitor-section">
+        <h5>Pricing & Gaps</h5>
+        <ul>
+          <li>From $49/month — very affordable</li>
+          <li>AI is a bolt-on to PM, not core product</li>
+          <li>No case summarization engine</li>
+          <li>No contract generation</li>
+          <li>PM-first architecture limits AI depth</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="competitor-card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h4>Spellbook</h4>
+        <div class="competitor-meta"><span style="color: var(--orange); font-weight: 600;">$350M valuation</span> &nbsp;·&nbsp; $84.8M raised &nbsp;·&nbsp; 4,000+ teams in 80+ countries</div>
+      </div>
+      <span class="tag tag-orange">Contracts only</span>
+    </div>
+    <div class="competitor-grid">
+      <div class="competitor-section">
+        <h5>What They Do</h5>
+        <ul>
+          <li>#1 AI for transactional lawyers — contract review in Word</li>
+          <li>GPT-5 + Claude powered, clause benchmarking</li>
+          <li>Custom playbooks, team-specific workflows</li>
+          <li>Spellbook Associate: first AI agent for multi-doc drafting</li>
+          <li>SOC 2 Type II, GDPR, CCPA compliant</li>
+        </ul>
+      </div>
+      <div class="competitor-section">
+        <h5>Pricing & Gaps</h5>
+        <ul>
+          <li>~$20-$179/user/month (7-day free trial)</li>
+          <li>Contracts ONLY — no case summarization</li>
+          <li>No case management features</li>
+          <li>No legal research capabilities</li>
+          <li>No client communication tools</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="competitor-card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h4>Smokeball</h4>
+        <div class="competitor-meta">Cloud-based PM &nbsp;·&nbsp; <span style="color: var(--green); font-weight: 600;">4.8/5 rating</span> &nbsp;·&nbsp; 2/3 of users have 2-10 employees</div>
+      </div>
+      <span class="tag tag-orange">No own AI</span>
+    </div>
+    <div class="competitor-grid">
+      <div class="competitor-section">
+        <h5>What They Do</h5>
+        <ul>
+          <li>Best-in-class small firm practice management</li>
+          <li>200+ pre-built matter types, 20K+ court forms</li>
+          <li>Archie AI assistant: summaries, drafting, billing</li>
+          <li>Automatic time tracking, Microsoft Office integration</li>
+          <li>Just partnered with CoCounsel (Thomson Reuters)</li>
+        </ul>
+      </div>
+      <div class="competitor-section">
+        <h5>Pricing & Gaps</h5>
+        <ul>
+          <li>From ~$139/user/month</li>
+          <li>No proprietary AI — relying on CoCounsel partnership</li>
+          <li>PM-focused, not AI-first</li>
+          <li>No standalone AI analysis offering</li>
+          <li>Partnership dependency = less control</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="competitor-card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h4>EvenUp</h4>
+        <div class="competitor-meta"><span style="color: var(--orange); font-weight: 600;">$2B valuation</span> &nbsp;·&nbsp; $385M raised total &nbsp;·&nbsp; Founded 2019</div>
+      </div>
+      <span class="tag tag-red">PI only</span>
+    </div>
+    <div class="competitor-grid">
+      <div class="competitor-section">
+        <h5>What They Do</h5>
+        <ul>
+          <li>AI for personal injury lawyers exclusively</li>
+          <li>Automated demand letter generation</li>
+          <li>Settlement negotiation optimization</li>
+          <li>Best vertical-specific legal AI</li>
+        </ul>
+      </div>
+      <div class="competitor-section">
+        <h5>Pricing & Gaps</h5>
+        <ul>
+          <li>Custom pricing (not public)</li>
+          <li>ONLY personal injury — zero other practice areas</li>
+          <li>Proves vertical model works (good sign for our Phase 3)</li>
+          <li>$2B valuation on one niche = huge vertical opportunity</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="color: var(--red);">Direct Competitor: LegalAI.com</h3>
+  <p>The closest competitor in our exact segment — targeting solo practitioners and small firms with AI-powered legal tools at affordable pricing.</p>
+
+  <div class="competitor-card" style="border: 2px solid rgba(248,113,113,0.3); background: rgba(248,113,113,0.03);">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h4>LegalAI.com</h4>
+        <div class="competitor-meta">Solo/small firm focus &nbsp;·&nbsp; 9 AI tools &nbsp;·&nbsp; <span style="color: var(--red); font-weight: 600;">$39-$179/mo — Direct Competitor</span></div>
+      </div>
+      <span class="tag tag-red">Direct competitor</span>
+    </div>
+    <div class="competitor-grid">
+      <div class="competitor-section">
+        <h5>What They Do</h5>
+        <ul>
+          <li>9 AI tools: contract analysis, legal research, document drafting, case summarization, compliance check, IP analysis, legal Q&A, document comparison, citation check</li>
+          <li>Same target audience: solo practitioners and small firms</li>
+          <li>Affordable pricing: $39/mo (Starter), $99/mo (Pro), $179/mo (Enterprise)</li>
+          <li>Web-based platform, no desktop app needed</li>
+          <li>GPT-5.2 powered</li>
+        </ul>
+      </div>
+      <div class="competitor-section">
+        <h5>Why We Win</h5>
+        <ul>
+          <li><span style="color: var(--green); font-weight: 600;">Breadth over depth</span> — 9 tools, but none at associate-level quality</li>
+          <li><span style="color: var(--green); font-weight: 600;">No practice area specialization</span> — generic across all areas</li>
+          <li><span style="color: var(--green); font-weight: 600;">No adaptive learning</span> — doesn't learn lawyer's style/preferences</li>
+          <li><span style="color: var(--green); font-weight: 600;">Generic court output</span> — no jurisdiction-specific formatting</li>
+          <li><span style="color: var(--green); font-weight: 600;">No state bar compliance engine</span> — doesn't track 50-state rules</li>
+          <li><span style="color: var(--green); font-weight: 600;">Checkbox AI</span> — many features, none deep enough to replace an associate</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Tier 3: Budget / Niche</h3>
+
+  <div class="grid-2">
+    <div class="competitor-card" style="margin-bottom: 0;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h4>LawDroid</h4>
+        <span class="tag tag-orange">Too basic</span>
+      </div>
+      <div class="competitor-meta">Solo/small firm focus &nbsp;·&nbsp; $25-$99/mo</div>
+      <ul>
+        <li>AI copilot, chatbot builder, intake automation</li>
+        <li>Most affordable option in market</li>
+        <li>No-code chatbots for client intake</li>
+        <li><span style="color: var(--red);">Limited AI capabilities vs competitors</span></li>
+        <li><span style="color: var(--red);">Basic document automation only</span></li>
+      </ul>
+    </div>
+    <div class="competitor-card" style="margin-bottom: 0;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h4>CaseMark</h4>
+        <span class="tag tag-orange">Summaries only</span>
+      </div>
+      <div class="competitor-meta">Pay-per-use model &nbsp;·&nbsp; Per 1K pages</div>
+      <ul>
+        <li>AI document summarization specialist</li>
+        <li>White-label platform for court reporters</li>
+        <li>Good at one thing: summarizing documents</li>
+        <li><span style="color: var(--red);">No contract drafting</span></li>
+        <li><span style="color: var(--red);">No case management or research</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Competitive Feature Matrix</h3>
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Harvey</th>
+          <th>CoCounsel</th>
+          <th>Clio</th>
+          <th>Spellbook</th>
+          <th>Smokeball</th>
+          <th>LawDroid</th>
+          <th>CaseMark</th>
+          <th style="color: var(--red);">LegalAI</th>
+          <th style="color: var(--accent);">AI Associate</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-weight: 600;">Case Summarization</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--orange);">Basic</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--accent); font-weight: 700;">&#10003;</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600;">Contract Drafting</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--orange);">Basic</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--accent); font-weight: 700;">&#10003;</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600;">Legal Research</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--orange);">Basic</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--text-dim);">Phase 2</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600;">Case Management</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--text-dim);">Phase 2</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600;">AI-Native</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--orange);">Partial</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--green);">&#10003;</td>
+          <td style="color: var(--accent); font-weight: 700;">&#10003;</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600;">Solo-Friendly Price</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--orange);">$75+</td>
+          <td style="color: var(--green);">$49+</td>
+          <td style="color: var(--green);">$20+</td>
+          <td style="color: var(--orange);">$139</td>
+          <td style="color: var(--green);">$25+</td>
+          <td style="color: var(--green);">Pay/use</td>
+          <td style="color: var(--green);">$39+</td>
+          <td style="color: var(--accent); font-weight: 700;">$99</td>
+        </tr>
+        <tr class="highlight">
+          <td style="font-weight: 700; color: var(--accent);">All-in-One + Affordable</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--red);">&#10007;</td>
+          <td style="color: var(--orange);">Shallow</td>
+          <td style="color: var(--accent); font-weight: 700; font-size: 18px;">&#10003;</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== CHAPTER 5: WHITE SPACE ==================== -->
+<div class="chapter" id="ch5">
+  <div class="chapter-num">Chapter 05</div>
+  <h2>White Space & Differentiation</h2>
+  <p class="chapter-intro">Every competitor fails the solo lawyer test in at least one critical dimension. Our position: AI-first, all-in-one, affordable — the only platform that passes all three.</p>
+
+  <h3>The Market Gap</h3>
+  <div class="grid-2">
+    <div class="card" style="border-left: 3px solid var(--red);">
+      <h4 style="color: var(--red); margin: 0 0 8px;">&#10007; Too Expensive</h4>
+      <p>Harvey ($1,200/mo), CoCounsel ($225-500/mo), Legora (€1-3K/yr), Luminance (enterprise custom). Built for BigLaw budgets — a solo earning $70-120K simply can't justify $500+/month for an AI tool.</p>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--orange);">
+      <h4 style="color: var(--orange); margin: 0 0 8px;">&#10007; Too Narrow</h4>
+      <p>Spellbook does contracts only. EvenUp does PI only. CaseMark does summaries only. A solo lawyer handles diverse practice areas daily — they need a platform that covers the breadth of their work.</p>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--text-dim);">
+      <h4 style="color: var(--text-dim); margin: 0 0 8px;">&#10007; AI as Afterthought</h4>
+      <p>Clio and Smokeball are practice management first. Their AI features are bolt-ons — limited by legacy PM architecture. Smokeball doesn't even build its own AI, instead partnering with CoCounsel.</p>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--yellow);">
+      <h4 style="color: var(--yellow); margin: 0 0 8px;">&#10007; Too Basic</h4>
+      <p>LawDroid ($25-99/mo) is affordable but its AI capabilities are basic compared to what Claude/GPT-5 can deliver. It's a chatbot builder, not a legal analysis engine.</p>
+    </div>
+  </div>
+
+  <h3 style="color: var(--red);">Head-to-Head: AI Associate vs LegalAI.com</h3>
+  <p>LegalAI.com is our closest competitor — same target audience (solo/small firms), similar pricing ($39-179/mo), and 9 AI tools. Here's why we win:</p>
+
+  <div class="grid-2" style="margin-top: 20px;">
+    <div class="card" style="border: 2px solid rgba(248,113,113,0.2);">
+      <h4 style="color: var(--red); margin: 0 0 12px;">LegalAI.com — "Checkbox AI"</h4>
+      <ul>
+        <li>9 generic tools — contract analysis, research, drafting, summarization, compliance, IP, Q&A, doc comparison, citations</li>
+        <li>Breadth-first approach: many features, none at associate-level quality</li>
+        <li>No practice area specialization — same generic prompts for PI, family, traffic</li>
+        <li>No adaptive learning — treats every lawyer identically</li>
+        <li>Generic document output — no court-specific formatting</li>
+        <li>No state bar compliance tracking</li>
+        <li>GPT-5.2 only — single model dependency</li>
+      </ul>
+    </div>
+    <div class="card card-accent" style="border: 2px solid rgba(129,140,248,0.3);">
+      <h4 style="color: var(--accent); margin: 0 0 12px;">AI Associate — "Deep AI"</h4>
+      <ul>
+        <li>2-3 core features at associate-quality depth (Phase 1), expanding methodically</li>
+        <li>Depth-first approach: fewer tools, each one replaces a junior associate</li>
+        <li>Vertical modules by practice area with jurisdiction-specific knowledge</li>
+        <li>"Learn My Practice" — adapts to each lawyer's style and preferences</li>
+        <li>Courtroom-ready formatting per specific court standards</li>
+        <li>State Bar Compliance Engine covering 30+ state AI guidelines</li>
+        <li>Claude API (Anthropic) — best-in-class reasoning for legal analysis</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Differentiation Strategies</h3>
+  <p>Six strategic pillars that create compounding competitive moats — each one widens the gap with LegalAI and makes us harder to replicate.</p>
+
+  <div class="grid-2" style="margin-top: 20px;">
+    <div class="card card-accent" style="border-top: 3px solid var(--accent);">
+      <h4 style="margin: 0 0 8px;">1. Deep Practice Area Intelligence</h4>
+      <p>Vertical modules per practice area — traffic defense, personal injury, family law, real estate, employment. Each module understands area-specific terminology, local court practices, state-specific standards, and common case patterns. Modeled after EvenUp's success ($2B valuation on PI alone) but across multiple verticals.</p>
+      <p style="margin-top: 8px;"><strong style="color: var(--accent);">vs LegalAI:</strong> They use the same generic prompts regardless of practice area. We deliver specialist-level output.</p>
+    </div>
+    <div class="card card-accent" style="border-top: 3px solid var(--accent-violet);">
+      <h4 style="margin: 0 0 8px;">2. "Learn My Practice" — Adaptive AI</h4>
+      <p>AI learns each lawyer's personal style: contract templates, clause preferences, communication tone, typical case types. After a month of use, it generates contracts in the lawyer's voice, suggests their preferred clause structures, and pre-fills based on their case history.</p>
+      <p style="margin-top: 8px;"><strong style="color: var(--accent);">vs LegalAI:</strong> They treat every user identically. We create a personalized AI associate that gets better over time.</p>
+    </div>
+    <div class="card card-accent" style="border-top: 3px solid var(--accent-blue);">
+      <h4 style="margin: 0 0 8px;">3. "Opponent Analysis" Engine</h4>
+      <p>Upload opposing counsel's documents and get AI analysis of their strategy: identify weak arguments, find logical gaps, suggest counter-arguments, flag potential settlement leverage points. Turns every case review into a strategic advantage.</p>
+      <p style="margin-top: 8px;"><strong style="color: var(--accent);">vs LegalAI:</strong> They only analyze your documents. We analyze the opponent's strategy.</p>
+    </div>
+    <div class="card card-accent" style="border-top: 3px solid var(--accent-green);">
+      <h4 style="margin: 0 0 8px;">4. "Courtroom-Ready Output"</h4>
+      <p>Documents formatted to the exact standards of the target court — correct margins, citation style (Bluebook, ALWD), filing requirements, local rules compliance. No more reformatting. Output goes straight from AI Associate to the clerk's office.</p>
+      <p style="margin-top: 8px;"><strong style="color: var(--accent);">vs LegalAI:</strong> They produce generic templates. We produce court-ready filings.</p>
+    </div>
+    <div class="card card-accent" style="border-top: 3px solid var(--accent-orange);">
+      <h4 style="margin: 0 0 8px;">5. State Bar Compliance Engine</h4>
+      <p>Built-in compliance tracking for 30+ state bar AI guidelines. Automatic disclosure language where required, audit trails for AI-assisted work, flags when output needs human review per state ethics rules. ABA Opinion 512 compliant from day one.</p>
+      <p style="margin-top: 8px;"><strong style="color: var(--accent);">vs LegalAI:</strong> They ignore state-specific AI ethics rules. We make compliance automatic.</p>
+    </div>
+    <div class="card card-accent" style="border-top: 3px solid var(--accent-cyan);">
+      <h4 style="margin: 0 0 8px;">6. Quality Over Quantity</h4>
+      <p>2-3 features at the level that genuinely replaces a junior associate, not 9 shallow tools that each require manual rework. Our case summarization identifies weak points a human would catch. Our contract generation handles jurisdiction-specific clause variations. Depth beats breadth.</p>
+      <p style="margin-top: 8px;"><strong style="color: var(--accent);">vs LegalAI:</strong> 9 tools you use with an asterisk. 2-3 tools you trust completely.</p>
+    </div>
+  </div>
+
+  <h3>Our Competitive Moats</h3>
+  <div class="grid-3">
+    <div class="card card-accent">
+      <h4 style="margin: 0 0 8px;">Price Point Moat</h4>
+      <p>10x cheaper than Harvey, 2-5x cheaper than CoCounsel. At $99/mo, we're in the "no-brainer" zone for any solo practitioner — less than one billable hour pays for a month.</p>
+    </div>
+    <div class="card card-accent">
+      <h4 style="margin: 0 0 8px;">AI-Native Architecture</h4>
+      <p>Built from scratch around AI — not a legacy PM with AI bolted on. Every feature leverages AI as the primary engine, not an afterthought.</p>
+    </div>
+    <div class="card card-accent">
+      <h4 style="margin: 0 0 8px;">Solo-First UX</h4>
+      <p>Designed for one-person workflows. No team management overhead, no enterprise features cluttering the UI. Fast, focused, frictionless.</p>
+    </div>
+    <div class="card card-accent">
+      <h4 style="margin: 0 0 8px;">Template Marketplace</h4>
+      <p>Community-driven contract templates by practice area and jurisdiction. Network effects grow with user base — every template makes the platform more valuable.</p>
+    </div>
+    <div class="card card-accent">
+      <h4 style="margin: 0 0 8px;">Vertical Pipeline</h4>
+      <p>Phase 3+ vertical modules (traffic defense, PI, family law) create deep specialization moats — like EvenUp proved at $2B for PI alone.</p>
+    </div>
+    <div class="card card-accent">
+      <h4 style="margin: 0 0 8px;">Growth Architecture</h4>
+      <p>Solo → small firm → mid firm scaling. As a solo grows their practice, we grow with them — from $99 to $199/seat to $399/seat without platform switching.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CHAPTER 6: PRODUCT VISION ==================== -->
+<div class="chapter" id="ch6">
+  <div class="chapter-num">Chapter 06</div>
+  <h2>Product Vision</h2>
+  <p class="chapter-intro">A three-phase roadmap that starts with immediate value (case summarization + contracts), expands to a full practice suite, and deepens with vertical specialization.</p>
+
+  <h3>Phase 1: MVP (8 weeks)</h3>
+  <div class="grid-2">
+    <div class="card card-accent">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h4 style="margin: 0; font-size: 20px;">Case Summarization</h4>
+        <span class="tag tag-indigo">Core Feature</span>
+      </div>
+      <ul>
+        <li>Upload case materials: PDF, DOCX, photos (OCR via Google Vision)</li>
+        <li>AI generates structured summary in ~2 minutes</li>
+        <li>Chronological timeline of events</li>
+        <li>Key facts & evidence inventory</li>
+        <li>Parties mapped with roles and relationships</li>
+        <li>Legal arguments for each side</li>
+        <li>Weak points & vulnerabilities identified</li>
+        <li>Suggested questions for depositions</li>
+        <li>Interactive chat — drill into any detail</li>
+        <li>Export as PDF/DOCX</li>
+      </ul>
+    </div>
+    <div class="card card-accent" style="border-color: rgba(139,92,246,0.3);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h4 style="margin: 0; font-size: 20px;">Contract Generation</h4>
+        <span class="tag tag-violet">Core Feature</span>
+      </div>
+      <ul>
+        <li>50+ templates by practice area (NDA, lease, employment, etc.)</li>
+        <li>AI customization per client and jurisdiction</li>
+        <li>Clause library with risk scoring (low/medium/high)</li>
+        <li>Side-by-side redlining and comparison</li>
+        <li>Version history and change tracking</li>
+        <li>AI suggestions: "Consider adding..." based on context</li>
+        <li>Jurisdiction-aware compliance warnings</li>
+        <li>E-signature ready export</li>
+        <li>Interactive chat for refinement</li>
+        <li>Multi-format export: PDF, DOCX, plain text</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Phase 2: Full Practice Suite (+6 weeks)</h3>
+  <div class="grid-4">
+    <div class="card">
+      <h4 style="margin: 0 0 8px; font-size: 15px; color: var(--blue);">Case Management</h4>
+      <ul>
+        <li>Track cases, deadlines, documents</li>
+        <li>Client profiles & contacts</li>
+        <li>Calendar integration</li>
+        <li>Deadline alerts</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin: 0 0 8px; font-size: 15px; color: var(--cyan);">Legal Research</h4>
+      <ul>
+        <li>Precedent search</li>
+        <li>Statute analysis</li>
+        <li>Applicability scoring</li>
+        <li>Citation generation</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin: 0 0 8px; font-size: 15px; color: var(--green);">Client Communication</h4>
+      <ul>
+        <li>Letter generation</li>
+        <li>Status reports</li>
+        <li>Billing summaries</li>
+        <li>Template library</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin: 0 0 8px; font-size: 15px; color: var(--orange);">Court Filing Prep</h4>
+      <ul>
+        <li>Court-specific formatting</li>
+        <li>Filing checklists</li>
+        <li>Document assembly</li>
+        <li>E-filing integration</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Phase 3+: Vertical Specialization (+8 weeks)</h3>
+  <div class="grid-3">
+    <div class="card">
+      <h4 style="margin: 0 0 8px; color: var(--accent);">Traffic Defense</h4>
+      <p>Upload traffic ticket → AI analyzes statute, finds procedural weak points, suggests defense strategy, pulls relevant case law.</p>
+    </div>
+    <div class="card">
+      <h4 style="margin: 0 0 8px; color: var(--violet);">Personal Injury</h4>
+      <p>Demand letter automation, medical record analysis, settlement value estimation, timeline reconstruction.</p>
+    </div>
+    <div class="card">
+      <h4 style="margin: 0 0 8px; color: var(--blue);">Family Law</h4>
+      <p>Divorce document generation, asset division analysis, custody agreement templates, support calculations.</p>
+    </div>
+  </div>
+  <p style="margin-top: 16px;">Additional planned: iOS app, template marketplace, court database integrations, multi-language support for market expansion.</p>
+</div>
+
+<!-- ==================== CHAPTER 7: BUSINESS MODEL ==================== -->
+<div class="chapter" id="ch7">
+  <div class="chapter-num">Chapter 07</div>
+  <h2>Business Model & Financial Projections</h2>
+  <p class="chapter-intro">Hybrid subscription + per-document pricing that scales from solo to firm. High margins, strong unit economics, clear path to profitability.</p>
+
+  <h3>Pricing Tiers</h3>
+  <div class="grid-3">
+    <div class="pricing-card">
+      <h4 style="color: var(--blue); margin: 0;">Solo</h4>
+      <div class="price" style="color: var(--blue);">$99</div>
+      <div class="price-period">/month</div>
+      <div class="divider"></div>
+      <ul>
+        <li>50 documents/month</li>
+        <li>Case summarization</li>
+        <li>Contract generation</li>
+        <li>AI chat with documents</li>
+        <li>All templates access</li>
+        <li>Email support</li>
+      </ul>
+    </div>
+    <div class="pricing-card featured">
+      <div class="pricing-badge">Most Popular</div>
+      <h4 style="color: var(--accent); margin: 0;">Small Firm</h4>
+      <div class="price" style="color: var(--accent);">$199</div>
+      <div class="price-period">/seat/month</div>
+      <div class="divider"></div>
+      <ul>
+        <li>200 documents/month</li>
+        <li>Everything in Solo</li>
+        <li>Team collaboration</li>
+        <li>Shared template library</li>
+        <li>Admin dashboard</li>
+        <li>Priority support</li>
+      </ul>
+    </div>
+    <div class="pricing-card">
+      <h4 style="color: var(--violet); margin: 0;">Firm+</h4>
+      <div class="price" style="color: var(--violet);">$399</div>
+      <div class="price-period">/seat/month</div>
+      <div class="divider"></div>
+      <ul>
+        <li>Unlimited documents</li>
+        <li>Everything in Small Firm</li>
+        <li>Custom workflows & playbooks</li>
+        <li>API access</li>
+        <li>SSO / SAML</li>
+        <li>Dedicated account manager</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin: 16px 0 32px;">
+    <span style="font-size: 14px; color: var(--text-dim);">Free trial: 3 documents, no credit card required &nbsp;|&nbsp; Per-document overage: $3-5/doc</span>
+  </div>
+
+  <h3>Unit Economics</h3>
+  <div class="grid-4">
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--green); font-size: 32px;">$0.50-2</div>
+      <div class="stat-label">AI cost per document (Claude API)</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--accent); font-size: 32px;">~78%</div>
+      <div class="stat-label">Target gross margin</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--violet); font-size: 32px;">$200-400</div>
+      <div class="stat-label">Target CAC</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="stat-big" style="color: var(--blue); font-size: 32px;">8-15x</div>
+      <div class="stat-label">Target LTV/CAC ratio</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="margin: 0 0 12px;">LTV by Segment</h4>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <div class="bar-label">Solo ($99/mo)</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 38%; background: var(--blue);">$3K+</div></div>
+          <div class="bar-value">$3,000+</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Small Firm ($199)</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 75%; background: var(--accent);">$8K+</div></div>
+          <div class="bar-value">$8,000+</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Firm+ ($399)</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 100%; background: var(--violet);">$15K+</div></div>
+          <div class="bar-value">$15,000+</div>
+        </div>
+      </div>
+      <p style="font-size: 12px; color: var(--text-dim);">Based on 30-month average retention</p>
+    </div>
+
+    <div class="card">
+      <h4 style="margin: 0 0 12px;">Revenue Projections (Bootstrap)</h4>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <div class="bar-label">Year 1</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 12%; background: linear-gradient(90deg, var(--accent), var(--violet));">$600K</div></div>
+          <div class="bar-value">$600K ARR</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Year 2</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 40%; background: linear-gradient(90deg, var(--violet), var(--blue));">$2M</div></div>
+          <div class="bar-value">$2M ARR</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Year 3</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 100%; background: linear-gradient(90deg, var(--blue), var(--green));">$5M</div></div>
+          <div class="bar-value">$5M ARR</div>
+        </div>
+      </div>
+      <p style="font-size: 12px; color: var(--text-dim);">Profitable from 5 paying customers. No external funding needed.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-title">The Math That Sells</div>
+    <p>A solo lawyer billing at $288/hr who saves just 5 hours/month with AI Associate earns an additional $1,440/month — a <strong>14.5x ROI</strong> on the $99 subscription. Even a conservative 2 hours saved yields a 5.8x return. One less missed deadline could save a $50K+ malpractice claim.</p>
+  </div>
+</div>
+
+<!-- ==================== CHAPTER 8: GO-TO-MARKET ==================== -->
+<div class="chapter" id="ch8">
+  <div class="chapter-num">Chapter 08</div>
+  <h2>Go-To-Market Strategy</h2>
+  <p class="chapter-intro">Lawyers are conservative adopters. Our GTM builds trust through professional channels, peer recommendations, and demonstrable ROI — not aggressive sales tactics.</p>
+
+  <h3>Acquisition Channels</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="margin: 0 0 12px; color: var(--accent);">1. Content & SEO (30% of leads)</h4>
+      <p>Blog posts, guides, comparison articles targeting high-intent keywords: "AI for solo lawyers", "contract drafting automation", "legal document summarizer". Own the educational content space before competitors.</p>
+      <ul>
+        <li>Weekly blog posts on legal AI topics</li>
+        <li>SEO-optimized landing pages by practice area</li>
+        <li>"AI Associate vs Harvey" comparison pages</li>
+        <li>YouTube tutorials on AI in legal practice</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin: 0 0 12px; color: var(--violet);">2. Bar Associations (25% of leads)</h4>
+      <p>The most trusted channel in legal. Partner with state and local bars for CLE (Continuing Legal Education) credits — lawyers need these anyway.</p>
+      <ul>
+        <li>CLE-accredited webinars on AI ethics</li>
+        <li>ABA TECHSHOW presence & sponsorship</li>
+        <li>State bar newsletter sponsorships</li>
+        <li>Conference demo booths</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin: 0 0 12px; color: var(--blue);">3. Legal Communities (20% of leads)</h4>
+      <p>Organic presence in where lawyers actually hang out — online and offline.</p>
+      <ul>
+        <li>AbovetheLaw articles and sponsorships</li>
+        <li>Lawyerist partnership</li>
+        <li>Reddit r/lawyers, r/LawFirm engagement</li>
+        <li>Facebook groups for solo practitioners</li>
+        <li>Legal tech podcast appearances</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin: 0 0 12px; color: var(--green);">4. Referral & Integrations (25% of leads)</h4>
+      <p>Lawyers trust peers. Product integrations meet users where they work.</p>
+      <ul>
+        <li>Referral program: 30-day free for both parties</li>
+        <li>Clio App Directory listing</li>
+        <li>Smokeball Marketplace listing</li>
+        <li>PracticePanther integration</li>
+        <li>Free tools as lead magnets (NDA generator, clause checker)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Launch Sequence</h3>
+  <div class="card">
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background: var(--accent);"></div>
+      <div>
+        <div style="font-weight: 600; color: var(--accent);">Weeks 1-4: Closed Beta</div>
+        <p>50 hand-picked solo lawyers from bar association partnerships. Daily feedback sessions. Iterate fast. Build case studies and testimonials.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background: var(--violet);"></div>
+      <div>
+        <div style="font-weight: 600; color: var(--violet);">Weeks 5-8: Open Beta</div>
+        <p>500 users via waitlist. Pricing validation. Collect usage data. A/B test conversion flows. Generate first revenue.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background: var(--blue);"></div>
+      <div>
+        <div style="font-weight: 600; color: var(--blue);">Weeks 9-12: Public Launch</div>
+        <p>PR push: TechCrunch, LawSites, AbovetheLaw coverage. Product Hunt launch. Content marketing ramp. Referral program goes live.</p>
+      </div>
+    </div>
+    <div class="timeline-item" style="margin-bottom: 0;">
+      <div class="timeline-dot" style="background: var(--green);"></div>
+      <div>
+        <div style="font-weight: 600; color: var(--green);">Month 4-6: Growth Phase</div>
+        <p>Paid acquisition ramp (Google Ads for legal keywords). Bar association CLE program launch. First marketplace integrations live.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CHAPTER 9: LEGAL & ETHICS ==================== -->
+<div class="chapter" id="ch9">
+  <div class="chapter-num">Chapter 09</div>
+  <h2>Legal & Ethics Compliance</h2>
+  <p class="chapter-intro">In a profession where trust is everything and regulators are watching closely, our compliance posture is a competitive advantage — not just a checkbox.</p>
+
+  <h3>ABA Regulatory Framework</h3>
+  <div class="card" style="margin: 24px 0;">
+    <h4 style="margin: 0 0 16px;">ABA Formal Opinion 512 (July 2024)</h4>
+    <p>The ABA's comprehensive guidance on AI use by lawyers. Our platform is designed around these requirements:</p>
+    <div class="grid-2" style="margin-top: 16px;">
+      <div>
+        <h5 style="font-size: 13px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Rule 1.1 — Competence</h5>
+        <p>Lawyers must understand AI tools they use. Our approach: built-in explainability. Every AI output includes confidence scores, source references, and "why" explanations.</p>
+      </div>
+      <div>
+        <h5 style="font-size: 13px; color: var(--violet); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Rule 1.6 — Confidentiality</h5>
+        <p>Client data must be protected. Our approach: AES-256 encryption, no training on user data, auto-delete options, isolated processing.</p>
+      </div>
+      <div>
+        <h5 style="font-size: 13px; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Rule 1.4 — Communication</h5>
+        <p>Clients must be informed about AI use. Our approach: customizable disclosure templates that lawyers can include in engagement letters.</p>
+      </div>
+      <div>
+        <h5 style="font-size: 13px; color: var(--green); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Rule 3.3 — Candor to Tribunal</h5>
+        <p>AI output must be verified before court submission. Our approach: mandatory review checkpoints, citation verification, hallucination warnings.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>State Bar Compliance</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="margin: 0 0 12px;">Current Landscape</h4>
+      <ul>
+        <li><strong style="color: var(--text);">30+ states</strong> have issued AI-specific guidance</li>
+        <li>Texas: Opinion No. 705 (Feb 2025) — specific gen AI guidance</li>
+        <li>Pennsylvania: mandatory AI disclosure in court submissions</li>
+        <li>New York: 2 annual CLE credits required in AI competency</li>
+        <li>North Carolina: Formal Ethics Opinion 1 on AI in law practice</li>
+        <li>Trend: moving from "experiment" to "infrastructure" (ABA Task Force)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin: 0 0 12px;">Our Compliance Features</h4>
+      <ul>
+        <li><strong style="color: var(--text);">State Bar Tracker:</strong> built-in database of state-specific AI rules</li>
+        <li><strong style="color: var(--text);">Jurisdiction Warnings:</strong> alerts when output needs specific disclosures</li>
+        <li><strong style="color: var(--text);">Audit Trail:</strong> complete log of AI interactions per case</li>
+        <li><strong style="color: var(--text);">Verification Checkpoints:</strong> mandatory human review gates</li>
+        <li><strong style="color: var(--text);">Disclosure Templates:</strong> customizable client consent forms</li>
+        <li><strong style="color: var(--text);">CLE Partnership:</strong> AI ethics training bundled with product</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Security Architecture</h3>
+  <div class="grid-3">
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 28px; margin-bottom: 8px;">&#128274;</div>
+      <h4 style="margin: 0 0 8px;">Encryption</h4>
+      <p>AES-256 at rest, TLS 1.3 in transit. All documents encrypted before storage.</p>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 28px; margin-bottom: 8px;">&#128683;</div>
+      <h4 style="margin: 0 0 8px;">Zero Training</h4>
+      <p>User data never used for AI model training. Complete data isolation between users.</p>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 28px; margin-bottom: 8px;">&#128203;</div>
+      <h4 style="margin: 0 0 8px;">SOC 2 Type II</h4>
+      <p>Certification roadmap within 12 months. Annual penetration testing.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-title">Compliance as Competitive Advantage</div>
+    <p>Most AI tools treat legal compliance as an afterthought. We build it in from day one — making it easy for lawyers to adopt AI confidently, knowing they're meeting their ethical obligations. This trust factor is crucial for a conservative profession where 30+ states are actively scrutinizing AI use.</p>
+  </div>
+</div>
+
+<!-- ==================== CHAPTER 10: ROADMAP & INVESTMENT ==================== -->
+<div class="chapter" id="ch10">
+  <div class="chapter-num">Chapter 10</div>
+  <h2>Roadmap & Bootstrap Plan</h2>
+  <p class="chapter-intro">A clear 18-month path from MVP to market leadership — bootstrapped with minimal costs, funded by revenue from day one.</p>
+
+  <h3>Timeline</h3>
+  <div class="card" style="margin: 24px 0;">
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background: var(--accent); width: 16px; height: 16px;"></div>
+      <div style="flex: 1;">
+        <div style="display: flex; justify-content: space-between;">
+          <div style="font-weight: 700; color: var(--accent); font-size: 16px;">Q2 2026 — MVP Development</div>
+          <span class="tag tag-indigo">8 weeks</span>
+        </div>
+        <p style="margin-top: 8px;">Case summarization engine, contract generation with templates, document upload (PDF/DOCX/OCR), AI chat, basic dashboard, auth (Clerk), billing (Stripe).</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background: var(--violet); width: 16px; height: 16px;"></div>
+      <div style="flex: 1;">
+        <div style="display: flex; justify-content: space-between;">
+          <div style="font-weight: 700; color: var(--violet); font-size: 16px;">Q3 2026 — Beta Launch</div>
+          <span class="tag tag-violet">4 weeks</span>
+        </div>
+        <p style="margin-top: 8px;">Closed beta with 50 lawyers → Open beta with 500 users. Iterate based on feedback. First revenue. Build case studies.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background: var(--blue); width: 16px; height: 16px;"></div>
+      <div style="flex: 1;">
+        <div style="display: flex; justify-content: space-between;">
+          <div style="font-weight: 700; color: var(--blue); font-size: 16px;">Q4 2026 — Public Launch & Growth</div>
+          <span class="tag tag-blue">Ongoing</span>
+        </div>
+        <p style="margin-top: 8px;">PR push, content marketing, referral program, bar association partnerships. Target: 500+ paying users by end of quarter.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background: var(--green); width: 16px; height: 16px;"></div>
+      <div style="flex: 1;">
+        <div style="display: flex; justify-content: space-between;">
+          <div style="font-weight: 700; color: var(--green); font-size: 16px;">Q1 2027 — Phase 2 Features</div>
+          <span class="tag tag-green">6 weeks</span>
+        </div>
+        <p style="margin-top: 8px;">Case management, legal research, client communication, court filing prep. Target: 1,500+ users, $2M ARR run rate.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background: var(--orange); width: 16px; height: 16px;"></div>
+      <div style="flex: 1;">
+        <div style="display: flex; justify-content: space-between;">
+          <div style="font-weight: 700; color: var(--orange); font-size: 16px;">Q2-Q4 2027 — Phase 3 & Scale</div>
+          <span class="tag tag-orange">8 weeks</span>
+        </div>
+        <p style="margin-top: 8px;">Vertical modules (traffic defense, PI, family law). Court DB integrations. iOS app. Template marketplace. Revenue-funded growth.</p>
+      </div>
+    </div>
+    <div class="timeline-item" style="margin-bottom: 0;">
+      <div class="timeline-dot" style="background: var(--cyan); width: 16px; height: 16px;"></div>
+      <div style="flex: 1;">
+        <div style="display: flex; justify-content: space-between;">
+          <div style="font-weight: 700; color: var(--cyan); font-size: 16px;">2028 — International Expansion</div>
+          <span class="tag" style="background: rgba(34,211,238,0.15); color: var(--cyan);">Future</span>
+        </div>
+        <p style="margin-top: 8px;">UK, Canada, Australia (common law countries). Multi-language support. Architecture already designed for multi-jurisdiction.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Bootstrap Economics</h3>
+  <div class="card card-accent" style="text-align: center; padding: 40px; margin: 24px 0; border-color: rgba(52,211,153,0.3);">
+    <div style="font-size: 16px; color: var(--green); font-weight: 600; margin-bottom: 8px;">Total Cost to First Paying Customer</div>
+    <div style="font-size: 56px; font-weight: 800; color: var(--green); letter-spacing: -2px;">< $500</div>
+    <div style="font-size: 16px; color: var(--text-secondary); margin-top: 8px;">100% founder ownership. Zero dilution. Revenue-funded growth.</div>
+  </div>
+
+  <div class="grid-4">
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 32px; font-weight: 800; color: var(--green);">$0</div>
+      <div style="font-size: 15px; font-weight: 600; margin: 4px 0;">Vercel Hosting</div>
+      <div class="stat-label">Free tier covers MVP</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 32px; font-weight: 800; color: var(--accent);">~$200</div>
+      <div style="font-size: 15px; font-weight: 600; margin: 4px 0;">Claude API</div>
+      <div class="stat-label">/month — scales with usage</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 32px; font-weight: 800; color: var(--violet);">$0</div>
+      <div style="font-size: 15px; font-weight: 600; margin: 4px 0;">Supabase</div>
+      <div class="stat-label">Free tier covers MVP</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 32px; font-weight: 800; color: var(--blue);">~$15</div>
+      <div style="font-size: 15px; font-weight: 600; margin: 4px 0;">Domain</div>
+      <div class="stat-label">/year</div>
+    </div>
+  </div>
+
+  <div class="callout" style="border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.04);">
+    <div class="callout-title" style="color: var(--green);">The Bootstrap Math</div>
+    <p>Just 5 solo subscribers at $99/mo ($495) cover all monthly infrastructure costs. Every subscriber after that is pure margin. AI API costs scale linearly with revenue — no upfront capital needed. Solo founder builds the product, revenue funds the growth.</p>
+  </div>
+
+  <h3>Growth Milestones</h3>
+  <div class="grid-3">
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 36px; font-weight: 800; color: var(--accent);">50</div>
+      <div class="stat-label">Beta users — Month 3</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 36px; font-weight: 800; color: var(--violet);">200</div>
+      <div class="stat-label">Paying users — Month 6</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 36px; font-weight: 800; color: var(--blue);">500+</div>
+      <div class="stat-label">Paying users — Month 12</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 36px; font-weight: 800; color: var(--green);">$600K+</div>
+      <div class="stat-label">ARR — Month 12</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 36px; font-weight: 800; color: var(--orange);">100%</div>
+      <div class="stat-label">Founder ownership</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 36px; font-weight: 800; color: var(--cyan);">Profitable</div>
+      <div class="stat-label">From first 5 customers</div>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top: 32px;">
+    <div class="callout-title">Why Now?</div>
+    <p>Three forces are converging: (1) AI capabilities have reached the quality threshold lawyers demand — Claude and GPT-5 can genuinely understand legal documents. (2) Regulatory clarity is arriving — the ABA and 30+ state bars have issued AI guidance, removing the #1 adoption barrier. (3) The market is being educated by enterprise players ($16B+ in competitor valuations) but no one is serving the 480K solo practitioners who need it most. The window to capture this segment is open now — before Harvey or CoCounsel build a "lite" tier. And with free-tier infrastructure (Vercel, Supabase) and pay-per-use AI APIs, the barrier to entry has never been lower for a solo founder.</p>
+  </div>
+
+  <div style="text-align: center; padding: 60px 0 0;">
+    <div style="font-size: 48px; margin-bottom: 12px;">&#9878;</div>
+    <div style="font-size: 24px; font-weight: 700; color: var(--accent);">AI Associate</div>
+    <div style="font-size: 16px; color: var(--text-secondary); margin-top: 8px;">The capabilities of a BigLaw associate for $99/month</div>
+    <div style="font-size: 13px; color: var(--text-dim); margin-top: 24px;">Confidential — April 2026</div>
+  </div>
+</div>
+
+<script>
+  // Sidebar active state on scroll
+  const chapters = document.querySelectorAll('.chapter, .cover, .toc');
+  const sidebarLinks = document.querySelectorAll('.sidebar-link');
+
+  const observerOptions = { rootMargin: '-20% 0px -70% 0px' };
+  const sidebarObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        sidebarLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+      }
+    });
+  }, observerOptions);
+  chapters.forEach(ch => sidebarObserver.observe(ch));
+
+  // Smooth scroll for sidebar links
+  sidebarLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+      // Close sidebar on mobile
+      if (window.innerWidth < 1024) document.getElementById('sidebar').classList.remove('open');
+    });
+  });
+
+  // TOC smooth scroll
+  document.querySelectorAll('.toc-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.querySelector(item.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+</body>
+</html>
