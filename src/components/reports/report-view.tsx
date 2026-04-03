@@ -11,6 +11,7 @@ import { CASE_TYPE_LABELS } from "@/lib/constants";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { CaseBrief } from "./case-brief";
 import { DocumentReport } from "./document-report";
+import { ExportMenu } from "./export-menu";
 import type { AnalysisOutput } from "@/lib/schemas";
 
 interface DocumentData {
@@ -116,6 +117,9 @@ export function ReportView({
             </Badge>
           </div>
           <div className="flex items-center gap-2">
+            {status === "ready" && (
+              <ExportMenu caseId={caseId} caseName={caseName} />
+            )}
             {onReanalyze && (
               <Button
                 variant="outline"

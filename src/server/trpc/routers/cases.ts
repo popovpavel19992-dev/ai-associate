@@ -6,8 +6,10 @@ import { cases } from "../../db/schema/cases";
 import { documents } from "../../db/schema/documents";
 import { documentAnalyses } from "../../db/schema/document-analyses";
 import { calculateCredits, checkCredits, decrementCredits } from "../../services/credits";
+import { generateDocx, generatePlainTextReport } from "../../services/export";
 import { inngest } from "../../inngest/client";
-import { CASE_TYPES, AUTO_DELETE_DAYS } from "@/lib/constants";
+import { CASE_TYPES, AUTO_DELETE_DAYS, CASE_TYPE_LABELS } from "@/lib/constants";
+import type { AnalysisOutput } from "@/lib/schemas";
 
 export const casesRouter = router({
   create: protectedProcedure
@@ -175,6 +177,22 @@ export const casesRouter = router({
       return updated;
     }),
 
+  exportDocx: protectedProcedure
+    .input(z.object({ caseId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const exportData = await buildExportData(ctx, input.caseId);
+      const buffer = await generateDocx(exportData);
+      return { buffer: buffer.toString("base64") };
+    }),
+
+  exportText: protectedProcedure
+    .input(z.object({ caseId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const exportData = await buildExportData(ctx, input.caseId);
+      const text = generatePlainTextReport(exportData);
+      return { text };
+    }),
+
   delete: protectedProcedure
     .input(z.object({ caseId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
@@ -192,3 +210,48 @@ export const casesRouter = router({
       return { success: true };
     }),
 });
+
+// Helper for export procedures
+async function buildExportData(
+  ctx: { db: typeof import("../../db").db; user: { id: string } },
+  caseId: string,
+) {
+  const [caseRecord] = await ctx.db
+    .select()
+    .from(cases)
+    .where(and(eq(cases.id, caseId), eq(cases.userId, ctx.user.id)))
+    .limit(1);
+
+  if (!caseRecord) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
+  }
+
+  const docs = await ctx.db
+    .select()
+    .from(documents)
+    .where(eq(documents.caseId, caseId))
+    .orderBy(documents.createdAt);
+
+  const analyses = await ctx.db
+    .select()
+    .from(documentAnalyses)
+    .where(eq(documentAnalyses.caseId, caseId));
+
+  const caseType =
+    caseRecord.overrideCaseType ?? caseRecord.detectedCaseType ?? "general";
+
+  return {
+    caseName: caseRecord.name,
+    caseType: CASE_TYPE_LABELS[caseType] ?? caseType,
+    caseBrief: caseRecord.caseBrief as AnalysisOutput | null,
+    selectedSections: caseRecord.selectedSections,
+    documents: docs.map((doc) => {
+      const analysis = analyses.find((a) => a.documentId === doc.id);
+      return {
+        filename: doc.filename,
+        sections: (analysis?.sections ?? {}) as AnalysisOutput,
+        userEdits: analysis?.userEdits as Record<string, unknown> | null,
+      };
+    }),
+  };
+}

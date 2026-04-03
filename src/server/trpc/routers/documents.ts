@@ -204,6 +204,50 @@ export const documentsRouter = router({
       return { success: true };
     }),
 
+  saveEdits: protectedProcedure
+    .input(
+      z.object({
+        analysisId: z.string().uuid(),
+        sectionName: z.string().min(1),
+        edits: z.unknown(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [analysis] = await ctx.db
+        .select()
+        .from(documentAnalyses)
+        .where(eq(documentAnalyses.id, input.analysisId))
+        .limit(1);
+
+      if (!analysis) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Analysis not found" });
+      }
+
+      // Verify ownership through case
+      const [caseRecord] = await ctx.db
+        .select({ id: cases.id })
+        .from(cases)
+        .where(
+          and(eq(cases.id, analysis.caseId), eq(cases.userId, ctx.user.id)),
+        )
+        .limit(1);
+
+      if (!caseRecord) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
+      }
+
+      const currentEdits = (analysis.userEdits ?? {}) as Record<string, unknown>;
+      const updatedEdits = { ...currentEdits, [input.sectionName]: input.edits };
+
+      const [updated] = await ctx.db
+        .update(documentAnalyses)
+        .set({ userEdits: updatedEdits })
+        .where(eq(documentAnalyses.id, input.analysisId))
+        .returning();
+
+      return updated;
+    }),
+
   delete: protectedProcedure
     .input(z.object({ documentId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
