@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { NotificationBell } from "./notification-bell";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -27,10 +28,11 @@ function NavContent() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="px-4 py-6">
+      <div className="flex items-center justify-between px-4 py-6">
         <Link href="/dashboard" className="text-xl font-bold tracking-tight">
           ClearTerms
         </Link>
+        <NotificationBell />
       </div>
 
       <Separator />
