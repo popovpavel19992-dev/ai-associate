@@ -42,9 +42,12 @@ export const comparisonsRouter = router({
       }
 
       // Calculate credits: 2 per unanalyzed contract + 1 for diff
+      // Don't charge for contracts already being processed (extracting/analyzing)
+      const needsAnalysisA = contractA.status !== "ready" && contractA.status !== "extracting" && contractA.status !== "analyzing";
+      const needsAnalysisB = contractB.status !== "ready" && contractB.status !== "extracting" && contractB.status !== "analyzing";
       let cost = COMPARISON_DIFF_CREDITS;
-      if (contractA.status !== "ready") cost += CONTRACT_REVIEW_CREDITS;
-      if (contractB.status !== "ready") cost += CONTRACT_REVIEW_CREDITS;
+      if (needsAnalysisA) cost += CONTRACT_REVIEW_CREDITS;
+      if (needsAnalysisB) cost += CONTRACT_REVIEW_CREDITS;
 
       const credits = await checkCredits(ctx.user.id);
 
