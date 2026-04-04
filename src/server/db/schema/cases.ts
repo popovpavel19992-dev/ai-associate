@@ -1,6 +1,7 @@
 import { pgTable, uuid, text, timestamp, jsonb, boolean, pgEnum } from "drizzle-orm/pg-core";
 import { users } from "./users";
 import { organizations } from "./organizations";
+import { caseStages } from "./case-stages";
 
 export const caseStatusEnum = pgEnum("case_status", ["draft", "processing", "ready", "failed"]);
 
@@ -16,6 +17,9 @@ export const cases = pgTable("cases", {
   selectedSections: jsonb("selected_sections").$type<string[]>(),
   sectionsLocked: boolean("sections_locked").default(false).notNull(),
   caseBrief: jsonb("case_brief"),
+  stageId: uuid("stage_id").references(() => caseStages.id),
+  stageChangedAt: timestamp("stage_changed_at", { withTimezone: true }),
+  description: text("description"),
   deleteAt: timestamp("delete_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
