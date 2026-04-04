@@ -15,3 +15,4 @@ export type ComparisonStatus = "draft" | "processing" | "ready" | "failed";
 export type ClauseSeverity = "critical" | "warning" | "info";
 export type MissingClauseImportance = "critical" | "recommended" | "optional";
 export type NegotiationPriority = "high" | "medium" | "low";
+export type DraftStatus = "draft" | "generating" | "ready" | "failed";
