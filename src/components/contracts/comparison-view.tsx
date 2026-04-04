@@ -18,8 +18,7 @@ interface ClauseDiffData {
 interface ComparisonSummary {
   overall_assessment?: string;
   recommendation?: string;
-  risk_score_before?: number | null;
-  risk_score_after?: number | null;
+  risk_delta?: { before: number; after: number } | null;
 }
 
 export interface ComparisonViewProps {
@@ -39,8 +38,8 @@ export function ComparisonView({ contractAName, contractBName, summary, clauseDi
   const positiveCount = countByImpact(clauseDiffs, "positive");
 
   const parsed = summary as ComparisonSummary | null;
-  const riskBefore = parsed?.risk_score_before ?? null;
-  const riskAfter = parsed?.risk_score_after ?? null;
+  const riskBefore = parsed?.risk_delta?.before ?? null;
+  const riskAfter = parsed?.risk_delta?.after ?? null;
 
   // Sort: negative first, then neutral, then positive
   const sorted = [...clauseDiffs].sort((a, b) => {
