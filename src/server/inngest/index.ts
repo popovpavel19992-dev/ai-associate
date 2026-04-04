@@ -1,6 +1,8 @@
 import { extractDocument } from "./functions/extract-document";
 import { caseAnalyze } from "./functions/case-analyze";
+import { contractAnalyze } from "./functions/contract-analyze";
+import { contractCompare } from "./functions/contract-compare";
 import { creditReset } from "./functions/credit-reset";
 import { autoDelete } from "./functions/auto-delete";
 
-export const functions = [extractDocument, caseAnalyze, creditReset, autoDelete];
+export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, creditReset, autoDelete];
