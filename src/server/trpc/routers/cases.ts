@@ -105,7 +105,7 @@ export const casesRouter = router({
           riskScore: contracts.riskScore,
         })
         .from(contracts)
-        .where(eq(contracts.linkedCaseId, input.caseId))
+        .where(and(eq(contracts.linkedCaseId, input.caseId), eq(contracts.userId, ctx.user.id)))
         .orderBy(contracts.createdAt);
 
       return { ...caseRecord, documents: docs, analyses, linkedContracts };
