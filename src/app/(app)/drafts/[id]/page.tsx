@@ -91,7 +91,13 @@ export default function DraftEditorPage({
     );
   }
 
-  const selectedClause = data.clauses.find((c) => c.id === selectedClauseId) ?? data.clauses[0] ?? null;
+  const clauses = data.clauses.map((c) => ({
+    ...c,
+    clauseNumber: c.clauseNumber ?? "",
+    title: c.title ?? "",
+  }));
+
+  const selectedClause = clauses.find((c) => c.id === selectedClauseId) ?? clauses[0] ?? null;
 
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col">
@@ -118,7 +124,7 @@ export default function DraftEditorPage({
         {/* Left panel: Clause Navigation */}
         <div className="w-[200px] border-r">
           <DraftClauseNav
-            clauses={data.clauses}
+            clauses={clauses}
             selectedClauseId={selectedClause?.id ?? null}
             onSelectClause={setSelectedClauseId}
           />
@@ -131,18 +137,18 @@ export default function DraftEditorPage({
               key={selectedClause.id}
               clause={selectedClause}
               fullText={data.generatedText ?? ""}
-              onSave={(text) =>
-                updateClause.mutate({ clauseId: selectedClause.id, userEditedText: text })
+              onSave={(clauseId, text) =>
+                updateClause.mutate({ clauseId, userEditedText: text })
               }
-              onRewrite={async (instruction) => {
+              onRewrite={async (clauseId, instruction) => {
                 const result = await rewriteClauseMutation.mutateAsync({
-                  clauseId: selectedClause.id,
+                  clauseId,
                   instruction,
                 });
                 return result.text;
               }}
-              onReset={() =>
-                updateClause.mutate({ clauseId: selectedClause.id, userEditedText: null })
+              onReset={(clauseId) =>
+                updateClause.mutate({ clauseId, userEditedText: null })
               }
               isSaving={updateClause.isPending}
             />
