@@ -50,7 +50,7 @@ export const contractAnalyze = inngest.createFunction(
           .set({ extractedText: result.text, pageCount: result.pageCount })
           .where(eq(contracts.id, contractId));
 
-        return { text: result.text, ok: true as const };
+        return { text: result.text, pageCount: result.pageCount, ok: true as const };
       } catch (err) {
         await db.update(contracts).set({ status: "failed" }).where(eq(contracts.id, contractId));
         throw err;
@@ -79,6 +79,7 @@ export const contractAnalyze = inngest.createFunction(
         sections,
         contractType,
         caseBrief ?? undefined,
+        extraction.pageCount,
       );
 
       await db
