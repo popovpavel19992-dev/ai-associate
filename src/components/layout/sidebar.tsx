@@ -9,6 +9,7 @@ import {
   Settings,
   Zap,
   Menu,
+  FileCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -18,6 +19,7 @@ import { NotificationBell } from "./notification-bell";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/contracts", label: "Contracts", icon: FileCheck },
   { href: "/quick-analysis", label: "Quick Analysis", icon: Zap },
   { href: "/settings/templates", label: "Templates", icon: FileText },
   { href: "/settings", label: "Settings", icon: Settings },
@@ -43,7 +45,7 @@ function NavContent() {
             pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
-              key={item.href}
+              key={item.label}
               href={item.href}
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",

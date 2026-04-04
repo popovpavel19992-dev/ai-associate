@@ -6,6 +6,7 @@ import { chatMessages } from "../../db/schema/chat-messages";
 import { cases } from "../../db/schema/cases";
 import { documents } from "../../db/schema/documents";
 import { documentAnalyses } from "../../db/schema/document-analyses";
+import { contracts, contractClauses } from "../../db/schema/contracts";
 import {
   CHAT_RATE_LIMIT_PER_HOUR,
   PLAN_LIMITS,
@@ -90,23 +91,20 @@ export const chatRouter = router({
   send: protectedProcedure
     .input(
       z.object({
-        caseId: z.string().uuid(),
+        caseId: z.string().uuid().optional(),
+        contractId: z.string().uuid().optional(),
         documentId: z.string().uuid().optional(),
+        clauseRef: z.string().optional(),
         content: z.string().min(1).max(10_000),
-      }),
+      }).refine(
+        (data) => {
+          const has = [data.caseId, data.contractId].filter(Boolean).length;
+          return has === 1;
+        },
+        { message: "Exactly one of caseId or contractId must be provided" },
+      ),
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify case ownership
-      const [caseRecord] = await ctx.db
-        .select()
-        .from(cases)
-        .where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)))
-        .limit(1);
-
-      if (!caseRecord) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
-      }
-
       // Rate limit: 30 messages/hour
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
       const [{ count: hourlyCount }] = await ctx.db
@@ -127,95 +125,167 @@ export const chatRouter = router({
         });
       }
 
-      // Plan message cap per case
-      const plan = (ctx.user.plan ?? "trial") as Plan;
-      const limit = PLAN_LIMITS[plan].chatMessagesPerCase;
+      let systemPrompt: string;
+      let scopeCaseId: string | null = null;
+      let scopeContractId: string | null = null;
 
-      if (limit !== Infinity) {
-        const [{ count: caseMessageCount }] = await ctx.db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(chatMessages)
-          .where(
-            and(
-              eq(chatMessages.caseId, input.caseId),
-              eq(chatMessages.userId, ctx.user.id),
-              eq(chatMessages.role, "user"),
-            ),
-          );
+      if (input.caseId) {
+        // --- Case-scoped chat (existing logic) ---
+        scopeCaseId = input.caseId;
 
-        if (caseMessageCount >= limit) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: `Chat message limit reached for your plan (${limit} messages per case). Upgrade to continue.`,
-          });
+        const [caseRecord] = await ctx.db
+          .select()
+          .from(cases)
+          .where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)))
+          .limit(1);
+
+        if (!caseRecord) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
         }
+
+        // Plan message cap per case
+        const plan = (ctx.user.plan ?? "trial") as Plan;
+        const msgLimit = PLAN_LIMITS[plan].chatMessagesPerCase;
+
+        if (msgLimit !== Infinity) {
+          const [{ count: caseMessageCount }] = await ctx.db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(chatMessages)
+            .where(
+              and(
+                eq(chatMessages.caseId, input.caseId),
+                eq(chatMessages.userId, ctx.user.id),
+                eq(chatMessages.role, "user"),
+              ),
+            );
+
+          if (caseMessageCount >= msgLimit) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: `Chat message limit reached for your plan (${msgLimit} messages per case). Upgrade to continue.`,
+            });
+          }
+        }
+
+        // Gather context for AI
+        const docs = await ctx.db
+          .select({ id: documents.id, filename: documents.filename })
+          .from(documents)
+          .where(eq(documents.caseId, input.caseId))
+          .orderBy(documents.createdAt);
+
+        const analyses = await ctx.db
+          .select({ documentId: documentAnalyses.documentId, sections: documentAnalyses.sections })
+          .from(documentAnalyses)
+          .where(eq(documentAnalyses.caseId, input.caseId));
+
+        const docAnalyses = docs.map((doc) => {
+          const analysis = analyses.find((a) => a.documentId === doc.id);
+          return { filename: doc.filename, sections: analysis?.sections ?? {} };
+        });
+
+        const scope = input.documentId ? "document" : "case";
+        const docIndex = input.documentId
+          ? docs.findIndex((d) => d.id === input.documentId)
+          : undefined;
+
+        const analysisSummary = buildAnalysisSummary(
+          caseRecord.caseBrief,
+          docAnalyses,
+          scope,
+          docIndex,
+        );
+
+        const caseType =
+          caseRecord.overrideCaseType ?? caseRecord.detectedCaseType ?? "general";
+        const jurisdiction = resolveJurisdiction(caseRecord, ctx.user);
+
+        systemPrompt = buildChatSystemPrompt(caseType, jurisdiction, analysisSummary);
+      } else {
+        // --- Contract-scoped chat ---
+        scopeContractId = input.contractId!;
+
+        const [contract] = await ctx.db
+          .select()
+          .from(contracts)
+          .where(and(eq(contracts.id, scopeContractId), eq(contracts.userId, ctx.user.id)))
+          .limit(1);
+
+        if (!contract) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Contract not found" });
+        }
+
+        // Plan message cap per contract (reuse per-case limit)
+        const plan = (ctx.user.plan ?? "trial") as Plan;
+        const msgLimit = PLAN_LIMITS[plan].chatMessagesPerCase;
+
+        if (msgLimit !== Infinity) {
+          const [{ count: contractMessageCount }] = await ctx.db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(chatMessages)
+            .where(
+              and(
+                eq(chatMessages.contractId, scopeContractId),
+                eq(chatMessages.userId, ctx.user.id),
+                eq(chatMessages.role, "user"),
+              ),
+            );
+
+          if (contractMessageCount >= msgLimit) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: `Chat message limit reached for your plan (${msgLimit} messages per contract). Upgrade to continue.`,
+            });
+          }
+        }
+
+        // Gather contract clauses for AI context
+        const clauses = await ctx.db
+          .select()
+          .from(contractClauses)
+          .where(eq(contractClauses.contractId, scopeContractId))
+          .orderBy(contractClauses.sortOrder);
+
+        const contractType =
+          contract.overrideContractType ?? contract.detectedContractType ?? "generic";
+
+        let contractContext = `Contract: ${contract.name}\nType: ${contractType}\n`;
+
+        if (contract.analysisSections) {
+          contractContext += `\nAnalysis:\n${JSON.stringify(contract.analysisSections, null, 2).slice(0, 60_000)}`;
+        }
+
+        if (clauses.length > 0) {
+          const clausesSummary = clauses
+            .map((c) => `[${c.clauseNumber ?? "?"}] ${c.title ?? "Untitled"} (${c.riskLevel ?? "ok"}): ${c.summary ?? ""}`)
+            .join("\n");
+          contractContext += `\n\nClauses:\n${clausesSummary.slice(0, 40_000)}`;
+        }
+
+        if (input.clauseRef) {
+          const targetClause = clauses.find((c) => c.clauseNumber === input.clauseRef);
+          if (targetClause) {
+            contractContext += `\n\nFOCUSED CLAUSE [${targetClause.clauseNumber}]:\nTitle: ${targetClause.title}\nOriginal: ${targetClause.originalText}\nAnnotation: ${targetClause.annotation}\nSuggested Edit: ${targetClause.suggestedEdit ?? "none"}`;
+          }
+        }
+
+        systemPrompt = buildChatSystemPrompt(contractType, null, contractContext);
       }
 
-      // Gather context for AI
-      const docs = await ctx.db
-        .select({
-          id: documents.id,
-          filename: documents.filename,
-        })
-        .from(documents)
-        .where(eq(documents.caseId, input.caseId))
-        .orderBy(documents.createdAt);
-
-      const analyses = await ctx.db
-        .select({
-          documentId: documentAnalyses.documentId,
-          sections: documentAnalyses.sections,
-        })
-        .from(documentAnalyses)
-        .where(eq(documentAnalyses.caseId, input.caseId));
-
-      const docAnalyses = docs.map((doc) => {
-        const analysis = analyses.find((a) => a.documentId === doc.id);
-        return {
-          filename: doc.filename,
-          sections: analysis?.sections ?? {},
-        };
-      });
-
-      const scope = input.documentId ? "document" : "case";
-      const docIndex = input.documentId
-        ? docs.findIndex((d) => d.id === input.documentId)
-        : undefined;
-
-      const analysisSummary = buildAnalysisSummary(
-        caseRecord.caseBrief,
-        docAnalyses,
-        scope,
-        docIndex,
-      );
-
-      const caseType =
-        caseRecord.overrideCaseType ??
-        caseRecord.detectedCaseType ??
-        "general";
-      const jurisdiction = resolveJurisdiction(caseRecord, ctx.user);
-
-      const systemPrompt = buildChatSystemPrompt(
-        caseType,
-        jurisdiction,
-        analysisSummary,
-      );
-
       // Fetch recent messages for context (last 20)
-      const recentMessages = await ctx.db
-        .select({
-          role: chatMessages.role,
-          content: chatMessages.content,
-        })
-        .from(chatMessages)
-        .where(
-          and(
+      const messageConditions = input.caseId
+        ? [
             eq(chatMessages.caseId, input.caseId),
             input.documentId
               ? eq(chatMessages.documentId, input.documentId)
               : sql`${chatMessages.documentId} IS NULL`,
-          ),
-        )
+          ]
+        : [eq(chatMessages.contractId, scopeContractId!)];
+
+      const recentMessages = await ctx.db
+        .select({ role: chatMessages.role, content: chatMessages.content })
+        .from(chatMessages)
+        .where(and(...messageConditions))
         .orderBy(desc(chatMessages.createdAt))
         .limit(20);
 
@@ -226,7 +296,6 @@ export const chatRouter = router({
           content: m.content,
         }));
 
-      // Add current user message
       conversationHistory.push({ role: "user", content: input.content });
 
       // Call Claude first — only persist messages on success
@@ -251,7 +320,8 @@ export const chatRouter = router({
         .insert(chatMessages)
         .values({
           userId: ctx.user.id,
-          caseId: input.caseId,
+          caseId: scopeCaseId,
+          contractId: scopeContractId,
           documentId: input.documentId ?? null,
           role: "user",
           content: input.content,
@@ -263,7 +333,8 @@ export const chatRouter = router({
         .insert(chatMessages)
         .values({
           userId: ctx.user.id,
-          caseId: input.caseId,
+          caseId: scopeCaseId,
+          contractId: scopeContractId,
           documentId: input.documentId ?? null,
           role: "assistant",
           content: assistantContent,
@@ -272,16 +343,14 @@ export const chatRouter = router({
         .returning();
 
       // Check if we need to inject compliance reminder (every 5th user message)
+      const countConditions = input.caseId
+        ? [eq(chatMessages.caseId, input.caseId), eq(chatMessages.userId, ctx.user.id), eq(chatMessages.role, "user")]
+        : [eq(chatMessages.contractId, scopeContractId!), eq(chatMessages.userId, ctx.user.id), eq(chatMessages.role, "user")];
+
       const [{ count: totalUserMessages }] = await ctx.db
         .select({ count: sql<number>`count(*)::int` })
         .from(chatMessages)
-        .where(
-          and(
-            eq(chatMessages.caseId, input.caseId),
-            eq(chatMessages.userId, ctx.user.id),
-            eq(chatMessages.role, "user"),
-          ),
-        );
+        .where(and(...countConditions));
 
       const includeDisclaimer = totalUserMessages % 5 === 0;
 

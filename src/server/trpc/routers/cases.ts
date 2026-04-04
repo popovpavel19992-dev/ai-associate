@@ -5,6 +5,7 @@ import { router, protectedProcedure } from "../trpc";
 import { cases } from "../../db/schema/cases";
 import { documents } from "../../db/schema/documents";
 import { documentAnalyses } from "../../db/schema/document-analyses";
+import { contracts } from "../../db/schema/contracts";
 import { calculateCredits, checkCredits, decrementCredits, refundCredits } from "../../services/credits";
 import { generateDocx, generatePlainTextReport } from "../../services/export";
 import { inngest } from "../../inngest/client";
@@ -95,7 +96,21 @@ export const casesRouter = router({
         .from(documentAnalyses)
         .where(eq(documentAnalyses.caseId, input.caseId));
 
-      return { ...caseRecord, documents: docs, analyses };
+      const linkedContracts = await ctx.db
+        .select({
+          id: contracts.id,
+          name: contracts.name,
+          status: contracts.status,
+          filename: contracts.filename,
+          riskScore: contracts.riskScore,
+          detectedContractType: contracts.detectedContractType,
+          createdAt: contracts.createdAt,
+        })
+        .from(contracts)
+        .where(and(eq(contracts.linkedCaseId, input.caseId), eq(contracts.userId, ctx.user.id)))
+        .orderBy(contracts.createdAt);
+
+      return { ...caseRecord, documents: docs, analyses, linkedContracts };
     }),
 
   analyze: protectedProcedure
