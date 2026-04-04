@@ -71,14 +71,22 @@ export const contractAnalyze = inngest.createFunction(
         caseBrief = linkedCase?.caseBrief ?? null;
       }
 
-      const { output } = await analyzeContract(extraction.text, caseBrief);
+      const sections = (contract.selectedSections as string[]) ?? [];
+      const contractType = contract.overrideContractType ?? contract.detectedContractType ?? "general";
+
+      const { output } = await analyzeContract(
+        extraction.text,
+        sections,
+        contractType,
+        caseBrief ?? undefined,
+      );
 
       await db
         .update(contracts)
         .set({
-          riskScore: output.riskScore,
-          analysisSections: output.analysisSections,
-          detectedContractType: output.detectedContractType,
+          riskScore: output.risk_assessment.score,
+          analysisSections: output,
+          detectedContractType: output.executive_summary.contract_type,
         })
         .where(eq(contracts.id, contractId));
 
@@ -89,29 +97,18 @@ export const contractAnalyze = inngest.createFunction(
     await step.run("extract-clauses", async () => {
       if (!analysis.clauses || analysis.clauses.length === 0) return;
 
-      const clauseValues = analysis.clauses.map(
-        (clause: {
-          clauseNumber: string;
-          title: string;
-          originalText: string;
-          clauseType: "standard" | "unusual" | "favorable" | "unfavorable";
-          riskLevel: "critical" | "warning" | "info" | "ok";
-          summary: string;
-          annotation: string;
-          suggestedEdit: string | null;
-        }, idx: number) => ({
-          contractId,
-          clauseNumber: clause.clauseNumber,
-          title: clause.title,
-          originalText: clause.originalText,
-          clauseType: clause.clauseType,
-          riskLevel: clause.riskLevel,
-          summary: clause.summary,
-          annotation: clause.annotation,
-          suggestedEdit: clause.suggestedEdit ?? null,
-          sortOrder: idx,
-        }),
-      );
+      const clauseValues = analysis.clauses.map((clause, idx) => ({
+        contractId,
+        clauseNumber: clause.number,
+        title: clause.title,
+        originalText: clause.original_text,
+        clauseType: clause.type,
+        riskLevel: clause.risk_level,
+        summary: clause.summary,
+        annotation: clause.annotation,
+        suggestedEdit: clause.suggested_edit ?? null,
+        sortOrder: idx,
+      }));
 
       await db.insert(contractClauses).values(clauseValues);
     });

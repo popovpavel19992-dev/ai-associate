@@ -101,33 +101,23 @@ export const contractCompare = inngest.createFunction(
       const clauseBMap = new Map(clausesB.map((c) => [c.clauseNumber, c.id]));
 
       // Batch insert clause diffs
-      if (output.diffs && output.diffs.length > 0) {
-        const diffValues = output.diffs.map(
-          (diff: {
-            clauseARef: string | null;
-            clauseBRef: string | null;
-            diffType: "added" | "removed" | "modified" | "unchanged";
-            impact: "positive" | "negative" | "neutral";
-            title: string;
-            description: string;
-            recommendation: string | null;
-          }, idx: number) => ({
-            comparisonId,
-            clauseAId: diff.clauseARef ? (clauseAMap.get(diff.clauseARef) ?? null) : null,
-            clauseBId: diff.clauseBRef ? (clauseBMap.get(diff.clauseBRef) ?? null) : null,
-            diffType: diff.diffType,
-            impact: diff.impact,
-            title: diff.title,
-            description: diff.description,
-            recommendation: diff.recommendation ?? null,
-            sortOrder: idx,
-          }),
-        );
+      if (output.changes && output.changes.length > 0) {
+        const diffValues = output.changes.map((change, idx) => ({
+          comparisonId,
+          clauseAId: change.clause_ref_a ? (clauseAMap.get(change.clause_ref_a) ?? null) : null,
+          clauseBId: change.clause_ref_b ? (clauseBMap.get(change.clause_ref_b) ?? null) : null,
+          diffType: change.diff_type,
+          impact: change.impact,
+          title: change.title,
+          description: change.description,
+          recommendation: change.recommendation ?? null,
+          sortOrder: idx,
+        }));
 
         await db.insert(contractClauseDiffs).values(diffValues);
       }
 
-      return { diffCount: output.diffs?.length ?? 0 };
+      return { diffCount: output.changes?.length ?? 0 };
     });
 
     // Step 3: Mark ready
