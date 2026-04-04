@@ -7,7 +7,54 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 
-type Stage = "idle" | "uploading" | "creating" | "comparing" | "error";
+type Stage = "idle" | "hashing" | "uploading" | "creating" | "comparing" | "error";
+
+async function computeSha256(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function uploadFileToS3(file: File): Promise<{
+  s3Key: string;
+  fileType: string;
+  checksum: string;
+}> {
+  // 1. Compute SHA-256 hash
+  const checksum = await computeSha256(file);
+
+  // 2. Get presigned URL
+  const presignRes = await fetch("/api/upload/presign-contract", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      filename: file.name,
+      contentType: file.type,
+      fileSize: file.size,
+    }),
+  });
+
+  if (!presignRes.ok) {
+    const err = await presignRes.json();
+    throw new Error(err.error ?? "Failed to get upload URL");
+  }
+
+  const { uploadUrl, s3Key, fileType } = await presignRes.json();
+
+  // 3. Upload to S3
+  const uploadRes = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": file.type },
+    body: file,
+  });
+
+  if (!uploadRes.ok) {
+    throw new Error("Failed to upload file to storage");
+  }
+
+  return { s3Key, fileType, checksum };
+}
 
 export default function DirectComparePage() {
   const router = useRouter();
@@ -52,34 +99,43 @@ export default function DirectComparePage() {
     if (!fileA || !fileB) return;
 
     setError(null);
-    setStage("creating");
 
     try {
-      // Create both contracts (they need S3 keys, so in a real flow
-      // we'd upload first. For now, create with placeholder keys that
-      // the upload presign flow would provide.)
+      // 1. Upload both files to S3
+      setStage("hashing");
+      const [uploadA, uploadB] = await Promise.all([
+        uploadFileToS3(fileA),
+        uploadFileToS3(fileB),
+      ]);
+
+      setStage("uploading");
+
+      // 2. Create both contracts with real S3 keys
+      setStage("creating");
       const nameA = fileA.name.replace(/\.[^.]+$/, "");
       const nameB = fileB.name.replace(/\.[^.]+$/, "");
 
       const [contractA, contractB] = await Promise.all([
         createContract.mutateAsync({
           name: nameA,
-          s3Key: `uploads/${crypto.randomUUID()}/${fileA.name}`,
+          s3Key: uploadA.s3Key,
           filename: fileA.name,
-          fileType: fileA.type || undefined,
+          fileType: uploadA.fileType || undefined,
           fileSize: fileA.size || undefined,
+          checksum: uploadA.checksum,
         }),
         createContract.mutateAsync({
           name: nameB,
-          s3Key: `uploads/${crypto.randomUUID()}/${fileB.name}`,
+          s3Key: uploadB.s3Key,
           filename: fileB.name,
-          fileType: fileB.type || undefined,
+          fileType: uploadB.fileType || undefined,
           fileSize: fileB.size || undefined,
+          checksum: uploadB.checksum,
         }),
       ]);
 
+      // 3. Create comparison
       setStage("comparing");
-
       const { comparison } = await createComparison.mutateAsync({
         contractAId: contractA.id,
         contractBId: contractB.id,
@@ -92,14 +148,21 @@ export default function DirectComparePage() {
     }
   }, [fileA, fileB, createContract, createComparison, router]);
 
-  if (stage === "creating" || stage === "comparing") {
+  const stageLabels: Partial<Record<Stage, string>> = {
+    hashing: "Computing checksums...",
+    uploading: "Uploading files...",
+    creating: "Creating contracts...",
+    comparing: "Starting comparison...",
+  };
+
+  if (stage === "hashing" || stage === "uploading" || stage === "creating" || stage === "comparing") {
     return (
       <div className="mx-auto max-w-2xl px-4 py-8">
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-12">
             <Loader2 className="size-6 animate-spin text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              {stage === "creating" ? "Creating contracts..." : "Starting comparison..."}
+              {stageLabels[stage]}
             </p>
           </CardContent>
         </Card>
