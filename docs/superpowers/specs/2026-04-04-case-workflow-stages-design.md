@@ -4,6 +4,18 @@
 
 Extend ClearTerms Case Management with a stage-based workflow system. Each case type (7 total) gets its own pipeline of stages. Stages are stored in the database as templates, with an `isCustom` flag to support user-defined stages in the future. When a stage changes, the system logs an event to the timeline and creates tasks from stage templates.
 
+### Case Type Resolution
+
+The existing `cases` table has two type fields: `detectedCaseType` (set by AI analysis) and `overrideCaseType` (user override). The resolved case type used throughout this spec is:
+
+```ts
+const resolvedCaseType = caseRecord.overrideCaseType ?? caseRecord.detectedCaseType ?? "general";
+```
+
+- At **create** time: `overrideCaseType ?? "general"` (detection has not run yet).
+- At **changeStage** time: full resolution with fallback to `"general"`.
+- If **detectedCaseType changes** after analysis (e.g., auto-detected type differs from override): no effect on stages — `overrideCaseType` takes precedence. If neither override exists and detection changes the type, the stage pipeline remains on the old type. The user can manually change stage if needed.
+
 ## Data Model
 
 ### New Tables
@@ -15,7 +27,7 @@ Stores stage templates per case type. System-defined stages have `isCustom=false
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | id | UUID | PK, default gen_random_uuid() | |
-| caseType | text | NOT NULL | One of 7 case types |
+| caseType | pgEnum(`case_type_enum`) | NOT NULL | Uses existing CASE_TYPES values |
 | name | text | NOT NULL | Display name ("Intake", "Discovery") |
 | slug | text | NOT NULL | URL-safe identifier |
 | description | text | NOT NULL | What happens at this stage |
@@ -56,7 +68,7 @@ Timeline of events for a case. Both system-generated (stage changes, document up
 | title | text | NOT NULL | Human-readable event title |
 | description | text | nullable | Additional details |
 | metadata | JSONB | nullable | Structured data (fromStage, toStage, documentId, etc.) |
-| actorId | UUID | nullable | Who performed the action |
+| actorId | UUID | nullable, FK → users (SET NULL on delete) | Who performed the action |
 | occurredAt | timestamp with timezone | NOT NULL, default now() | When event happened |
 | createdAt | timestamp with timezone | NOT NULL, default now() | When record was created |
 
@@ -108,7 +120,7 @@ Index: `(caseId, occurredAt DESC)` for paginated timeline queries.
 4. **Negotiation** (#F59E0B) — Settlement discussions, mediation
 5. **Litigation / Arbitration** (#EF4444) — File suit or initiate arbitration
 6. **Resolution** (#10B981) — Settlement agreement or judgment
-7. **Closed** (#6B7280) �� Enforced, paid, archived
+7. **Closed** (#6B7280) — Enforced, paid, archived
 
 ### Criminal Defense (7 stages)
 
@@ -147,26 +159,28 @@ Index: `(caseId, occurredAt DESC)` for paginated timeline queries.
 - **Type:** Mutation
 - **Input:** `{ caseId: string, stageId: string }`
 - **Auth:** Requires case ownership (or team membership — 2.1.4)
-- **Logic:**
+- **Logic (all inside `db.transaction()`):**
   1. Verify case exists and belongs to user
-  2. Verify stageId belongs to correct caseType
-  3. Update `cases.stageId` and `cases.stageChangedAt`
-  4. Insert `case_events` record (type: `stage_changed`, metadata: `{ fromStageId, toStageId, fromStageName, toStageName }`)
-  5. Return updated case with new stage info
+  2. If `stageId` equals current `cases.stageId` → no-op, return current case
+  3. Resolve case type via `overrideCaseType ?? detectedCaseType ?? "general"`
+  4. Verify stageId belongs to resolved caseType
+  5. Update `cases.stageId` and `cases.stageChangedAt`
+  6. Insert `case_events` record (type: `stage_changed`, metadata: `{ fromStageId, toStageId, fromStageName, toStageName }`)
+  7. Return updated case with new stage info
 - **Credits:** Free (no credit cost)
 
 #### `cases.getStages`
 
-- **Type:** Query
-- **Input:** `{ caseType: string }`
+- **Type:** Query (protectedProcedure)
+- **Input:** `{ caseType: z.enum(CASE_TYPES) }`
 - **Returns:** Array of stages with their task templates, ordered by `sortOrder`
 
 #### `cases.getEvents`
 
 - **Type:** Query
-- **Input:** `{ caseId: string, limit?: number (default 20), cursor?: string }`
+- **Input:** `{ caseId: string, limit?: number (default 20), offset?: number (default 0) }`
 - **Auth:** Requires case ownership
-- **Returns:** Paginated events ordered by `occurredAt DESC`
+- **Returns:** Paginated events ordered by `occurredAt DESC`, with `total` count for UI pagination
 
 #### `cases.addEvent`
 
@@ -180,10 +194,11 @@ Index: `(caseId, occurredAt DESC)` for paginated timeline queries.
 #### `cases.create`
 
 After creating the case:
-1. Look up Intake stage for the case's type
-2. Set `stageId` to Intake stage ID
-3. Set `stageChangedAt` to now
-4. Insert `case_events` record (type: `stage_changed`, title: "Case created", metadata: `{ toStageId, toStageName: "Intake" }`)
+1. Resolve case type: `overrideCaseType ?? "general"`
+2. Look up Intake stage for the resolved type
+3. If Intake stage found: set `stageId` to Intake stage ID, set `stageChangedAt` to now
+4. If Intake stage not found (seed not run): leave `stageId` as null — gracefully handled in UI
+5. Insert `case_events` record (type: `stage_changed`, title: "Case created", metadata: `{ toStageId, toStageName: "Intake" }`)
 
 #### `cases.getById`
 
@@ -249,6 +264,30 @@ Refactor `src/app/(app)/cases/[id]/page.tsx`:
 - Timeline tab → `CaseTimeline` component
 - Existing document/contract/chat content moves into respective tabs
 
+## RLS Policies
+
+### `case_stages` and `stage_task_templates`
+
+System-wide read-only template data. All authenticated users can read, no direct writes.
+
+```sql
+ALTER TABLE case_stages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "read_stage_templates" ON case_stages FOR SELECT USING (true);
+
+ALTER TABLE stage_task_templates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "read_task_templates" ON stage_task_templates FOR SELECT USING (true);
+```
+
+### `case_events`
+
+Per-case data — inherits case ownership pattern (same as `documents`).
+
+```sql
+ALTER TABLE case_events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "case_events_owner" ON case_events FOR ALL
+  USING (case_id IN (SELECT id FROM cases WHERE user_id = auth.uid()));
+```
+
 ## Seed Script
 
 `src/server/db/seed/case-stages.ts` — executable via `npx tsx src/server/db/seed/case-stages.ts`
@@ -263,7 +302,8 @@ Inserts all stage templates and task templates for 7 case types. Uses upsert (ON
 |------|---------|
 | `src/server/db/schema/case-stages.ts` | DB tables: case_stages, stage_task_templates, case_events |
 | `src/server/db/seed/case-stages.ts` | Seed script for stage templates |
-| `src/lib/constants/case-stages.ts` | Stage definitions, colors, descriptions |
+| `src/lib/case-stages.ts` | Stage definitions, colors, descriptions |
+| `src/server/db/migrations/NNNN_case_workflow_stages.sql` | Migration: new tables, alter cases, RLS policies |
 | `src/components/cases/stage-pipeline.tsx` | Pipeline bar component |
 | `src/components/cases/stage-selector.tsx` | Stage dropdown selector |
 | `src/components/cases/case-timeline.tsx` | Timeline component |
@@ -295,6 +335,7 @@ Inserts all stage templates and task templates for 7 case types. Uses upsert (ON
 
 - `changeStage` — verify stage updates, event created, returns correct data
 - `changeStage` — reject invalid stageId (wrong case type)
+- `changeStage` — no-op when called with current stage (no duplicate event)
 - `getStages` — returns correct stages for each case type, ordered by sortOrder
 - `getEvents` — pagination works, ordered by occurredAt DESC
 - `addEvent` — creates manual event with correct fields
