@@ -19,9 +19,24 @@ export const eventTypeEnum = pgEnum("event_type", [
   "manual",
   "contract_linked",
   "draft_linked",
+  "task_added",
+  "task_completed",
+  "task_removed",
+  "tasks_auto_created",
 ]);
 
 export const taskPriorityEnum = pgEnum("task_priority", ["low", "medium", "high", "urgent"]);
+
+export const taskStatusEnum = pgEnum("task_status", ["todo", "in_progress", "done"]);
+
+export const taskCategoryEnum = pgEnum("task_category", [
+  "filing",
+  "research",
+  "client_communication",
+  "evidence",
+  "court",
+  "administrative",
+]);
 
 export const caseStages = pgTable(
   "case_stages",
