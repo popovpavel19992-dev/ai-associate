@@ -22,11 +22,24 @@ export const contractCompare = inngest.createFunction(
     },
   },
   async ({ event, step }) => {
-    const { comparisonId, contractAId, contractBId } = event.data as {
-      comparisonId: string;
-      contractAId: string;
-      contractBId: string;
-    };
+    const { comparisonId } = event.data as { comparisonId: string };
+
+    // Step 0: Fetch contract IDs from the comparison record (source of truth)
+    const { contractAId, contractBId } = await step.run("fetch-comparison", async () => {
+      const [comparison] = await db
+        .select({
+          contractAId: contractComparisons.contractAId,
+          contractBId: contractComparisons.contractBId,
+        })
+        .from(contractComparisons)
+        .where(eq(contractComparisons.id, comparisonId));
+
+      if (!comparison) {
+        throw new Error(`Comparison ${comparisonId} not found`);
+      }
+
+      return { contractAId: comparison.contractAId, contractBId: comparison.contractBId };
+    });
 
     // Step 1: Ensure both contracts are analyzed
     await step.run("ensure-analyses", async () => {
