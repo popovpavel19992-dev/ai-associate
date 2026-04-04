@@ -7,6 +7,7 @@ import { cases } from "../../db/schema/cases";
 import { documents } from "../../db/schema/documents";
 import { documentAnalyses } from "../../db/schema/document-analyses";
 import { contracts, contractClauses } from "../../db/schema/contracts";
+import { contractDrafts, draftClauses } from "../../db/schema/contract-drafts";
 import {
   CHAT_RATE_LIMIT_PER_HOUR,
   PLAN_LIMITS,
@@ -93,15 +94,16 @@ export const chatRouter = router({
       z.object({
         caseId: z.string().uuid().optional(),
         contractId: z.string().uuid().optional(),
+        draftId: z.string().uuid().optional(),
         documentId: z.string().uuid().optional(),
         clauseRef: z.string().optional(),
         content: z.string().min(1).max(10_000),
       }).refine(
         (data) => {
-          const has = [data.caseId, data.contractId].filter(Boolean).length;
+          const has = [data.caseId, data.contractId, data.draftId].filter(Boolean).length;
           return has === 1;
         },
-        { message: "Exactly one of caseId or contractId must be provided" },
+        { message: "Exactly one of caseId, contractId, or draftId must be provided" },
       ),
     )
     .mutation(async ({ ctx, input }) => {
@@ -128,6 +130,7 @@ export const chatRouter = router({
       let systemPrompt: string;
       let scopeCaseId: string | null = null;
       let scopeContractId: string | null = null;
+      let scopeDraftId: string | null = null;
 
       if (input.caseId) {
         // --- Case-scoped chat (existing logic) ---
@@ -201,9 +204,9 @@ export const chatRouter = router({
         const jurisdiction = resolveJurisdiction(caseRecord, ctx.user);
 
         systemPrompt = buildChatSystemPrompt(caseType, jurisdiction, analysisSummary);
-      } else {
+      } else if (input.contractId) {
         // --- Contract-scoped chat ---
-        scopeContractId = input.contractId!;
+        scopeContractId = input.contractId;
 
         const [contract] = await ctx.db
           .select()
@@ -270,6 +273,70 @@ export const chatRouter = router({
         }
 
         systemPrompt = buildChatSystemPrompt(contractType, null, contractContext);
+      } else if (input.draftId) {
+        // --- Draft-scoped chat ---
+        scopeDraftId = input.draftId;
+
+        const [draft] = await ctx.db
+          .select()
+          .from(contractDrafts)
+          .where(and(eq(contractDrafts.id, scopeDraftId), eq(contractDrafts.userId, ctx.user.id)))
+          .limit(1);
+
+        if (!draft) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Draft not found" });
+        }
+
+        // Plan message cap (reuse per-case limit)
+        const plan = (ctx.user.plan ?? "trial") as Plan;
+        const msgLimit = PLAN_LIMITS[plan].chatMessagesPerCase;
+
+        if (msgLimit !== Infinity) {
+          const [{ count: draftMessageCount }] = await ctx.db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(chatMessages)
+            .where(
+              and(
+                eq(chatMessages.draftId, scopeDraftId),
+                eq(chatMessages.userId, ctx.user.id),
+                eq(chatMessages.role, "user"),
+              ),
+            );
+
+          if (draftMessageCount >= msgLimit) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: `Chat message limit reached for your plan (${msgLimit} messages per draft). Upgrade to continue.`,
+            });
+          }
+        }
+
+        // Gather draft clauses for AI context
+        const clauses = await ctx.db
+          .select()
+          .from(draftClauses)
+          .where(eq(draftClauses.draftId, scopeDraftId))
+          .orderBy(draftClauses.sortOrder);
+
+        let draftContext = `Draft Contract: ${draft.name}\nType: ${draft.contractType}\nParties: ${draft.partyA} (${draft.partyARole}) & ${draft.partyB} (${draft.partyBRole})\n`;
+
+        if (clauses.length > 0) {
+          const clausesSummary = clauses
+            .map((c) => `[${c.clauseNumber ?? "?"}] ${c.title ?? "Untitled"} (${c.clauseType ?? "standard"}): ${(c.userEditedText ?? c.generatedText ?? "").slice(0, 500)}`)
+            .join("\n");
+          draftContext += `\nClauses:\n${clausesSummary.slice(0, 40_000)}`;
+        }
+
+        if (input.clauseRef) {
+          const targetClause = clauses.find((c) => c.clauseNumber === input.clauseRef);
+          if (targetClause) {
+            draftContext += `\n\nFOCUSED CLAUSE [${targetClause.clauseNumber}]:\nTitle: ${targetClause.title}\nText: ${targetClause.userEditedText ?? targetClause.generatedText}\nAI Notes: ${targetClause.aiNotes ?? "none"}`;
+          }
+        }
+
+        systemPrompt = buildChatSystemPrompt(draft.contractType, draft.jurisdiction, draftContext);
+      } else {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Exactly one of caseId, contractId, or draftId must be provided" });
       }
 
       // Fetch recent messages for context (last 20)
@@ -280,7 +347,9 @@ export const chatRouter = router({
               ? eq(chatMessages.documentId, input.documentId)
               : sql`${chatMessages.documentId} IS NULL`,
           ]
-        : [eq(chatMessages.contractId, scopeContractId!)];
+        : input.contractId
+          ? [eq(chatMessages.contractId, scopeContractId!)]
+          : [eq(chatMessages.draftId, scopeDraftId!)];
 
       const recentMessages = await ctx.db
         .select({ role: chatMessages.role, content: chatMessages.content })
@@ -322,6 +391,7 @@ export const chatRouter = router({
           userId: ctx.user.id,
           caseId: scopeCaseId,
           contractId: scopeContractId,
+          draftId: scopeDraftId,
           documentId: input.documentId ?? null,
           role: "user",
           content: input.content,
@@ -335,6 +405,7 @@ export const chatRouter = router({
           userId: ctx.user.id,
           caseId: scopeCaseId,
           contractId: scopeContractId,
+          draftId: scopeDraftId,
           documentId: input.documentId ?? null,
           role: "assistant",
           content: assistantContent,
@@ -345,7 +416,9 @@ export const chatRouter = router({
       // Check if we need to inject compliance reminder (every 5th user message)
       const countConditions = input.caseId
         ? [eq(chatMessages.caseId, input.caseId), eq(chatMessages.userId, ctx.user.id), eq(chatMessages.role, "user")]
-        : [eq(chatMessages.contractId, scopeContractId!), eq(chatMessages.userId, ctx.user.id), eq(chatMessages.role, "user")];
+        : input.contractId
+          ? [eq(chatMessages.contractId, scopeContractId!), eq(chatMessages.userId, ctx.user.id), eq(chatMessages.role, "user")]
+          : [eq(chatMessages.draftId, scopeDraftId!), eq(chatMessages.userId, ctx.user.id), eq(chatMessages.role, "user")];
 
       const [{ count: totalUserMessages }] = await ctx.db
         .select({ count: sql<number>`count(*)::int` })
@@ -364,42 +437,70 @@ export const chatRouter = router({
   list: protectedProcedure
     .input(
       z.object({
-        caseId: z.string().uuid(),
+        caseId: z.string().uuid().optional(),
+        draftId: z.string().uuid().optional(),
         documentId: z.string().uuid().optional(),
         limit: z.number().int().min(1).max(50).default(20),
         cursor: z.string().uuid().optional(),
-      }),
+      }).refine(
+        (data) => {
+          const has = [data.caseId, data.draftId].filter(Boolean).length;
+          return has === 1;
+        },
+        { message: "Exactly one of caseId or draftId must be provided" },
+      ),
     )
     .query(async ({ ctx, input }) => {
-      // Verify case ownership
-      const [caseRecord] = await ctx.db
-        .select({ id: cases.id })
-        .from(cases)
-        .where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)))
-        .limit(1);
+      let conditions: ReturnType<typeof eq>[] = [];
 
-      if (!caseRecord) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
-      }
+      if (input.draftId) {
+        // Verify draft ownership
+        const [draft] = await ctx.db
+          .select({ id: contractDrafts.id })
+          .from(contractDrafts)
+          .where(and(eq(contractDrafts.id, input.draftId), eq(contractDrafts.userId, ctx.user.id)))
+          .limit(1);
 
-      const conditions = [eq(chatMessages.caseId, input.caseId)];
+        if (!draft) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Draft not found" });
+        }
 
-      if (input.documentId) {
-        conditions.push(eq(chatMessages.documentId, input.documentId));
+        conditions = [eq(chatMessages.draftId, input.draftId)];
       } else {
-        conditions.push(sql`${chatMessages.documentId} IS NULL`);
+        // Verify case ownership
+        const [caseRecord] = await ctx.db
+          .select({ id: cases.id })
+          .from(cases)
+          .where(and(eq(cases.id, input.caseId!), eq(cases.userId, ctx.user.id)))
+          .limit(1);
+
+        if (!caseRecord) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
+        }
+
+        conditions = [eq(chatMessages.caseId, input.caseId!)];
+
+        if (input.documentId) {
+          conditions.push(eq(chatMessages.documentId, input.documentId));
+        } else {
+          conditions.push(sql`${chatMessages.documentId} IS NULL` as unknown as ReturnType<typeof eq>);
+        }
       }
 
       if (input.cursor) {
+        const cursorCondition = input.draftId
+          ? eq(chatMessages.draftId, input.draftId)
+          : eq(chatMessages.caseId, input.caseId!);
+
         const [cursorMsg] = await ctx.db
           .select({ createdAt: chatMessages.createdAt })
           .from(chatMessages)
-          .where(and(eq(chatMessages.id, input.cursor), eq(chatMessages.caseId, input.caseId)))
+          .where(and(eq(chatMessages.id, input.cursor), cursorCondition))
           .limit(1);
 
         if (cursorMsg) {
           conditions.push(
-            sql`${chatMessages.createdAt} < ${cursorMsg.createdAt}`,
+            sql`${chatMessages.createdAt} < ${cursorMsg.createdAt}` as unknown as ReturnType<typeof eq>,
           );
         }
       }
