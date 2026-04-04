@@ -4,7 +4,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { protectedProcedure, router } from "../trpc";
 import { cases } from "@/server/db/schema/cases";
 import { caseTasks } from "@/server/db/schema/case-tasks";
-import { caseStages } from "@/server/db/schema/case-stages";
+import { caseStages, caseEvents } from "@/server/db/schema/case-stages";
 
 async function assertCaseOwnership(
   ctx: { db: typeof import("@/server/db").db; user: { id: string } },
@@ -62,5 +62,58 @@ export const caseTasksRouter = router({
         stageColor: r.stageColor,
         stageSortOrder: r.stageSortOrder,
       }));
+    }),
+
+  getById: protectedProcedure
+    .input(z.object({ taskId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      return assertTaskOwnership(ctx, input.taskId);
+    }),
+
+  create: protectedProcedure
+    .input(
+      z.object({
+        caseId: z.string().uuid(),
+        title: z.string().min(1).max(500),
+        description: z.string().optional(),
+        priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+        category: z
+          .enum(["filing", "research", "client_communication", "evidence", "court", "administrative"])
+          .optional(),
+        dueDate: z.date().optional(),
+        stageId: z.string().uuid().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertCaseOwnership(ctx, input.caseId);
+
+      const result = await ctx.db.transaction(async (tx) => {
+        const [task] = await tx
+          .insert(caseTasks)
+          .values({
+            caseId: input.caseId,
+            stageId: input.stageId ?? null,
+            title: input.title,
+            description: input.description,
+            priority: input.priority,
+            category: input.category,
+            dueDate: input.dueDate,
+            status: "todo",
+            templateId: null,
+          })
+          .returning();
+
+        await tx.insert(caseEvents).values({
+          caseId: input.caseId,
+          type: "task_added",
+          title: `Task added: ${input.title}`,
+          metadata: { taskId: task.id },
+          actorId: ctx.user.id,
+        });
+
+        return task;
+      });
+
+      return result;
     }),
 });
