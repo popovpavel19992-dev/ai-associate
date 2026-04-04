@@ -5,13 +5,10 @@ import { contracts, contractClauses } from "../../db/schema/contracts";
 import { contractComparisons, contractClauseDiffs } from "../../db/schema/contract-comparisons";
 import { compareContracts } from "../../services/contract-claude";
 
-const POLL_INTERVAL_MS = 30_000;
-const MAX_POLL_MS = 10 * 60 * 1000;
-
 export const contractCompare = inngest.createFunction(
   {
     id: "contract-compare",
-    retries: 1,
+    retries: 3,
     triggers: [{ event: "contract/compare" }],
     onFailure: async ({ event }) => {
       const { comparisonId } = event.data.event.data as { comparisonId: string };
@@ -41,8 +38,8 @@ export const contractCompare = inngest.createFunction(
       return { contractAId: comparison.contractAId, contractBId: comparison.contractBId };
     });
 
-    // Step 1: Ensure both contracts are analyzed
-    await step.run("ensure-analyses", async () => {
+    // Step 1: Check contract statuses and trigger analyses if needed
+    const statuses = await step.run("check-contracts", async () => {
       const [contractA] = await db
         .select({ status: contracts.status })
         .from(contracts)
@@ -52,43 +49,62 @@ export const contractCompare = inngest.createFunction(
         .from(contracts)
         .where(eq(contracts.id, contractBId));
 
-      for (const [label, c, cId] of [
-        ["A", contractA, contractAId],
-        ["B", contractB, contractBId],
-      ] as const) {
-        if (c.status === "failed") {
+      return { a: contractA.status, b: contractB.status };
+    });
+
+    // Fail fast if either contract already failed
+    if (statuses.a === "failed" || statuses.b === "failed") {
+      await step.run("mark-failed-early", async () => {
+        await db
+          .update(contractComparisons)
+          .set({ status: "failed" })
+          .where(eq(contractComparisons.id, comparisonId));
+      });
+      throw new Error("One or both contracts have failed status");
+    }
+
+    // Trigger analysis for contracts that need it
+    if (statuses.a !== "ready" && statuses.a !== "analyzing") {
+      await step.run("trigger-analysis-a", async () => {
+        await inngest.send({ name: "contract/analyze", data: { contractId: contractAId } });
+      });
+    }
+
+    if (statuses.b !== "ready" && statuses.b !== "analyzing") {
+      await step.run("trigger-analysis-b", async () => {
+        await inngest.send({ name: "contract/analyze", data: { contractId: contractBId } });
+      });
+    }
+
+    // Wait for analyses to complete (only if not both ready yet)
+    if (statuses.a !== "ready" || statuses.b !== "ready") {
+      await step.sleep("wait-for-analyses", "30s");
+
+      // Re-check statuses after waiting
+      await step.run("verify-ready", async () => {
+        const [a] = await db
+          .select({ status: contracts.status })
+          .from(contracts)
+          .where(eq(contracts.id, contractAId));
+        const [b] = await db
+          .select({ status: contracts.status })
+          .from(contracts)
+          .where(eq(contracts.id, contractBId));
+
+        if (a.status === "failed" || b.status === "failed") {
           await db
             .update(contractComparisons)
             .set({ status: "failed" })
             .where(eq(contractComparisons.id, comparisonId));
-          throw new Error(`Contract ${label} (${cId}) has failed status`);
-        }
-
-        if (c.status !== "ready") {
-          // Trigger analysis for this contract
-          await inngest.send({ name: "contract/analyze", data: { contractId: cId } });
-        }
-      }
-    });
-
-    // Poll until both are ready
-    await step.run("poll-ready", async () => {
-      const start = Date.now();
-      while (Date.now() - start < MAX_POLL_MS) {
-        const [a] = await db.select({ status: contracts.status }).from(contracts).where(eq(contracts.id, contractAId));
-        const [b] = await db.select({ status: contracts.status }).from(contracts).where(eq(contracts.id, contractBId));
-
-        if (a.status === "failed" || b.status === "failed") {
-          await db.update(contractComparisons).set({ status: "failed" }).where(eq(contractComparisons.id, comparisonId));
           throw new Error("One or both contracts failed analysis");
         }
 
-        if (a.status === "ready" && b.status === "ready") return;
-
-        await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
-      }
-      throw new Error("Timed out waiting for contract analyses");
-    });
+        if (a.status !== "ready" || b.status !== "ready") {
+          // Throw a retryable error -- Inngest will retry the function
+          throw new Error("Contracts not yet ready, retrying");
+        }
+      });
+    }
 
     // Step 2: Compare clauses
     const comparisonResult = await step.run("compare", async () => {
