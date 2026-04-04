@@ -1,12 +1,25 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import { notFound } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { ReportView } from "@/components/reports/report-view";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LinkedContractsTab } from "@/components/contracts/linked-contracts-tab";
+import { StagePipeline } from "@/components/cases/stage-pipeline";
+import { StageSelector } from "@/components/cases/stage-selector";
+import { CaseTimeline } from "@/components/cases/case-timeline";
+import { CaseOverview } from "@/components/cases/case-overview";
+import { cn } from "@/lib/utils";
+
+const TABS = [
+  { key: "overview", label: "Overview" },
+  { key: "report", label: "Report" },
+  { key: "timeline", label: "Timeline" },
+  { key: "contracts", label: "Contracts" },
+] as const;
+
+type TabKey = (typeof TABS)[number]["key"];
 
 export default function CaseDetailPage({
   params,
@@ -15,6 +28,7 @@ export default function CaseDetailPage({
 }) {
   const { id } = use(params);
   const utils = trpc.useUtils();
+  const [activeTab, setActiveTab] = useState<TabKey>("overview");
 
   const { data: caseData, isLoading } = trpc.cases.getById.useQuery(
     { caseId: id },
@@ -30,6 +44,10 @@ export default function CaseDetailPage({
     },
   });
 
+  const changeStage = trpc.cases.changeStage.useMutation({
+    onSuccess: () => utils.cases.getById.invalidate({ caseId: id }),
+  });
+
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -42,9 +60,6 @@ export default function CaseDetailPage({
     notFound();
   }
 
-  const caseType =
-    caseData.overrideCaseType ?? caseData.detectedCaseType ?? "general";
-
   const linkedContracts = (caseData as Record<string, unknown>).linkedContracts as
     | Array<{
         id: string;
@@ -56,25 +71,94 @@ export default function CaseDetailPage({
       }>
     | undefined;
 
+  const stages = ((caseData as Record<string, unknown>).stages ?? []) as Array<{
+    id: string;
+    name: string;
+    color: string;
+    sortOrder: number;
+    description: string;
+  }>;
+
+  const currentStage = (caseData as Record<string, unknown>).stage as {
+    id: string;
+    name: string;
+    color: string;
+    description: string;
+  } | null;
+
+  const recentEvents = ((caseData as Record<string, unknown>).recentEvents ?? []) as Array<{
+    id: string;
+    title: string;
+    type: string;
+    occurredAt: Date;
+  }>;
+
+  const stageTaskTemplatesList = ((caseData as Record<string, unknown>).stageTaskTemplates ?? []) as Array<{
+    title: string;
+    priority: string;
+  }>;
+
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col">
-      <Tabs defaultValue="report" className="flex flex-1 flex-col">
-        <TabsList className="mx-4 mt-2 w-fit">
-          <TabsTrigger value="report">Report</TabsTrigger>
-          <TabsTrigger value="contracts">
-            Linked Contracts
-            {(linkedContracts?.length ?? 0) > 0 && (
-              <span className="ml-1.5 text-xs text-muted-foreground">
-                ({linkedContracts!.length})
-              </span>
-            )}
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="report" className="flex-1">
+      {/* Pipeline Bar */}
+      {stages.length > 0 && (
+        <StagePipeline
+          stages={stages}
+          currentStageId={caseData.stageId ?? null}
+        />
+      )}
+
+      {/* Tab Navigation + Stage Selector */}
+      <div className="flex items-center justify-between border-b border-zinc-800 px-4">
+        <div className="flex gap-0">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              className={cn(
+                "border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+                activeTab === tab.key
+                  ? "border-white text-white"
+                  : "border-transparent text-zinc-500 hover:text-zinc-300",
+              )}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {tab.label}
+              {tab.key === "contracts" && (linkedContracts?.length ?? 0) > 0 && (
+                <span className="ml-1.5 text-xs text-muted-foreground">
+                  ({linkedContracts!.length})
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+        {stages.length > 0 && (
+          <StageSelector
+            stages={stages}
+            currentStageId={caseData.stageId ?? null}
+            onSelect={(stageId) => changeStage.mutate({ caseId: id, stageId })}
+            disabled={changeStage.isPending}
+          />
+        )}
+      </div>
+
+      {/* Tab Content */}
+      <div className="flex-1 overflow-y-auto">
+        {activeTab === "overview" && (
+          <CaseOverview
+            stage={currentStage}
+            stageChangedAt={caseData.stageChangedAt}
+            description={caseData.description}
+            documentsCount={caseData.documents.length}
+            contractsCount={linkedContracts?.length ?? 0}
+            stageTaskTemplates={stageTaskTemplatesList}
+          />
+        )}
+
+        {activeTab === "report" && (
           <ReportView
             caseId={caseData.id}
             caseName={caseData.name}
-            caseType={caseType}
+            caseType={caseData.overrideCaseType ?? caseData.detectedCaseType ?? "general"}
             status={caseData.status}
             caseBrief={caseData.caseBrief}
             documents={caseData.documents}
@@ -87,14 +171,21 @@ export default function CaseDetailPage({
             }
             isReanalyzing={reanalyze.isPending}
           />
-        </TabsContent>
-        <TabsContent value="contracts" className="px-4 py-4">
-          <LinkedContractsTab
-            linkedContracts={linkedContracts ?? []}
-            caseId={caseData.id}
-          />
-        </TabsContent>
-      </Tabs>
+        )}
+
+        {activeTab === "timeline" && (
+          <CaseTimeline caseId={id} />
+        )}
+
+        {activeTab === "contracts" && (
+          <div className="px-4 py-4">
+            <LinkedContractsTab
+              linkedContracts={linkedContracts ?? []}
+              caseId={caseData.id}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
