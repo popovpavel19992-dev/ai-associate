@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../trpc";
 import { contracts } from "../../db/schema/contracts";
@@ -167,7 +167,7 @@ export const comparisonsRouter = router({
         .limit(limit)
         .offset(offset);
 
-      // Fetch contract names for all comparisons
+      // Fetch contract names for all comparisons in a single query
       const contractIds = new Set<string>();
       for (const row of rows) {
         contractIds.add(row.contractAId);
@@ -175,13 +175,14 @@ export const comparisonsRouter = router({
       }
 
       const contractNames = new Map<string, string>();
-      for (const id of contractIds) {
-        const [c] = await ctx.db
-          .select({ name: contracts.name })
+      if (contractIds.size > 0) {
+        const contractRows = await ctx.db
+          .select({ id: contracts.id, name: contracts.name })
           .from(contracts)
-          .where(eq(contracts.id, id))
-          .limit(1);
-        if (c) contractNames.set(id, c.name);
+          .where(inArray(contracts.id, [...contractIds]));
+        for (const c of contractRows) {
+          contractNames.set(c.id, c.name);
+        }
       }
 
       return rows.map((row) => ({
