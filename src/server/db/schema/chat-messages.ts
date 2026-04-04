@@ -3,6 +3,7 @@ import { users } from "./users";
 import { cases } from "./cases";
 import { documents } from "./documents";
 import { contracts } from "./contracts";
+import { contractDrafts } from "./contract-drafts";
 
 export const chatRoleEnum = pgEnum("chat_role", ["user", "assistant"]);
 
@@ -11,6 +12,7 @@ export const chatMessages = pgTable("chat_messages", {
   userId: uuid("user_id").references(() => users.id).notNull(),
   caseId: uuid("case_id").references(() => cases.id, { onDelete: "cascade" }),
   contractId: uuid("contract_id").references(() => contracts.id, { onDelete: "cascade" }),
+  draftId: uuid("draft_id").references(() => contractDrafts.id, { onDelete: "cascade" }),
   documentId: uuid("document_id").references(() => documents.id, { onDelete: "set null" }),
   role: chatRoleEnum("role").notNull(),
   content: text("content").notNull(),
