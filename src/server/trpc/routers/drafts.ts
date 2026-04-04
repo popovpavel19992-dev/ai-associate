@@ -5,6 +5,7 @@ import { router, protectedProcedure } from "../trpc";
 import { contractDrafts, draftClauses } from "../../db/schema/contract-drafts";
 import { contracts } from "../../db/schema/contracts";
 import { cases } from "../../db/schema/cases";
+import { caseEvents } from "../../db/schema/case-stages";
 import { checkCredits, decrementCredits, refundCredits } from "../../services/credits";
 import { rewriteClause } from "../../services/contract-generate";
 import { inngest } from "../../inngest/client";
@@ -76,6 +77,15 @@ export const draftsRouter = router({
           deleteAt,
         })
         .returning();
+
+      if (input.linkedCaseId) {
+        await ctx.db.insert(caseEvents).values({
+          caseId: input.linkedCaseId,
+          type: "draft_linked",
+          title: `Draft linked: ${input.name}`,
+          actorId: ctx.user.id,
+        });
+      }
 
       try {
         await inngest.send({

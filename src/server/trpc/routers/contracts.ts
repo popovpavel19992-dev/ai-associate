@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../trpc";
 import { contracts, contractClauses } from "../../db/schema/contracts";
 import { cases } from "../../db/schema/cases";
+import { caseEvents } from "../../db/schema/case-stages";
 import { checkCredits, decrementCredits, refundCredits } from "../../services/credits";
 import { inngest } from "../../inngest/client";
 import { AUTO_DELETE_DAYS, CONTRACT_REVIEW_CREDITS, CONTRACT_TYPES } from "@/lib/constants";
@@ -245,6 +246,13 @@ export const contractsRouter = router({
         .set({ linkedCaseId: input.caseId, updatedAt: new Date() })
         .where(and(eq(contracts.id, input.contractId), eq(contracts.userId, ctx.user.id)))
         .returning();
+
+      await ctx.db.insert(caseEvents).values({
+        caseId: input.caseId,
+        type: "contract_linked",
+        title: `Contract linked: ${updated.name}`,
+        actorId: ctx.user.id,
+      });
 
       return updated;
     }),
