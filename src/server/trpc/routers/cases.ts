@@ -7,6 +7,7 @@ import { documents } from "../../db/schema/documents";
 import { documentAnalyses } from "../../db/schema/document-analyses";
 import { contracts } from "../../db/schema/contracts";
 import { caseStages, stageTaskTemplates, caseEvents } from "../../db/schema/case-stages";
+import { createTasksFromTemplatesInternal } from "./case-tasks";
 import { calculateCredits, checkCredits, decrementCredits, refundCredits } from "../../services/credits";
 import { generateDocx, generatePlainTextReport } from "../../services/export";
 import { inngest } from "../../inngest/client";
@@ -276,6 +277,18 @@ export const casesRouter = router({
           },
           actorId: ctx.user.id,
         });
+
+        const templateResult = await createTasksFromTemplatesInternal(tx, input.caseId, input.stageId);
+
+        if (templateResult.created > 0) {
+          await tx.insert(caseEvents).values({
+            caseId: input.caseId,
+            type: "tasks_auto_created",
+            title: `${templateResult.created} tasks created for stage ${newStage.name}`,
+            metadata: { stageId: input.stageId, taskCount: templateResult.created },
+            actorId: ctx.user.id,
+          });
+        }
 
         return updated;
       });
