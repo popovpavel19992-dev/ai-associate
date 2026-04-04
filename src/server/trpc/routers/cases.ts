@@ -11,6 +11,7 @@ import { calculateCredits, checkCredits, decrementCredits, refundCredits } from 
 import { generateDocx, generatePlainTextReport } from "../../services/export";
 import { inngest } from "../../inngest/client";
 import { CASE_TYPES, AUTO_DELETE_DAYS, CASE_TYPE_LABELS } from "@/lib/constants";
+import type { CaseType } from "@/lib/case-stages";
 import type { AnalysisOutput } from "@/lib/schemas";
 
 export const casesRouter = router({
@@ -137,7 +138,7 @@ export const casesRouter = router({
         .where(and(eq(contracts.linkedCaseId, input.caseId), eq(contracts.userId, ctx.user.id)))
         .orderBy(contracts.createdAt);
 
-      const resolvedType = caseRecord.overrideCaseType ?? caseRecord.detectedCaseType ?? "general";
+      const resolvedType = (caseRecord.overrideCaseType ?? caseRecord.detectedCaseType ?? "general") as CaseType;
 
       // Get all stages for this case type (for pipeline bar)
       const stages = await ctx.db
@@ -224,7 +225,7 @@ export const casesRouter = router({
         return caseRecord;
       }
 
-      const resolvedType = caseRecord.overrideCaseType ?? caseRecord.detectedCaseType ?? "general";
+      const resolvedType = (caseRecord.overrideCaseType ?? caseRecord.detectedCaseType ?? "general") as CaseType;
 
       // Verify stage belongs to correct case type
       const [newStage] = await ctx.db
