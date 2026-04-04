@@ -29,8 +29,8 @@ case_tasks
 ├── description text — nullable
 ├── status      taskStatusEnum: 'todo' | 'in_progress' | 'done'
 ├── priority    taskPriorityEnum: 'low' | 'medium' | 'high' | 'urgent' (reuse existing)
-├── category    text — nullable (filing, research, client_communication, evidence, court, administrative)
-├── assignedTo  text — nullable (Clerk userId)
+├── category    taskCategoryEnum: 'filing' | 'research' | 'client_communication' | 'evidence' | 'court' | 'administrative'
+├── assignedTo  uuid FK → users (set null on delete) — nullable
 ├── dueDate     timestamp — nullable
 ├── checklist   jsonb DEFAULT '[]' — [{id: string, title: string, completed: boolean}]
 ├── sortOrder   integer NOT NULL DEFAULT 0
@@ -43,14 +43,22 @@ case_tasks
 
 - `(caseId, status)` — kanban grouped by status
 - `(caseId, stageId)` — kanban grouped by stage
+- `(caseId, stageId, templateId)` — duplicate check for auto-creation
 
-### New enum
+### New enums
 
 - `taskStatusEnum`: `'todo' | 'in_progress' | 'done'`
+- `taskCategoryEnum`: `'filing' | 'research' | 'client_communication' | 'evidence' | 'court' | 'administrative'`
 
 ### Extended enum
 
-- `eventTypeEnum`: add `'task_added'` and `'task_completed'`
+- `eventTypeEnum`: add `'task_added'`, `'task_completed'`, and `'task_removed'`
+
+**Migration note:** Adding values to a Postgres enum requires `ALTER TYPE ... ADD VALUE` (not reversible in a transaction). Use `drizzle-kit push` or a manual migration.
+
+### `updatedAt` handling
+
+Drizzle does not auto-update timestamps. Every `update` mutation must explicitly set `updatedAt: new Date()`. Autosave must flush pending changes on panel close / route navigation to prevent data loss.
 
 ### Checklist Zod schema
 
@@ -62,6 +70,10 @@ z.array(z.object({
 }))
 ```
 
+## Authorization
+
+All `caseTasks` procedures must verify case ownership (`cases.userId = ctx.user.id`) before operating on tasks. For task-level mutations (`update`, `reorder`, `toggleAssign`, `delete`), first resolve the parent case via `caseTasks.caseId` and verify ownership. Follow the same `protectedProcedure` + ownership check pattern used in `cases.ts`.
+
 ## tRPC API
 
 ### New router: `caseTasks`
@@ -72,7 +84,7 @@ z.array(z.object({
 |-----------|-------|--------|-------------|
 | `listByCaseId` | `{ caseId, groupBy?: 'status' \| 'stage' }` | Tasks grouped with stage name/color | Main kanban data |
 | `getById` | `{ taskId }` | Full task with checklist | Detail panel data |
-| `getStats` | `{ caseId }` | `{ total, todo, inProgress, done, overdue }` | Summary counts |
+| `getStats` | `{ caseId }` | `{ total, todo, inProgress, done, overdue }` | Summary counts (derived from listByCaseId on client is also acceptable) |
 
 **Mutations:**
 
@@ -80,24 +92,26 @@ z.array(z.object({
 |-----------|-------|-------------|
 | `create` | `{ caseId, title, description?, priority, category?, dueDate?, stageId? }` | Manual task creation, logs `task_added` event |
 | `update` | `{ taskId, title?, description?, priority?, status?, dueDate?, assignedTo?, checklist?, category? }` | Universal update. Sets `completedAt` when status → done, clears when status leaves done |
-| `reorder` | `{ taskId, newSortOrder, targetStageId? }` | Drag-and-drop reordering. Moves between stages if targetStageId differs |
+| `reorder` | `{ caseId, columnItems: Array<{taskId, sortOrder}>, targetStageId? }` | Bulk positional update for DnD. Receives full ordered list of task IDs for the affected column(s), updates all sort orders in a single transaction. If `targetStageId` is provided and differs from source, also updates the moved task's `stageId`. |
 | `toggleAssign` | `{ taskId }` | Sets assignedTo = currentUser or null |
 | `delete` | `{ taskId }` | Hard delete + `task_removed` event |
 | `createFromTemplates` | `{ caseId, stageId }` | Bulk create from stage templates. Skips existing (checks templateId + stageId) |
 
 ### Integration with `changeStage`
 
-Extend existing `changeStage` mutation:
+Extend existing `changeStage` mutation — all steps inside the existing transaction:
 1. Update `stageId` + log `stage_changed` event (existing)
-2. Check if tasks exist for new `stageId` (by `templateId`)
-3. If none — call `createFromTemplates` logic internally
+2. Check if any tasks exist for `(caseId, newStageId)` regardless of templateId
+3. If count = 0 — INSERT tasks from `stage_task_templates` for that stage
 4. Log single event: "Tasks created for stage {name}"
+
+**Edge case — returning to a previous stage:** If a user deleted template-created tasks and re-enters the stage, tasks will be re-created. This is intentional — the check is on task existence for the stage, not on historical creation. If user wants a clean stage, they get fresh template tasks.
 
 ## UI Components
 
 ### Tab placement
 
-New **"Tasks"** tab on case detail page — 5th tab between Overview and Report:
+Insert **"Tasks"** tab at index 1 (between Overview and Report), making 5 tabs total:
 `Overview | Tasks | Report | Timeline | Contracts`
 
 ### Component structure
@@ -160,7 +174,7 @@ src/components/cases/tasks/
 - Checklist: toggle items, "+ Add item", delete items
 - Footer: "Created {date} · From template" or "Created {date} · Manual"
 
-**Autosave:** debounced 500ms on every change, optimistic updates via tRPC mutation + query invalidation. No Save/Cancel buttons.
+**Autosave:** debounced 500ms on every change, optimistic updates via tRPC mutation + query invalidation. No Save/Cancel buttons. Must flush pending saves on panel close or route navigation to prevent data loss.
 
 ### Task create modal
 
@@ -170,7 +184,7 @@ Simple modal with fields: title (required), priority (default: medium), category
 
 **On stage change:**
 1. `changeStage` mutation updates stageId + logs event (existing)
-2. Query `case_tasks` for `caseId + stageId` with non-null `templateId`
+2. Query `case_tasks` for `(caseId, stageId)` regardless of templateId
 3. If count = 0: INSERT tasks from `stage_task_templates` for that stage
    - Copy: title, description, priority, category, sortOrder
    - Set: status = 'todo', caseId, stageId, templateId
@@ -187,6 +201,7 @@ Simple modal with fields: title (required), priority (default: medium), category
 New event types added to `eventTypeEnum`:
 - `task_added` — manual task creation
 - `task_completed` — task status changed to done
+- `task_removed` — task deleted
 
 Auto-creation from templates logs one aggregate event, not per-task.
 
