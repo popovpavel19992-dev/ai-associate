@@ -10,10 +10,12 @@ import { StagePipeline } from "@/components/cases/stage-pipeline";
 import { StageSelector } from "@/components/cases/stage-selector";
 import { CaseTimeline } from "@/components/cases/case-timeline";
 import { CaseOverview } from "@/components/cases/case-overview";
+import { TasksTab } from "@/components/cases/tasks/tasks-tab";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { key: "overview", label: "Overview" },
+  { key: "tasks", label: "Tasks" },
   { key: "report", label: "Report" },
   { key: "timeline", label: "Timeline" },
   { key: "contracts", label: "Contracts" },
@@ -152,6 +154,10 @@ export default function CaseDetailPage({
             contractsCount={linkedContracts?.length ?? 0}
             stageTaskTemplates={stageTaskTemplatesList}
           />
+        )}
+
+        {activeTab === "tasks" && (
+          <TasksTab caseId={caseData.id} currentStageId={caseData.stageId ?? null} />
         )}
 
         {activeTab === "report" && (
