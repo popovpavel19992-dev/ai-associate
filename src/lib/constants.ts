@@ -106,3 +106,60 @@ export const APPROVED_PHRASES = [
   "analysis indicates", "consider", "this clause means",
   "note that", "typically in similar cases",
 ];
+
+export const CONTRACT_TYPES = [
+  "employment_agreement",
+  "nda_confidentiality",
+  "service_agreement",
+  "lease_rental",
+  "settlement_agreement",
+  "purchase_sale",
+  "partnership_operating",
+  "independent_contractor",
+  "non_compete",
+  "loan_promissory",
+  "generic",
+] as const;
+
+export const CONTRACT_TYPE_LABELS: Record<string, string> = {
+  employment_agreement: "Employment Agreement",
+  nda_confidentiality: "NDA / Confidentiality",
+  service_agreement: "Service Agreement",
+  lease_rental: "Lease / Rental",
+  settlement_agreement: "Settlement Agreement",
+  purchase_sale: "Purchase / Sale Agreement",
+  partnership_operating: "Partnership / Operating Agreement",
+  independent_contractor: "Independent Contractor Agreement",
+  non_compete: "Non-Compete / Non-Solicitation",
+  loan_promissory: "Loan / Promissory Note",
+  generic: "Generic Contract",
+};
+
+export const CONTRACT_ANALYSIS_SECTIONS = [
+  "executive_summary",
+  "key_terms",
+  "obligations",
+  "risk_assessment",
+  "red_flags",
+  "clauses",
+  "missing_clauses",
+  "negotiation_points",
+  "governing_law",
+  "defined_terms",
+] as const;
+
+export const CONTRACT_SECTION_LABELS: Record<string, string> = {
+  executive_summary: "Executive Summary",
+  key_terms: "Key Terms",
+  obligations: "Obligations & Deadlines",
+  risk_assessment: "Risk Assessment",
+  red_flags: "Red Flags",
+  clauses: "Clause-by-Clause",
+  missing_clauses: "Missing Clauses",
+  negotiation_points: "Negotiation Points",
+  governing_law: "Governing Law",
+  defined_terms: "Defined Terms",
+};
+
+export const CONTRACT_REVIEW_CREDITS = 2;
+export const COMPARISON_DIFF_CREDITS = 1;
