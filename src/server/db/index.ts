@@ -10,6 +10,7 @@ import * as subscriptions from "./schema/subscriptions";
 import * as sectionPresets from "./schema/section-presets";
 import * as contracts from "./schema/contracts";
 import * as contractComparisons from "./schema/contract-comparisons";
+import * as contractDrafts from "./schema/contract-drafts";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -25,5 +26,6 @@ export const db = drizzle(client, {
     ...sectionPresets,
     ...contracts,
     ...contractComparisons,
+    ...contractDrafts,
   },
 });
