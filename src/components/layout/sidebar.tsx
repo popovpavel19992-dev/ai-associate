@@ -10,6 +10,7 @@ import {
   Zap,
   Menu,
   FileCheck,
+  PenLine,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -20,6 +21,7 @@ import { NotificationBell } from "./notification-bell";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/contracts", label: "Contracts", icon: FileCheck },
+  { href: "/drafts", label: "Drafts", icon: PenLine },
   { href: "/quick-analysis", label: "Quick Analysis", icon: Zap },
   { href: "/settings/templates", label: "Templates", icon: FileText },
   { href: "/settings", label: "Settings", icon: Settings },
