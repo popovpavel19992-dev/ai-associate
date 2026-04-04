@@ -81,7 +81,7 @@ export function CompareSelector({ contractId, onComparisonCreated }: CompareSele
               <Loader2 className="size-5 animate-spin text-muted-foreground" />
             </div>
           ) : readyContracts.length > 0 ? (
-            <Select value={selectedContractId} onValueChange={setSelectedContractId}>
+            <Select value={selectedContractId} onValueChange={(v) => setSelectedContractId(v ?? "")}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a contract..." />
               </SelectTrigger>
