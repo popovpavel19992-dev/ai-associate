@@ -1,15 +1,34 @@
 import Link from "next/link";
-import { Plus, Zap } from "lucide-react";
+import { Plus, Zap, FileCheck, GitCompareArrows } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { CaseList } from "@/components/cases/case-list";
+import { ContractList } from "@/components/contracts/contract-list";
 import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   return (
-    <div>
+    <div className="space-y-10">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Cases</h1>
-        <div className="flex gap-3">
+        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/cases/new" className={cn(buttonVariants())}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Case
+          </Link>
+          <Link
+            href="/contracts/new"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            <FileCheck className="mr-2 h-4 w-4" />
+            Review Contract
+          </Link>
+          <Link
+            href="/contracts/compare"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            <GitCompareArrows className="mr-2 h-4 w-4" />
+            Compare
+          </Link>
           <Link
             href="/quick-analysis"
             className={cn(buttonVariants({ variant: "outline" }))}
@@ -17,16 +36,18 @@ export default function DashboardPage() {
             <Zap className="mr-2 h-4 w-4" />
             Quick Analysis
           </Link>
-          <Link href="/cases/new" className={cn(buttonVariants())}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Case
-          </Link>
         </div>
       </div>
 
-      <div className="mt-8">
+      <section>
+        <h2 className="mb-4 text-lg font-semibold">Recent Cases</h2>
         <CaseList />
-      </div>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-lg font-semibold">Recent Contracts</h2>
+        <ContractList />
+      </section>
     </div>
   );
 }
