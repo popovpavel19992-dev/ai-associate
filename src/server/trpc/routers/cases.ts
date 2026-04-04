@@ -103,6 +103,8 @@ export const casesRouter = router({
           status: contracts.status,
           filename: contracts.filename,
           riskScore: contracts.riskScore,
+          detectedContractType: contracts.detectedContractType,
+          createdAt: contracts.createdAt,
         })
         .from(contracts)
         .where(and(eq(contracts.linkedCaseId, input.caseId), eq(contracts.userId, ctx.user.id)))
