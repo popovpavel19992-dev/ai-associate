@@ -30,9 +30,19 @@ export const contractAnalyze = inngest.createFunction(
       return c;
     });
 
-    // Step 2: Extract text from the uploaded file
+    // Step 2: Extract text from the uploaded file (skip S3 if text already exists)
     const extraction = await step.run("extract-text", async () => {
       try {
+        // Re-fetch to get latest extractedText (may have been pre-populated by sendToReview)
+        const [fresh] = await db
+          .select({ extractedText: contracts.extractedText, pageCount: contracts.pageCount })
+          .from(contracts)
+          .where(eq(contracts.id, contractId));
+
+        if (fresh?.extractedText) {
+          return { text: fresh.extractedText, pageCount: fresh.pageCount ?? 0, ok: true as const };
+        }
+
         const { body } = await getObject(contract.s3Key);
         const chunks: Uint8Array[] = [];
         const reader = body.getReader();
