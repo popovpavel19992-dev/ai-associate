@@ -28,7 +28,7 @@
 
 - [ ] **Step 1: Extend `eventTypeEnum`**
 
-Edit `src/server/db/schema/case-stages.ts` — add `task_added`, `task_completed`, `task_removed` to the existing `eventTypeEnum` array:
+Edit `src/server/db/schema/case-stages.ts` — add `task_added`, `task_completed`, `task_removed`, and `tasks_auto_created` to the existing `eventTypeEnum` array. The `tasks_auto_created` variant is dedicated for the aggregate event when `changeStage` bulk-instantiates template tasks (avoids overloading `manual`).
 
 ```ts
 export const eventTypeEnum = pgEnum("event_type", [
@@ -41,6 +41,7 @@ export const eventTypeEnum = pgEnum("event_type", [
   "task_added",
   "task_completed",
   "task_removed",
+  "tasks_auto_created",
 ]);
 ```
 
@@ -642,8 +643,11 @@ createFromTemplates: protectedProcedure
 At the bottom of the file, above the router export:
 
 ```ts
+// Accepts either the root db or a transaction handle
+type DbOrTx = Parameters<Parameters<typeof import("@/server/db").db.transaction>[0]>[0] | typeof import("@/server/db").db;
+
 export async function createTasksFromTemplatesInternal(
-  db: typeof import("@/server/db").db,
+  db: DbOrTx,
   caseId: string,
   stageId: string,
 ) {
@@ -714,12 +718,12 @@ import { createTasksFromTemplatesInternal } from "./case-tasks";
 Inside the `ctx.db.transaction` block of `changeStage`, after the `caseEvents` insert and before `return updated`, add:
 
 ```ts
-const templateResult = await createTasksFromTemplatesInternal(tx as typeof ctx.db, input.caseId, input.stageId);
+const templateResult = await createTasksFromTemplatesInternal(tx, input.caseId, input.stageId);
 
 if (templateResult.created > 0) {
   await tx.insert(caseEvents).values({
     caseId: input.caseId,
-    type: "manual",
+    type: "tasks_auto_created",
     title: `${templateResult.created} tasks created for stage ${newStage.name}`,
     metadata: { stageId: input.stageId, taskCount: templateResult.created },
     actorId: ctx.user.id,
@@ -1040,7 +1044,7 @@ import {
 } from "@dnd-kit/core";
 import { KanbanColumn } from "./kanban-column";
 import type { TaskCardData } from "./task-card";
-import { trpc } from "@/lib/trpc/client";
+import { trpc } from "@/lib/trpc";
 import { TASK_STATUS_META, type TaskStatus } from "@/lib/case-tasks";
 import { toast } from "sonner";
 
@@ -1332,7 +1336,7 @@ git commit -m "feat(tasks): add TaskChecklist component"
 
 import { useEffect, useState, useRef } from "react";
 import { format } from "date-fns";
-import { trpc } from "@/lib/trpc/client";
+import { trpc } from "@/lib/trpc";
 import { TaskChecklist } from "./task-checklist";
 import {
   TASK_STATUSES,
@@ -1598,7 +1602,7 @@ git commit -m "feat(tasks): add TaskDetailPanel with inline editing and autosave
 "use client";
 
 import { useState } from "react";
-import { trpc } from "@/lib/trpc/client";
+import { trpc } from "@/lib/trpc";
 import {
   TASK_CATEGORIES_LIST,
   TASK_PRIORITIES_LIST,
