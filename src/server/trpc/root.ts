@@ -7,6 +7,7 @@ import { subscriptionsRouter } from "./routers/subscriptions";
 import { presetsRouter } from "./routers/presets";
 import { contractsRouter } from "./routers/contracts";
 import { comparisonsRouter } from "./routers/comparisons";
+import { draftsRouter } from "./routers/drafts";
 
 export const appRouter = router({
   users: usersRouter,
@@ -17,6 +18,7 @@ export const appRouter = router({
   presets: presetsRouter,
   contracts: contractsRouter,
   comparisons: comparisonsRouter,
+  drafts: draftsRouter,
 });
 
 export type AppRouter = typeof appRouter;
