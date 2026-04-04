@@ -8,6 +8,8 @@ import * as documentAnalyses from "./schema/document-analyses";
 import * as chatMessages from "./schema/chat-messages";
 import * as subscriptions from "./schema/subscriptions";
 import * as sectionPresets from "./schema/section-presets";
+import * as contracts from "./schema/contracts";
+import * as contractComparisons from "./schema/contract-comparisons";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -21,5 +23,7 @@ export const db = drizzle(client, {
     ...chatMessages,
     ...subscriptions,
     ...sectionPresets,
+    ...contracts,
+    ...contractComparisons,
   },
 });
