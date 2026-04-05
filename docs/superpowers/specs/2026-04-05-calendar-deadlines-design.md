@@ -219,7 +219,7 @@ The custom `<CalendarEventCard>` pulls `CalendarItem` back via `event.resource` 
 ### Navigation changes
 
 - New page `src/app/(app)/calendar/page.tsx` → renders `<GlobalCalendar />`
-- Sidebar `src/components/layout/sidebar.tsx` gains a "Calendar" entry placed directly below "Cases" and above "Tasks" (or matching whatever order the current sidebar uses for Cases/Tasks — the entry goes immediately after "Cases")
+- Sidebar `src/components/layout/sidebar.tsx` — current `navItems` are `Dashboard, Contracts, Drafts, Quick Analysis, Templates, Settings` (no top-level Cases entry today; cases are reached via Dashboard). For 2.1.3a we add two new entries in this order: `Cases` (href `/cases`) inserted after `Dashboard`, and `Calendar` (href `/calendar`) inserted after `Cases`. Adding `Cases` is a small hygiene fix bundled here because the Calendar entry's discoverability depends on having the Cases entry as an anchor; this is the minimum viable sidebar update, no broader nav refactor.
 - Case tabs `src/app/(app)/cases/[id]/page.tsx` gain "Calendar" tab between "Tasks" and "Timeline"
 
 ### State management
