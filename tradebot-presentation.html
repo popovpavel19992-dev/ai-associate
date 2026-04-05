@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tradebot — техническое описание торговой системы</title>
+<style>
+  :root{
+    --bg:#0b1020;
+    --bg2:#121a33;
+    --panel:#151e3a;
+    --panel2:#1b2548;
+    --ink:#e7ecff;
+    --ink2:#aeb8d6;
+    --muted:#7f8ab0;
+    --acc:#5cc8ff;
+    --acc2:#7ef0c1;
+    --warn:#ffcf6b;
+    --bad:#ff7a8a;
+    --line:#26315a;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:linear-gradient(180deg,#080c1c 0%,#0b1020 40%,#0b1020 100%);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:var(--acc)}
+  .wrap{max-width:1120px;margin:0 auto;padding:48px 28px 120px}
+  header.hero{padding:56px 36px 44px;border-radius:20px;background:radial-gradient(1200px 500px at 0% 0%,#1a2a5c 0%,transparent 60%),radial-gradient(900px 400px at 100% 0%,#243b78 0%,transparent 50%),linear-gradient(180deg,#121a33,#0e1530);border:1px solid var(--line);margin-bottom:28px}
+  header.hero .eyebrow{font:600 12px/1 ui-monospace,monospace;letter-spacing:.22em;color:var(--acc);text-transform:uppercase;margin-bottom:18px}
+  header.hero h1{font-size:40px;line-height:1.1;margin:0 0 14px;letter-spacing:-.02em}
+  header.hero p.lede{font-size:17px;color:var(--ink2);max-width:760px;margin:0 0 22px}
+  header.hero .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line);background:rgba(255,255,255,.02);color:var(--ink2);border-radius:999px;font-size:12px}
+  .chip b{color:var(--ink)}
+  .grid{display:grid;gap:16px}
+  .grid.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grid.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  @media (max-width:860px){.grid.c2,.grid.c3,.grid.c4{grid-template-columns:1fr}}
+  section{margin-top:36px}
+  h2.sec{font-size:22px;letter-spacing:-.01em;margin:0 0 6px;display:flex;align-items:center;gap:12px}
+  h2.sec .n{font:700 12px/1 var(--mono);color:var(--bg);background:var(--acc);padding:6px 8px;border-radius:6px}
+  p.sub{color:var(--muted);margin:0 0 18px;font-size:13px}
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+  .card h3{margin:0 0 10px;font-size:16px;color:var(--ink)}
+  .card h3 .tag{font:600 10px/1 var(--mono);color:var(--acc2);background:rgba(126,240,193,.08);border:1px solid rgba(126,240,193,.25);padding:4px 6px;border-radius:4px;margin-left:8px;text-transform:uppercase;letter-spacing:.1em}
+  .card p{margin:0 0 10px;color:var(--ink2)}
+  .card ul{margin:6px 0 0;padding-left:18px;color:var(--ink2)}
+  .card ul li{margin:4px 0}
+  code,kbd{font-family:var(--mono);font-size:12.5px;background:rgba(255,255,255,.05);border:1px solid var(--line);padding:1px 6px;border-radius:4px;color:#e8efff}
+  pre{background:#0a0f22;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto;font-family:var(--mono);font-size:12.5px;color:#d7e0ff;line-height:1.55}
+  pre .k{color:#ffcf6b}
+  pre .c{color:#6e7ba3;font-style:italic}
+  pre .s{color:#7ef0c1}
+  pre .n{color:#5cc8ff}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+  th,td{text-align:left;padding:10px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+  tr:last-child td{border-bottom:none}
+  td code{font-size:12px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font:600 11px/1.6 var(--mono);border:1px solid}
+  .pill.long{color:#7ef0c1;border-color:rgba(126,240,193,.35);background:rgba(126,240,193,.08)}
+  .pill.short{color:#ff7a8a;border-color:rgba(255,122,138,.35);background:rgba(255,122,138,.08)}
+  .pill.wait{color:#aeb8d6;border-color:var(--line);background:rgba(255,255,255,.03)}
+  .kv{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .kv span{background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--ink);padding:6px 10px;border-radius:8px;font-size:12px}
+  .kv span b{color:var(--acc);font-family:var(--mono)}
+  .flow{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+  .flow .step{position:relative;flex:1 1 180px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13px}
+  .flow .step .num{font:700 11px/1 var(--mono);color:var(--acc);display:block;margin-bottom:4px;letter-spacing:.1em}
+  .flow .step b{color:var(--ink)}
+  .callout{border-left:3px solid var(--acc);padding:10px 14px;background:rgba(92,200,255,.05);border-radius:4px;color:var(--ink2);font-size:13px;margin-top:10px}
+  .callout.warn{border-color:var(--warn);background:rgba(255,207,107,.05)}
+  .callout.bad{border-color:var(--bad);background:rgba(255,122,138,.05)}
+  .footline{margin-top:60px;padding-top:24px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;text-align:center}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 0}
+  .toc a{text-decoration:none;color:var(--ink2);background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px}
+  .toc a:hover{color:var(--ink);border-color:var(--acc)}
+  .big-num{font:700 28px/1 var(--mono);color:var(--acc);display:block}
+  .big-num + small{color:var(--muted);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">Tradebot · v1.5 · Bybit perpetuals</div>
+  <h1>Алгоритмический крипто-бот: техническое описание торговой системы</h1>
+  <p class="lede">Документ для ревью опытными трейдерами. Основной фокус — торговая логика: генерация сигналов, риск-менеджмент, фильтры, ML-автотюнинг и режимы рынка. Инфраструктура (Docker, Telegram UI, Prometheus/Grafana) вынесена за скобки.</p>
+  <div class="meta">
+    <span class="chip">Биржа: <b>Bybit (spot + perpetual futures)</b></span>
+    <span class="chip">Стек: <b>Python 3.12 · asyncio · ccxt</b></span>
+    <span class="chip">Режим: <b>paper / live</b></span>
+    <span class="chip">Баланс теста: <b>$10 000</b></span>
+    <span class="chip">Покрытие тестами: <b>517+</b></span>
+  </div>
+  <div class="toc">
+    <a href="#tldr">TL;DR</a>
+    <a href="#arch">Архитектура</a>
+    <a href="#signal">Сигналы</a>
+    <a href="#pairs">Отбор пар</a>
+    <a href="#risk">Риск</a>
+    <a href="#sent">Сентимент</a>
+    <a href="#regime">Режимы (HMM)</a>
+    <a href="#mtf">MTF</a>
+    <a href="#session">Сессии</a>
+    <a href="#protect">Защита</a>
+    <a href="#orders">Лимитки + DCA</a>
+    <a href="#ml">ML-тюнинг</a>
+    <a href="#cycle">Цикл исполнения</a>
+    <a href="#params">Параметры</a>
+  </div>
+</header>
+
+<!-- ================== TLDR ================== -->
+<section id="tldr">
+  <h2 class="sec"><span class="n">00</span>TL;DR для занятых</h2>
+  <p class="sub">Одна минута чтения — чтобы сразу понять, стоит ли копать глубже.</p>
+  <div class="grid c2">
+    <div class="card">
+      <h3>Что делает бот</h3>
+      <ul>
+        <li>Автоматически выбирает <b>top-10 пар</b> на Bybit по ликвидности / ATR / ADX.</li>
+        <li>На 15m-свечах строит <b>композитный сигнал</b> из 7 индикаторов (RSI, MACD, EMA-cross, StochRSI, OBV, Ichimoku, Volume).</li>
+        <li>Фильтрует сигналы через <b>сентимент</b> (F&amp;G + CoinGecko), <b>MTF-подтверждение</b> (1h/4h/1d), <b>торговую сессию</b> и <b>корреляцию портфеля</b>.</li>
+        <li>Вход — <b>лимитным ордером</b> с TTL 5 мин; SL/TP — на основе <b>ATR</b>; есть <b>trailing-stop</b> и <b>DCA-доливка</b>.</li>
+        <li>Каждые 24 ч <b>ML-pipeline</b> тюнит пороги стратегии на своих закрытых сделках с walk-forward-валидацией и авто-rollback.</li>
+        <li><b>HMM-детектор</b> определяет режим (trend/flat/volatile) и подгружает свой набор порогов.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Ключевые цифры</h3>
+      <div class="grid c2" style="gap:12px">
+        <div><span class="big-num">±4</span><small>Порог сигнала (score)</small></div>
+        <div><span class="big-num">5%</span><small>Размер позиции от депо</small></div>
+        <div><span class="big-num">5×ATR</span><small>Stop-loss</small></div>
+        <div><span class="big-num">10×ATR</span><small>Take-profit (R/R 1:2)</small></div>
+        <div><span class="big-num">10x</span><small>Плечо (futures)</small></div>
+        <div><span class="big-num">5</span><small>Макс. одновременных позиций</small></div>
+        <div><span class="big-num">3%</span><small>Daily loss limit</small></div>
+        <div><span class="big-num">20%</span><small>Max drawdown halt</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================== Architecture ================== -->
+<section id="arch">
+  <h2 class="sec"><span class="n">01</span>Архитектура (только торговая часть)</h2>
+  <p class="sub">Чистое разделение слоёв, DI-стиль, один asyncio-цикл, нет глобалов.</p>
+  <div class="card">
+    <div class="flow">
+      <div class="step"><span class="num">LAYER 1</span><b>Infrastructure</b><br>ccxt-клиент Bybit, paper-клиент, SQLite (SQLAlchemy async)</div>
+      <div class="step"><span class="num">LAYER 2</span><b>Analysis</b><br>Indicators, SignalGenerator, PairSelector, SentimentFilter, RegimeDetector, SessionFilter</div>
+      <div class="step"><span class="num">LAYER 3</span><b>Risk / Protection</b><br>RiskManager, CorrelationFilter, DrawdownHalt, AlertChecker</div>
+      <div class="step"><span class="num">LAYER 4</span><b>Trader</b><br>Trader (engine), OrderManager, DCAManager</div>
+      <div class="step"><span class="num">LAYER 5</span><b>Learning</b><br>TradeAnalyzer → PatternDetector → StrategyOptimizer → Pipeline</div>
+    </div>
+    <p style="color:var(--ink2);margin-top:14px">Вся IO асинхронная. Центр — класс <code>Trader</code>, который держит ссылки на биржу, БД, риск, сентимент, ML, нотифаер. Никаких синглтонов: всё инжектится в конструктор через <code>create_app()</code> в <code>src/main.py</code>.</p>
+  </div>
+</section>
+
+<!-- ================== Signals ================== -->
+<section id="signal">
+  <h2 class="sec"><span class="n">02</span>Генерация сигналов</h2>
+  <p class="sub">Композитный score по 7 индикаторам на 15m-таймфрейме.</p>
+
+  <div class="grid c2">
+    <div class="card">
+      <h3>Индикаторы и их вклад</h3>
+      <table>
+        <thead><tr><th>Индикатор</th><th>Параметры</th><th>Вклад в score</th></tr></thead>
+        <tbody>
+          <tr><td><b>RSI</b></td><td>14</td><td>+1 если &lt;30 · −1 если &gt;70</td></tr>
+          <tr><td><b>MACD</b></td><td>12/26/9</td><td>+1 если line&gt;signal &amp; hist&gt;0<br>−1 обратно</td></tr>
+          <tr><td><b>EMA Cross</b></td><td>9/21</td><td>+1 если fast&gt;slow · −1 обратно</td></tr>
+          <tr><td><b>Stoch RSI</b></td><td>14, smooth 3/3</td><td>+1 если %K&lt;20 · −1 если &gt;80</td></tr>
+          <tr><td><b>OBV Trend</b></td><td>EMA(20) от OBV</td><td>+1 bullish · −1 bearish</td></tr>
+          <tr><td><b>Ichimoku</b></td><td>9/26/52</td><td>+1 если tenkan&gt;kijun &amp; price&gt;cloud · −1 обратно</td></tr>
+          <tr><td><b>Volume</b></td><td>MA(20)</td><td>±1 (усиление направления)</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">Диапазон score: <code>−12 … +12</code>. Это фактически «голосование» индикаторов с усилением объёмом.</div>
+    </div>
+
+    <div class="card">
+      <h3>Решение LONG / SHORT / WAIT</h3>
+<pre><span class="c"># signal_generator.py</span>
+SIGNAL_THRESHOLD = <span class="n">4</span>   <span class="c"># поднят с 3 после прод-метрик
+                          # — убирает ~64% убыточных сетапов</span>
+
+<span class="k">if</span> score &gt;= +<span class="n">4</span>:  <span class="k">return</span> LONG
+<span class="k">if</span> score &lt;= −<span class="n">4</span>:  <span class="k">return</span> SHORT
+<span class="k">return</span> WAIT</pre>
+      <div class="kv">
+        <span>Порог LONG: <b>≥ +4</b></span>
+        <span>Порог SHORT: <b>≤ −4</b></span>
+        <span>Сохраняется <code>signal.strength</code> для MTF-bypass и ML</span>
+      </div>
+      <div class="callout warn">Обрати внимание: порог подняли с 3 до 4 уже <b>после</b> прод-данных — это эмпирическая корректировка, а не академическое обоснование. Это один из пунктов, на который стоит посмотреть критично.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================== Pair selection ================== -->
+<section id="pairs">
+  <h2 class="sec"><span class="n">03</span>Отбор торговых пар</h2>
+  <p class="sub">Пересканирование каждые 60 минут, всегда работаем с top-10.</p>
+  <div class="grid c2">
+    <div class="card">
+      <h3>Формула рейтинга пары</h3>
+<pre>pair_score = <span class="n">0.40</span>·volume_score
+           + <span class="n">0.35</span>·atr_score
+           + <span class="n">0.25</span>·adx_score</pre>
+      <ul>
+        <li><b>volume_score</b> = vol₂₄ʜ / max(vol₂₄ʜ в батче)</li>
+        <li><b>atr_score</b> = (atr/price) нормированный к максимуму в батче</li>
+        <li><b>adx_score</b> = min(ADX / 50, 1.0) — силa тренда</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Пайплайн</h3>
+      <ol style="color:var(--ink2);padding-left:18px;margin:0">
+        <li>Фильтр по объёму ≥ <b>$5M</b> за 24 ч</li>
+        <li>Нормализация символов (убираем <code>:USDT</code>)</li>
+        <li>Фетч 30 свечей 15m для каждого кандидата</li>
+        <li>Расчёт трёх скор-компонент</li>
+        <li>Сортировка и <b>top 10</b></li>
+        <li>Ре-скан каждые <b>60 мин</b></li>
+        <li><b>Fallback</b>: кэш → хардкод <code>BTC, ETH, SOL, XRP, DOGE, ADA, AVAX, LINK</code></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ================== Risk ================== -->
+<section id="risk">
+  <h2 class="sec"><span class="n">04</span>Риск-менеджмент</h2>
+  <p class="sub">Статический сайзинг + ATR-based SL/TP + многоуровневые гейты.</p>
+
+  <div class="grid c2">
+    <div class="card">
+      <h3>Position sizing</h3>
+<pre>notional = balance × max_position_pct   <span class="c"># 5%</span>
+qty       = notional / price
+min_notional = <span class="n">$5.0</span>                  <span class="c"># иначе skip</span></pre>
+      <div class="kv">
+        <span>max_position_pct: <b>5%</b></span>
+        <span>max_open_positions: <b>5</b></span>
+        <span>leverage: <b>10x</b></span>
+        <span>daily_loss_limit: <b>3%</b></span>
+      </div>
+      <div class="callout">С плечом 10x и сайзингом 5% от депо, <b>нотионал</b> одной позиции = ~50% баланса, но <b>маржа</b> = 5%. Все 5 позиций одновременно = 25% маржи заблокировано, нотионал 2.5× депозита.</div>
+    </div>
+
+    <div class="card">
+      <h3>SL / TP (ATR-based)</h3>
+<pre>SL_ATR_MULT = <span class="n">5.0</span>
+TP_ATR_MULT = <span class="n">10.0</span>
+MIN_SL_PCT  = <span class="n">1%</span>           <span class="c"># floor</span>
+
+<span class="k">LONG</span>:
+  SL = max(entry − 5·ATR, entry·0.01)
+  TP = entry + 10·ATR
+
+<span class="k">SHORT</span>:
+  SL = entry + 5·ATR
+  TP = max(entry − 10·ATR, entry·0.01)
+
+<span class="c"># fallback если ATR недоступен:</span>
+SL = ±<span class="n">2%</span> · TP = ±<span class="n">4%</span></pre>
+      <div class="callout">Соотношение <b>R/R ≈ 1:2</b> по мультипликаторам. На практике R/R зависит от заполнения по лимитке и проскальзывания.</div>
+    </div>
+
+    <div class="card">
+      <h3>Trailing stop</h3>
+<pre>TRAIL_ATR_MULT = <span class="n">0.5</span>
+trail_step = <span class="n">0.5</span> · ATR
+
+<span class="k">LONG</span>:  new_sl = price − trail_step
+        <span class="k">if</span> new_sl &gt; cur_sl: update
+<span class="k">SHORT</span>: new_sl = price + trail_step
+        <span class="k">if</span> new_sl &lt; cur_sl: update</pre>
+      <p>Стоп двигается только в сторону прибыли. Никогда не затягивается против нас.</p>
+    </div>
+
+    <div class="card">
+      <h3>Gate: <code>can_open_trade()</code></h3>
+      <p>Новая сделка <b>блокируется</b>, если хотя бы один пункт истинен:</p>
+      <ul>
+        <li>Уже открыто ≥ <b>5</b> позиций</li>
+        <li>Дневной PnL ≤ <code>−balance × 3%</code></li>
+        <li>Drawdown от пика ≤ <code>−20%</code> → полный halt</li>
+        <li>Серия из ≥ <b>5</b> убытков подряд → пауза <b>60 мин</b></li>
+        <li>Кулдаун после SL/TTL на этой паре (<b>30 мин</b>)</li>
+        <li>ATR/price &lt; <b>0.15%</b> (слишком тихо)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================== Sentiment ================== -->
+<section id="sent">
+  <h2 class="sec"><span class="n">05</span>Сентимент-фильтр</h2>
+  <p class="sub">Глобальный фон + по конкретной монете. Пороги зависят от режима рынка.</p>
+  <div class="grid c2">
+    <div class="card">
+      <h3>Источники</h3>
+      <ul>
+        <li><b>Fear &amp; Greed Index</b> (alternative.me) — 0..100, кеш 24 ч</li>
+        <li><b>CoinGecko per-coin</b> — <code>bullish% − bearish%</code>, диапазон −1..+1, кеш 60 мин</li>
+        <li>Поддержка 20 тикеров (BTC, ETH, SOL, BNB, XRP, ADA, DOGE, AVAX, DOT, MATIC, LINK, UNI, ATOM, LTC, FIL, NEAR, APT, ARB, OP, SUI)</li>
+      </ul>
+      <div class="callout">Если монета не в списке — используется медиана сентимента по недавним сделкам. Если API недоступен — сделки <b>пропускаются</b> (safe fail-open).</div>
+    </div>
+    <div class="card">
+      <h3>Пороги блокировки по режимам</h3>
+      <table>
+        <thead><tr><th>Режим</th><th>F&amp;G block LONG</th><th>F&amp;G block SHORT</th><th>Coin block LONG</th><th>Coin block SHORT</th></tr></thead>
+        <tbody>
+          <tr><td><b>trend</b></td><td>&lt; 15</td><td>&gt; 85</td><td>&lt; −0.4</td><td>&gt; +0.4</td></tr>
+          <tr><td><b>flat</b></td><td>&lt; 25</td><td>&gt; 75</td><td>&lt; −0.6</td><td>&gt; +0.6</td></tr>
+          <tr><td><b>volatile</b></td><td>&lt; 10</td><td>&gt; 90</td><td>&lt; −0.3</td><td>&gt; +0.3</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px">Логика: LONG не берём в «экстремальном страхе», SHORT не берём в «экстремальной жадности». На плоском рынке пороги шире (меньше сделок).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================== Regimes ================== -->
+<section id="regime">
+  <h2 class="sec"><span class="n">06</span>Режимы рынка — HMM-детектор</h2>
+  <p class="sub">Gaussian Hidden Markov Model с 3 скрытыми состояниями.</p>
+  <div class="grid c2">
+    <div class="card">
+      <h3>Обучение</h3>
+      <ul>
+        <li><b>Фичи</b>: log-returns и rolling-std(14) по log-returns</li>
+        <li>Окно обучения: <b>252 свечи</b> 15m (~17 дней)</li>
+        <li>Минимум данных: 50 свечей</li>
+        <li>Переобучение — 1 раз в сутки</li>
+      </ul>
+      <h3 style="margin-top:16px">Семантический мэппинг</h3>
+      <ul>
+        <li><b>trend</b> — состояние с наибольшим средним return</li>
+        <li><b>flat</b> — с наименьшей дисперсией</li>
+        <li><b>volatile</b> — с наибольшей дисперсией</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Применение параметров</h3>
+<pre><span class="c"># trader/engine.py</span>
+detect regime каждый цикл
+candidate regime per pair
+<span class="k">if</span> regime стабилен &gt;= <span class="n">24</span> часа:
+    switch active params → preset(regime)</pre>
+      <p>Подгружается пресет из <code>config.yaml</code>: пороги RSI, F&amp;G, coin-sentiment для данного режима. Это <b>мягкий</b> переключатель — без резких прыжков.</p>
+      <div class="callout warn">Подтверждение 24 ч создаёт лаг: когда рынок уже сменил режим, бот продолжает торговать старым пресетом почти сутки. Trade-off: стабильность vs отзывчивость.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================== MTF ================== -->
+<section id="mtf">
+  <h2 class="sec"><span class="n">07</span>Multi-timeframe gate</h2>
+  <p class="sub">Подтверждение на старших таймфреймах перед входом.</p>
+  <div class="card">
+<pre><span class="k">for</span> tf <span class="k">in</span> [<span class="s">"1h"</span>, <span class="s">"4h"</span>, <span class="s">"1d"</span>]:
+    fetch 30 candles
+    compute EMA(9), EMA(21)
+
+    <span class="k">if</span> signal == LONG  <span class="k">and</span> ema_fast &lt; ema_slow: BLOCK
+    <span class="k">if</span> signal == SHORT <span class="k">and</span> ema_fast &gt; ema_slow: BLOCK
+
+    <span class="c"># bypass дневного фильтра если сигнал очень сильный:</span>
+    <span class="k">if</span> tf == <span class="s">"1d"</span> <span class="k">and</span> signal.strength &gt;= <span class="n">5</span>:
+        continue</pre>
+    <div class="callout">Идея: не торговать против 1h/4h EMA-тренда. Дневной таймфрейм можно «проколоть» очень сильным сигналом (score ≥ 5) — это компромисс, чтобы не пропускать мощные развороты.</div>
+  </div>
+</section>
+
+<!-- ================== Sessions ================== -->
+<section id="session">
+  <h2 class="sec"><span class="n">08</span>Фильтр торговых сессий</h2>
+  <p class="sub">По умолчанию торгуем во все сессии, но можно ограничивать поперпендикулярно на паре.</p>
+  <div class="grid c2">
+    <div class="card">
+      <h3>Сессии (UTC)</h3>
+      <table>
+        <thead><tr><th>Сессия</th><th>Время</th><th>Длительность</th></tr></thead>
+        <tbody>
+          <tr><td>Asia</td><td>00:00–09:00</td><td>9 ч</td></tr>
+          <tr><td>EU</td><td>07:00–16:00</td><td>9 ч</td></tr>
+          <tr><td>US</td><td>13:00–22:00</td><td>9 ч</td></tr>
+          <tr><td><b>Overlap</b> (EU∩US)</td><td>13:00–16:00</td><td>3 ч — пик ликвидности</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:12px;color:var(--muted)">Окно 22:00–00:00 UTC — «нейтральный час», торговля выключена.</p>
+    </div>
+    <div class="card">
+      <h3>Per-pair override</h3>
+<pre>sessions:
+  enabled: <span class="n">true</span>
+  default_sessions: [asia, eu, us, overlap]
+  per_pair:
+    SOL/USDT: [overlap]     <span class="c"># только пик</span>
+    BTC/USDT: [eu, us, overlap]</pre>
+      <p>Можно задать узкое окно для отдельных пар, если эмпирика показывает плохие результаты в Azia.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================== Protection ================== -->
+<section id="protect">
+  <h2 class="sec"><span class="n">09</span>Защитный слой</h2>
+  <p class="sub">Drawdown halt + correlation filter + alerts.</p>
+  <div class="grid c3">
+    <div class="card">
+      <h3>Drawdown halt</h3>
+      <ul>
+        <li>Пиковый баланс трекается каждый цикл</li>
+        <li>DD = (cur − peak) / peak</li>
+        <li>Порог halt: <b>−20%</b> → все новые входы блокируются</li>
+        <li>Alert на <b>−15%</b> (cooldown 60 мин)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Correlation filter</h3>
+      <ul>
+        <li>Матрица Pearson на returns</li>
+        <li>720 свечей 1h (~30 дней)</li>
+        <li>Обновление каждый час</li>
+        <li>Блок если <code>|corr| &gt; 0.80</code> с любой открытой позицией</li>
+      </ul>
+      <div class="callout">Не даёт «дублировать» риск: открыли BTC-long → ETH-long скорее всего будет заблокирован.</div>
+    </div>
+    <div class="card">
+      <h3>Alerts (fire-once + cooldown)</h3>
+      <table>
+        <thead><tr><th>Правило</th><th>Порог</th><th>CD</th></tr></thead>
+        <tbody>
+          <tr><td>drawdown_pct</td><td>15%</td><td>60 м</td></tr>
+          <tr><td>pnl_usdt</td><td>−$150 / день</td><td>120 м</td></tr>
+          <tr><td>loss_streak</td><td>3 подряд</td><td>30 м</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ================== Orders & DCA ================== -->
+<section id="orders">
+  <h2 class="sec"><span class="n">10</span>Исполнение: лимитные ордера + DCA</h2>
+  <p class="sub">Вход только лимитным ордером с TTL, доливка — опционально.</p>
+  <div class="grid c2">
+    <div class="card">
+      <h3>Limit order entry</h3>
+<pre><span class="k">LONG</span>:  limit = bid × (1 − <span class="n">0.0005</span>)
+<span class="k">SHORT</span>: limit = ask × (1 + <span class="n">0.0005</span>)
+
+TTL = <span class="n">300</span> sec
+poll every <span class="n">5</span> sec
+<span class="k">on</span> fill:      обновить TradeRow.entry
+<span class="k">on</span> expire:    cancel, exit_reason=<span class="s">"ttl_expired"</span>,
+              cooldown <span class="n">15</span> мин на паре
+<span class="k">if</span> fill &lt; <span class="n">10%</span> qty: <span class="s">"micro_fill_rejected"</span></pre>
+      <div class="callout">Все отменённые / частично исполненные ордера исключаются из W/L и дневного PnL — чтобы статистика не портилась «псевдо-сделками».</div>
+    </div>
+    <div class="card">
+      <h3>DCA (усреднение)</h3>
+<pre>dca_multipliers: [<span class="n">1.0</span>, <span class="n">2.0</span>, <span class="n">3.5</span>]  <span class="c"># в ATR</span>
+max_dca_exposure_pct: <span class="n">0.20</span>
+single_order_max_pct: <span class="n">0.05</span>
+enabled: <span class="n">false</span>   <span class="c"># по умолчанию выкл</span></pre>
+      <p>Пример: BTC @ $40k, ATR $200 →</p>
+      <ul>
+        <li>Level 0: просадка $200 (1× ATR) → доливка</li>
+        <li>Level 1: просадка $400 → следующая</li>
+        <li>Level 2: просадка $700 → последняя</li>
+      </ul>
+      <p>После каждой доливки пересчитываются <b>средняя цена входа</b> и <b>новые SL/TP</b> от неё. Общий экспозиш ≤ 20% баланса.</p>
+      <div class="callout warn">DCA по умолчанию выключен. На ревью стоит обсудить — нужна ли эта опция в принципе или это путь к катастрофе на сильных трендах.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================== ML ================== -->
+<section id="ml">
+  <h2 class="sec"><span class="n">11</span>ML-пайплайн: авто-тюнинг стратегии</h2>
+  <p class="sub">Каждые 24 часа пересматриваем пороги на своих закрытых сделках.</p>
+  <div class="grid c2">
+    <div class="card">
+      <h3>Feature set (14)</h3>
+      <ul style="columns:2;column-gap:20px">
+        <li>RSI</li>
+        <li>MACD hist</li>
+        <li>EMA trend (±1/0)</li>
+        <li>Volume above avg</li>
+        <li>Signal strength</li>
+        <li>F&amp;G value</li>
+        <li>Coin sentiment</li>
+        <li>Hour UTC</li>
+        <li>Day of week</li>
+        <li>Side (BUY/SELL)</li>
+        <li>Leverage</li>
+        <li>StochRSI-K</li>
+        <li>OBV trend</li>
+        <li>Ichimoku signal</li>
+      </ul>
+      <p style="margin-top:8px"><b>Target</b>: <code>is_win</code> (0/1).</p>
+    </div>
+
+    <div class="card">
+      <h3>Модель и селекция</h3>
+      <ol style="padding-left:18px;color:var(--ink2)">
+        <li><b>SelectKBest</b> (F-score) — перебор K=3..N, выбираем по CV-accuracy. Folds: <code>min(5, max(2, n/5))</code>.</li>
+        <li><b>GridSearchCV по Random Forest</b> — 81 комбинация: <code>n_estimators∈{50,100,200}</code>, <code>max_depth∈{3,5,8}</code>, <code>min_samples_split∈{2,5,10}</code>, <code>min_samples_leaf∈{1,2,4}</code>, n_jobs=2.</li>
+        <li>Получаем <b>feature importances</b>.</li>
+        <li>Минимум данных: <b>20 сделок</b> (меньше → uniform importances).</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h3>Strategy optimizer</h3>
+<pre>FEATURE_PARAM_MAP = {
+  <span class="s">"rsi"</span>:                 [(rsi_oversold, +1), (rsi_overbought, −1)],
+  <span class="s">"fear_greed_value"</span>:    [(fg_block_long, +1), (fg_block_short, −1)],
+  <span class="s">"coin_sentiment_score"</span>: [(coin_block_long, −1), (coin_block_short, +1)],
+}
+
+max_step = baseline × <span class="n">10%</span> × importance
+<span class="k">if</span> WR &lt; <span class="n">50%</span>: сужаем полосы (меньше сделок)
+<span class="k">else</span>:            расширяем (больше сделок)
+
+bounds: baseline ± <span class="n">30%</span></pre>
+      <p>Пороги RSI обязательно сохраняют порядок <code>oversold &lt; overbought</code> — иначе сброс к baseline.</p>
+    </div>
+
+    <div class="card">
+      <h3>Walk-forward + rollback</h3>
+      <ul>
+        <li><b>TimeSeriesSplit</b> валидация — уважаем временной порядок.</li>
+        <li>Если новые параметры хуже текущих на hold-out → <b>reject</b>.</li>
+        <li>Иначе — применяем и пишем новую версию в <code>strategy_params</code>.</li>
+        <li>Каждые <b>10 сделок</b> проверка эффективности:
+          <br><code>WR_at_apply − WR_recent ≥ 10%</code> → rollback.</li>
+        <li>Rollback cascade: лучшая историческая версия с WR ≥ 40% → иначе baseline.</li>
+      </ul>
+      <div class="callout">Это не «ML-альфа-модель». Это <b>online hyperparameter tuner</b>, который подгоняет пороги классических индикаторов под недавнее поведение пары + своего трейдстатистики.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================== Cycle ================== -->
+<section id="cycle">
+  <h2 class="sec"><span class="n">12</span>Полный цикл исполнения <code>process_pair()</code></h2>
+  <p class="sub">Каждые 5 минут, для каждой из 10 пар параллельно через <code>asyncio.gather</code>.</p>
+  <div class="card">
+    <div class="flow">
+      <div class="step"><span class="num">01</span><b>is_running?</b><br>и не в drawdown halt</div>
+      <div class="step"><span class="num">02</span><b>Session filter</b><br>сейчас активна разрешённая сессия?</div>
+      <div class="step"><span class="num">03</span><b>Per-pair lock</b><br>уже есть открытая на этой паре?</div>
+      <div class="step"><span class="num">04</span><b>Post-SL/TTL cooldown</b><br>30 мин после прошлого выхода</div>
+      <div class="step"><span class="num">05</span><b>Loss-streak breaker</b><br>5 убытков = пауза 60 мин</div>
+      <div class="step"><span class="num">06</span><b>ATR gate</b><br>ATR/price ≥ 0.15%</div>
+      <div class="step"><span class="num">07</span><b>Regime detect</b><br>HMM → загрузка пресета</div>
+      <div class="step"><span class="num">08</span><b>Generate signal</b><br>score из 7 индикаторов</div>
+      <div class="step"><span class="num">09</span><b>MTF gate</b><br>1h/4h/1d EMA подтверждение</div>
+      <div class="step"><span class="num">10</span><b>Sentiment filter</b><br>F&amp;G + coin по режиму</div>
+      <div class="step"><span class="num">11</span><b>Correlation filter</b><br>|corr| ≤ 0.80</div>
+      <div class="step"><span class="num">12</span><b>Risk gate</b><br>positions, daily loss, DD</div>
+      <div class="step"><span class="num">13</span><b>Sizing + ATR SL/TP</b><br>5% notional · 5/10× ATR</div>
+      <div class="step"><span class="num">14</span><b>Limit order + poll</b><br>TTL 300s</div>
+      <div class="step"><span class="num">15</span><b>Persist + notify</b><br>DB + Telegram</div>
+    </div>
+    <p style="color:var(--muted);font-size:12px;margin-top:14px">Параллельно работает <code>check_open_trades()</code> — тоже каждые 5 мин: обновляет peak balance, двигает trailing stop, проверяет DCA-триггеры, закрывает по SL/TP.</p>
+  </div>
+</section>
+
+<!-- ================== Parameters table ================== -->
+<section id="params">
+  <h2 class="sec"><span class="n">13</span>Сводная таблица параметров</h2>
+  <p class="sub">Всё, что можно крутить без изменения кода — в <code>config.yaml</code>.</p>
+  <div class="card" style="padding:0">
+    <table>
+      <thead><tr><th>Параметр</th><th>Значение</th><th>Смысл</th></tr></thead>
+      <tbody>
+        <tr><td><code>signal_threshold</code></td><td>±4</td><td>Порог композитного score</td></tr>
+        <tr><td><code>max_position_pct</code></td><td>5%</td><td>Размер позиции от депо</td></tr>
+        <tr><td><code>max_open_positions</code></td><td>5</td><td>Одновременных позиций</td></tr>
+        <tr><td><code>daily_loss_limit_pct</code></td><td>3%</td><td>Стоп на день</td></tr>
+        <tr><td><code>futures_max_leverage</code></td><td>10x</td><td>Плечо</td></tr>
+        <tr><td><code>SL_ATR_MULT / TP_ATR_MULT</code></td><td>5.0 / 10.0</td><td>SL и TP в ATR</td></tr>
+        <tr><td><code>TRAIL_ATR_MULT</code></td><td>0.5</td><td>Шаг трейлинга</td></tr>
+        <tr><td><code>min_atr_pct</code></td><td>0.15%</td><td>Минимум волатильности</td></tr>
+        <tr><td><code>limit_order_ttl_seconds</code></td><td>300 с</td><td>TTL лимитки</td></tr>
+        <tr><td><code>limit_price_offset_pct</code></td><td>0.05%</td><td>Отступ от bid/ask</td></tr>
+        <tr><td><code>min_fill_threshold_pct</code></td><td>10%</td><td>Мин. заполнение ордера</td></tr>
+        <tr><td><code>max_drawdown_pct</code></td><td>20%</td><td>Halt по DD</td></tr>
+        <tr><td><code>correlation_threshold</code></td><td>0.80</td><td>Блок по корреляции</td></tr>
+        <tr><td><code>pair_rescan_interval</code></td><td>60 мин</td><td>Ре-сбор топ-пар</td></tr>
+        <tr><td><code>min_volume_24h</code></td><td>$5M</td><td>Фильтр ликвидности</td></tr>
+        <tr><td><code>top_n</code></td><td>10</td><td>Размер пула пар</td></tr>
+        <tr><td><code>cycle_minutes</code></td><td>5</td><td>Период основного цикла</td></tr>
+        <tr><td><code>hmm_confirmation_hours</code></td><td>24</td><td>Стабильный режим для свитча</td></tr>
+        <tr><td><code>ml_min_trades</code></td><td>50</td><td>Минимум данных для авто-тюна</td></tr>
+        <tr><td><code>max_deviation_pct</code></td><td>30%</td><td>Границы ML-подстройки</td></tr>
+        <tr><td><code>rollback_threshold_pct</code></td><td>10%</td><td>Падение WR для rollback</td></tr>
+        <tr><td><code>rollback_window</code></td><td>10 сделок</td><td>Окно проверки</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="footline">
+  Tradebot · Python 3.12 · asyncio · ccxt · SQLAlchemy · aiogram · ta · scikit-learn · hmmlearn<br>
+  Документ сгенерирован для технического ревью. Все значения соответствуют <code>config.yaml</code> и коду в <code>src/</code> на момент v1.5.
+</div>
+
+</div>
+</body>
+</html>
