@@ -35,7 +35,10 @@ export function KanbanBoard({ caseId, onTaskClick, onAddTask }: Props) {
 
   const { data: tasks = [] } = trpc.caseTasks.listByCaseId.useQuery({ caseId, groupBy });
   const reorderMutation = trpc.caseTasks.reorder.useMutation({
-    onSuccess: () => utils.caseTasks.listByCaseId.invalidate({ caseId }),
+    onSuccess: () => {
+      utils.caseTasks.listByCaseId.invalidate({ caseId });
+      utils.caseTasks.listWithDueDate.invalidate();
+    },
     onError: (e) => toast.error(e.message),
   });
 

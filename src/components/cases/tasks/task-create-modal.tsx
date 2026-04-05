@@ -29,6 +29,7 @@ export function TaskCreateModal({ caseId, currentStageId, open, onClose }: Props
   const createMutation = trpc.caseTasks.create.useMutation({
     onSuccess: () => {
       utils.caseTasks.listByCaseId.invalidate({ caseId });
+      utils.caseTasks.listWithDueDate.invalidate();
       toast.success("Task created");
       reset();
       onClose();

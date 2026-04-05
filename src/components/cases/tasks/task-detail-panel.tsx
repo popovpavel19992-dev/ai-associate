@@ -36,6 +36,7 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
       if (task) {
         utils.caseTasks.listByCaseId.invalidate({ caseId: task.caseId });
         utils.caseTasks.getById.invalidate({ taskId: task.id });
+        utils.caseTasks.listWithDueDate.invalidate();
       }
     },
     onError: (e) => toast.error(e.message),
@@ -43,11 +44,13 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
   const toggleAssignMutation = trpc.caseTasks.toggleAssign.useMutation({
     onSuccess: () => {
       if (task) utils.caseTasks.getById.invalidate({ taskId: task.id });
+      utils.caseTasks.listWithDueDate.invalidate();
     },
   });
   const deleteMutation = trpc.caseTasks.delete.useMutation({
     onSuccess: () => {
       if (task) utils.caseTasks.listByCaseId.invalidate({ caseId: task.caseId });
+      utils.caseTasks.listWithDueDate.invalidate();
       onClose();
       toast.success("Task deleted");
     },
