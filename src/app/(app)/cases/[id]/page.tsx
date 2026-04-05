@@ -11,11 +11,13 @@ import { StageSelector } from "@/components/cases/stage-selector";
 import { CaseTimeline } from "@/components/cases/case-timeline";
 import { CaseOverview } from "@/components/cases/case-overview";
 import { TasksTab } from "@/components/cases/tasks/tasks-tab";
+import { CaseCalendar } from "@/components/calendar/case-calendar";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { key: "overview", label: "Overview" },
   { key: "tasks", label: "Tasks" },
+  { key: "calendar", label: "Calendar" },
   { key: "report", label: "Report" },
   { key: "timeline", label: "Timeline" },
   { key: "contracts", label: "Contracts" },
@@ -158,6 +160,10 @@ export default function CaseDetailPage({
 
         {activeTab === "tasks" && (
           <TasksTab caseId={caseData.id} currentStageId={caseData.stageId ?? null} />
+        )}
+
+        {activeTab === "calendar" && (
+          <CaseCalendar caseId={caseData.id} />
         )}
 
         {activeTab === "report" && (
