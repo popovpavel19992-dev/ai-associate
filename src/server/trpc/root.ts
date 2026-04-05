@@ -9,6 +9,7 @@ import { contractsRouter } from "./routers/contracts";
 import { comparisonsRouter } from "./routers/comparisons";
 import { draftsRouter } from "./routers/drafts";
 import { caseTasksRouter } from "./routers/case-tasks";
+import { calendarRouter } from "./routers/calendar";
 
 export const appRouter = router({
   users: usersRouter,
@@ -21,6 +22,7 @@ export const appRouter = router({
   comparisons: comparisonsRouter,
   drafts: draftsRouter,
   caseTasks: caseTasksRouter,
+  calendar: calendarRouter,
 });
 
 export type AppRouter = typeof appRouter;
