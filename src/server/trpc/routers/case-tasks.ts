@@ -1,9 +1,10 @@
 import { z } from "zod/v4";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, gte, isNotNull, lte } from "drizzle-orm";
 import { protectedProcedure, router } from "../trpc";
 import { caseTasks } from "@/server/db/schema/case-tasks";
 import { caseStages, caseEvents, stageTaskTemplates } from "@/server/db/schema/case-stages";
 import { checklistSchema } from "@/lib/case-tasks";
+import { cases } from "@/server/db/schema/cases";
 import { assertCaseOwnership, assertTaskOwnership } from "../lib/case-auth";
 
 export const caseTasksRouter = router({
@@ -224,6 +225,37 @@ export const caseTasksRouter = router({
     .mutation(async ({ ctx, input }) => {
       await assertCaseOwnership(ctx, input.caseId);
       return createTasksFromTemplatesInternal(ctx.db, input.caseId, input.stageId);
+    }),
+
+  listWithDueDate: protectedProcedure
+    .input(
+      z.object({
+        from: z.date(),
+        to: z.date(),
+        caseId: z.string().uuid().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const conditions = [
+        eq(cases.userId, ctx.user.id),
+        isNotNull(caseTasks.dueDate),
+        gte(caseTasks.dueDate, input.from),
+        lte(caseTasks.dueDate, input.to),
+      ];
+      if (input.caseId) {
+        await assertCaseOwnership(ctx, input.caseId);
+        conditions.push(eq(caseTasks.caseId, input.caseId));
+      }
+
+      const rows = await ctx.db
+        .select({ task: caseTasks })
+        .from(caseTasks)
+        .innerJoin(cases, eq(cases.id, caseTasks.caseId))
+        .where(and(...conditions))
+        .orderBy(asc(caseTasks.dueDate))
+        .limit(500);
+
+      return rows.map((r) => r.task);
     }),
 });
 
