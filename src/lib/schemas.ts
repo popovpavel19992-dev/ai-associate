@@ -159,3 +159,20 @@ export const comparisonOutputSchema = z.object({
 
 export type ContractAnalysisOutput = z.infer<typeof contractAnalysisSchema>;
 export type ComparisonOutput = z.infer<typeof comparisonOutputSchema>;
+
+export const draftClauseOutputSchema = z.object({
+  number: z.string(),
+  title: z.string(),
+  text: z.string(),
+  type: z.enum(["standard", "unusual", "favorable", "unfavorable"]),
+  ai_notes: z.string(),
+});
+
+export const draftOutputSchema = z.object({
+  clauses: z.array(draftClauseOutputSchema),
+  preamble: z.string().optional(),
+  execution_block: z.string().optional(),
+});
+
+export type DraftOutput = z.infer<typeof draftOutputSchema>;
+export type DraftClauseOutput = z.infer<typeof draftClauseOutputSchema>;

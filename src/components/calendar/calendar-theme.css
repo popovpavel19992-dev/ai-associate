@@ -1,0 +1,48 @@
+/* src/components/calendar/calendar-theme.css */
+/* Dark theme overrides for react-big-calendar.
+   Scoped via the `.ct-calendar` wrapper class on CalendarView. */
+
+.ct-calendar .rbc-calendar {
+  background-color: transparent;
+  color: rgb(228 228 231); /* zinc-200 */
+}
+.ct-calendar .rbc-month-view,
+.ct-calendar .rbc-time-view,
+.ct-calendar .rbc-agenda-view {
+  border: 1px solid rgb(39 39 42); /* zinc-800 */
+  border-radius: 6px;
+}
+.ct-calendar .rbc-header,
+.ct-calendar .rbc-time-header,
+.ct-calendar .rbc-time-header-content,
+.ct-calendar .rbc-time-content,
+.ct-calendar .rbc-day-bg,
+.ct-calendar .rbc-month-row,
+.ct-calendar .rbc-row {
+  border-color: rgb(39 39 42);
+}
+.ct-calendar .rbc-off-range-bg {
+  background-color: rgb(9 9 11); /* zinc-950 */
+}
+.ct-calendar .rbc-today {
+  background-color: rgba(59, 130, 246, 0.08); /* blue-500/8% */
+}
+.ct-calendar .rbc-event {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+.ct-calendar .rbc-event-content {
+  padding: 0;
+}
+.ct-calendar .rbc-show-more {
+  color: rgb(161 161 170); /* zinc-400 */
+  background: transparent;
+}
+.ct-calendar .rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
+  border-color: rgb(39 39 42);
+  color: rgb(228 228 231);
+}
+.ct-calendar .rbc-agenda-empty {
+  color: rgb(113 113 122); /* zinc-500 */
+}

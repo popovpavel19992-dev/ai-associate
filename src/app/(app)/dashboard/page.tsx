@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Plus, Zap, FileCheck, GitCompareArrows } from "lucide-react";
+import { Plus, Zap, FileCheck, GitCompareArrows, PenLine } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { CaseList } from "@/components/cases/case-list";
 import { ContractList } from "@/components/contracts/contract-list";
+import { DraftList } from "@/components/drafts/draft-list";
 import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
@@ -30,6 +31,13 @@ export default function DashboardPage() {
             Compare
           </Link>
           <Link
+            href="/drafts/new"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            <PenLine className="mr-2 h-4 w-4" />
+            Generate Contract
+          </Link>
+          <Link
             href="/quick-analysis"
             className={cn(buttonVariants({ variant: "outline" }))}
           >
@@ -47,6 +55,11 @@ export default function DashboardPage() {
       <section>
         <h2 className="mb-4 text-lg font-semibold">Recent Contracts</h2>
         <ContractList />
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-lg font-semibold">Recent Drafts</h2>
+        <DraftList />
       </section>
     </div>
   );

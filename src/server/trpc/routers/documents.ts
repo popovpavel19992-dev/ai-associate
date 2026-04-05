@@ -5,6 +5,7 @@ import { router, protectedProcedure } from "../trpc";
 import { documents } from "../../db/schema/documents";
 import { documentAnalyses } from "../../db/schema/document-analyses";
 import { cases } from "../../db/schema/cases";
+import { caseEvents } from "../../db/schema/case-stages";
 import { deleteObject } from "../../services/s3";
 
 export const documentsRouter = router({
@@ -74,6 +75,14 @@ export const documentsRouter = router({
           status: "uploading",
         })
         .returning();
+
+      // Log document_added event
+      await ctx.db.insert(caseEvents).values({
+        caseId: input.caseId,
+        type: "document_added",
+        title: `Document added: ${input.filename}`,
+        actorId: ctx.user.id,
+      });
 
       // If case was already analyzed, mark brief as outdated
       if (caseRecord.status === "ready") {

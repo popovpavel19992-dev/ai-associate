@@ -7,6 +7,7 @@ import { documentAnalyses } from "../../db/schema/document-analyses";
 import { getObject } from "../../services/s3";
 import { extractText } from "../../services/extraction";
 import { analyzeDocument, synthesizeCaseBrief } from "../../services/claude";
+import { caseEvents } from "../../db/schema/case-stages";
 import { PIPELINE_CONCURRENCY } from "@/lib/constants";
 
 export const caseAnalyze = inngest.createFunction(
@@ -139,6 +140,11 @@ export const caseAnalyze = inngest.createFunction(
     if (analyses.length === 1) {
       await step.run("mark-ready-single", async () => {
         await db.update(cases).set({ status: "ready" }).where(eq(cases.id, caseId));
+        await db.insert(caseEvents).values({
+          caseId,
+          type: "analysis_completed",
+          title: "Analysis completed",
+        });
       });
     } else if (analyses.length > 1) {
       await step.run("synthesize-brief", async () => {
@@ -150,9 +156,19 @@ export const caseAnalyze = inngest.createFunction(
           );
 
           await db.update(cases).set({ caseBrief: brief, status: "ready" }).where(eq(cases.id, caseId));
+          await db.insert(caseEvents).values({
+            caseId,
+            type: "analysis_completed",
+            title: "Analysis completed",
+          });
         } catch {
           // Brief synthesis failed — individual reports still available
           await db.update(cases).set({ status: "ready" }).where(eq(cases.id, caseId));
+          await db.insert(caseEvents).values({
+            caseId,
+            type: "analysis_completed",
+            title: "Analysis completed",
+          });
         }
       });
     }

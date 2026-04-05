@@ -163,3 +163,4 @@ export const CONTRACT_SECTION_LABELS: Record<string, string> = {
 
 export const CONTRACT_REVIEW_CREDITS = 2;
 export const COMPARISON_DIFF_CREDITS = 1;
+export const GENERATION_CREDITS = 3;
