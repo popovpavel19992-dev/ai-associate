@@ -1,38 +1,10 @@
-import { TRPCError } from "@trpc/server";
 import { z } from "zod/v4";
 import { and, asc, eq } from "drizzle-orm";
 import { protectedProcedure, router } from "../trpc";
-import { cases } from "@/server/db/schema/cases";
 import { caseTasks } from "@/server/db/schema/case-tasks";
 import { caseStages, caseEvents, stageTaskTemplates } from "@/server/db/schema/case-stages";
 import { checklistSchema } from "@/lib/case-tasks";
-
-async function assertCaseOwnership(
-  ctx: { db: typeof import("@/server/db").db; user: { id: string } },
-  caseId: string,
-) {
-  const [c] = await ctx.db
-    .select({ id: cases.id })
-    .from(cases)
-    .where(and(eq(cases.id, caseId), eq(cases.userId, ctx.user.id)))
-    .limit(1);
-  if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
-  return c;
-}
-
-async function assertTaskOwnership(
-  ctx: { db: typeof import("@/server/db").db; user: { id: string } },
-  taskId: string,
-) {
-  const [row] = await ctx.db
-    .select({ task: caseTasks, case: cases })
-    .from(caseTasks)
-    .innerJoin(cases, eq(cases.id, caseTasks.caseId))
-    .where(and(eq(caseTasks.id, taskId), eq(cases.userId, ctx.user.id)))
-    .limit(1);
-  if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Task not found" });
-  return row.task;
-}
+import { assertCaseOwnership, assertTaskOwnership } from "../lib/case-auth";
 
 export const caseTasksRouter = router({
   listByCaseId: protectedProcedure
