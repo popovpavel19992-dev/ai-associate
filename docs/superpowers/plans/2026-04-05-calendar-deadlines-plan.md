@@ -24,7 +24,8 @@
 | `src/lib/calendar-events.ts` | `CALENDAR_EVENT_KINDS`, `CalendarEventKind` type, `calendarEventCreateSchema`, `calendarEventUpdateSchema`, metadata maps |
 | `src/components/calendar/calendar-item-utils.ts` | `mergeToCalendarItems`, `isOverdue`, `isUpcoming24h`, `getItemColor`, `getItemIcon`, `CalendarItem` type |
 | `src/components/calendar/use-calendar-items.ts` | React hook merging `calendar.*` + `caseTasks.listWithDueDate` queries |
-| `src/components/calendar/calendar-view.tsx` | Dynamic wrapper around `react-big-calendar` with adapter (`startsAt/endsAt` → `start/end`) |
+| `src/components/calendar/calendar-view.tsx` | Thin `next/dynamic` boundary — one-liner that lazy-loads `calendar-view-inner.tsx` |
+| `src/components/calendar/calendar-view-inner.tsx` | Actual `react-big-calendar` wrapper + localizer + CSS imports (isolated so RBC stays out of non-calendar bundles) |
 | `src/components/calendar/calendar-event-card.tsx` | Custom event renderer (color/icon by kind, overdue/upcoming border) |
 | `src/components/calendar/calendar-toolbar.tsx` | Custom RBC toolbar: nav buttons + view switcher + "+ Add Event" |
 | `src/components/calendar/event-form.tsx` | Shared form (react-hook-form + zodResolver) for create + edit |
@@ -892,7 +893,18 @@ git commit -m "chore: add react-big-calendar for 2.1.3a"
 **Files:**
 - Create: `src/components/calendar/calendar-item-utils.ts`
 
-- [ ] **Step 1: Create the utility module**
+- [ ] **Step 1: Verify upstream type exports exist**
+
+```bash
+grep -n "export type TaskStatus\b" src/lib/case-tasks.ts
+grep -n "export type TaskPriority\b" src/lib/case-tasks.ts
+grep -n "export const CALENDAR_EVENT_KIND_META\b" src/lib/calendar-events.ts
+grep -n "export const DEADLINE_KINDS\b" src/lib/calendar-events.ts
+```
+
+Expected: each grep returns exactly one hit. Also confirm (by opening `src/lib/calendar-events.ts` from Chunk 1) that each entry in `CALENDAR_EVENT_KIND_META` has both an `icon` (lucide component) and a `colorClass` (string) field — this task depends on both.
+
+- [ ] **Step 2: Create the utility module**
 
 ```ts
 // src/components/calendar/calendar-item-utils.ts
@@ -1031,9 +1043,20 @@ export function getBorderClass(
   if (isUpcoming24h(item, now)) return "border-l-[3px] border-l-yellow-500";
   return "";
 }
+
+// Shared react-big-calendar event shape, kept here so both the dynamic inner
+// view module and the event-card component can import it without pulling
+// react-big-calendar into non-calendar bundles.
+export interface RBCEvent {
+  title: string;
+  start: Date;
+  end: Date;
+  resource: CalendarItem;
+  allDay?: boolean;
+}
 ```
 
-- [ ] **Step 2: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
 git add src/components/calendar/calendar-item-utils.ts
@@ -1157,10 +1180,13 @@ git commit -m "feat(calendar): useCalendarItems hook merging events + tasks"
 ### Task 13: `CalendarView` base (react-big-calendar wrapper)
 
 **Files:**
-- Create: `src/components/calendar/calendar-view.tsx`
+- Create: `src/components/calendar/calendar-view.tsx` (thin dynamic-import boundary)
+- Create: `src/components/calendar/calendar-view-inner.tsx` (actual RBC wrapper — isolated so `next/dynamic` keeps RBC + its CSS out of non-calendar bundles)
 - Create: `src/components/calendar/calendar-event-card.tsx`
 - Create: `src/components/calendar/calendar-toolbar.tsx`
 - Create: `src/components/calendar/calendar-theme.css`
+
+> **Important (bundle splitting):** `next/dynamic` only code-splits when it wraps a **separate module** via `() => import("./path")`. Wrapping a locally-defined component in `Promise.resolve(...)` does NOT create a chunk boundary — the imports at the top of the file are still evaluated eagerly. That is why the inner component lives in its own file below and `calendar-view.tsx` is a one-liner.
 
 - [ ] **Step 1: Create `calendar-event-card.tsx`**
 
@@ -1168,21 +1194,16 @@ git commit -m "feat(calendar): useCalendarItems hook merging events + tasks"
 // src/components/calendar/calendar-event-card.tsx
 "use client";
 
+import type { EventProps } from "react-big-calendar";
 import { cn } from "@/lib/utils";
-import {
-  CALENDAR_EVENT_KIND_META,
-} from "@/lib/calendar-events";
+import { CALENDAR_EVENT_KIND_META } from "@/lib/calendar-events";
 import {
   getBorderClass,
   getItemColorClass,
-  type CalendarItem,
+  type RBCEvent,
 } from "./calendar-item-utils";
 
-interface Props {
-  event: { resource: CalendarItem; title: string };
-}
-
-export function CalendarEventCard({ event }: Props) {
+export function CalendarEventCard({ event }: EventProps<RBCEvent>) {
   const item = event.resource;
   const color = getItemColorClass(item);
   const border = getBorderClass(item);
@@ -1217,7 +1238,7 @@ import type { ToolbarProps, View } from "react-big-calendar";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { CalendarItem } from "./calendar-item-utils";
+import type { RBCEvent } from "./calendar-item-utils";
 
 const VIEW_LABELS: Record<View, string> = {
   month: "Month",
@@ -1227,7 +1248,7 @@ const VIEW_LABELS: Record<View, string> = {
   agenda: "Agenda",
 };
 
-interface Props extends ToolbarProps<{ resource: CalendarItem }> {
+interface Props extends ToolbarProps<RBCEvent> {
   onAddEvent: () => void;
   availableViews: View[];
 }
@@ -1343,13 +1364,12 @@ export function CalendarToolbar(props: Props) {
 }
 ```
 
-- [ ] **Step 4: Create `calendar-view.tsx`**
+- [ ] **Step 4: Create `calendar-view-inner.tsx` (contains all react-big-calendar imports)**
 
 ```tsx
-// src/components/calendar/calendar-view.tsx
+// src/components/calendar/calendar-view-inner.tsx
 "use client";
 
-import dynamic from "next/dynamic";
 import { useMemo } from "react";
 import {
   Calendar as RBCalendar,
@@ -1358,14 +1378,13 @@ import {
   type SlotInfo,
   type View,
 } from "react-big-calendar";
-import format from "date-fns/format";
-import parse from "date-fns/parse";
-import startOfWeek from "date-fns/startOfWeek";
-import getDay from "date-fns/getDay";
+// date-fns v4: use named imports from "date-fns" (deep subpath default imports
+// like "date-fns/format" were removed in v3 and do not work in v4).
+import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { CalendarEventCard } from "./calendar-event-card";
 import { CalendarToolbar } from "./calendar-toolbar";
-import type { CalendarItem } from "./calendar-item-utils";
+import type { CalendarItem, RBCEvent } from "./calendar-item-utils";
 
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./calendar-theme.css";
@@ -1379,15 +1398,7 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-interface RBCEvent {
-  title: string;
-  start: Date;
-  end: Date;
-  resource: CalendarItem;
-  allDay?: boolean;
-}
-
-interface Props {
+export interface CalendarViewProps {
   items: CalendarItem[];
   defaultView?: View;
   onSelectItem: (item: CalendarItem) => void;
@@ -1398,14 +1409,14 @@ interface Props {
 
 const AVAILABLE_VIEWS: View[] = ["month", "week", "agenda"];
 
-function CalendarViewInner({
+export default function CalendarViewInner({
   items,
   defaultView = "month",
   onSelectItem,
   onSelectSlot,
   onAddEvent,
   onRangeChange,
-}: Props) {
+}: CalendarViewProps) {
   const rbcEvents = useMemo<RBCEvent[]>(
     () =>
       items.map((i) => ({
@@ -1420,10 +1431,10 @@ function CalendarViewInner({
 
   const components: Components<RBCEvent> = useMemo(
     () => ({
-      event: CalendarEventCard as unknown as Components<RBCEvent>["event"],
+      event: CalendarEventCard,
       toolbar: (props) => (
         <CalendarToolbar
-          {...(props as React.ComponentProps<typeof CalendarToolbar>)}
+          {...props}
           availableViews={AVAILABLE_VIEWS}
           onAddEvent={onAddEvent}
         />
@@ -1462,27 +1473,52 @@ function CalendarViewInner({
     </div>
   );
 }
-
-// Dynamically imported to keep react-big-calendar out of non-calendar bundles.
-export const CalendarView = dynamic(
-  () => Promise.resolve(CalendarViewInner),
-  { ssr: false },
-);
-export type { RBCEvent };
 ```
 
-- [ ] **Step 5: Typecheck + quick build sanity**
+- [ ] **Step 5: Create `calendar-view.tsx` (thin dynamic-import boundary)**
+
+```tsx
+// src/components/calendar/calendar-view.tsx
+"use client";
+
+// This file MUST stay minimal. `next/dynamic` only creates a separate chunk
+// when it wraps a module via `() => import("...")`. Inlining the component or
+// using `Promise.resolve(Component)` would re-introduce react-big-calendar +
+// its CSS into every bundle that imports CalendarView.
+import dynamic from "next/dynamic";
+
+export type { CalendarViewProps } from "./calendar-view-inner";
+
+export const CalendarView = dynamic(() => import("./calendar-view-inner"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center text-sm text-zinc-500">
+      Loading calendar…
+    </div>
+  ),
+});
+```
+
+- [ ] **Step 6: Typecheck**
 
 ```bash
 pnpm tsc --noEmit
 ```
 
-Fix any type mismatches from react-big-calendar generics before proceeding. (Common gotcha: the `Components` generic must match the event shape you pass in.)
+Expected: clean exit. Common gotchas if it fails:
+- `Components<RBCEvent>["event"]` expects a component taking `EventProps<RBCEvent>`; `CalendarEventCard` is now typed that way directly — no cast needed.
+- `ToolbarProps<RBCEvent>` is the correct generic (not `{ resource: CalendarItem }`) because RBC passes the full event shape.
+- If `format`/`parse`/`startOfWeek`/`getDay` fail to resolve, you are on an older date-fns; verify `pnpm list date-fns` returns v4+.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Smoke render check**
+
+Temporarily add `<CalendarView items={[]} onSelectItem={()=>{}} onSelectSlot={()=>{}} onAddEvent={()=>{}} />` to any existing page (e.g. `/dashboard`), run `pnpm dev`, confirm the empty calendar renders with dark theme and no console errors, then revert the temporary edit before committing. Do NOT commit the scratch edit.
+
+- [ ] **Step 8: Commit**
 
 ```bash
 git add src/components/calendar/calendar-view.tsx \
+        src/components/calendar/calendar-view-inner.tsx \
         src/components/calendar/calendar-event-card.tsx \
         src/components/calendar/calendar-toolbar.tsx \
         src/components/calendar/calendar-theme.css
