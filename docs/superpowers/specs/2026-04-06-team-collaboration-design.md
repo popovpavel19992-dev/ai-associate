@@ -28,7 +28,7 @@ Team collaboration for law firms: invite members via email, manage roles, contro
 | caseId | uuid FK → cases.id | ON DELETE CASCADE |
 | userId | uuid FK → users.id | ON DELETE CASCADE |
 | role | enum('lead', 'contributor') | NOT NULL, default 'contributor' |
-| assignedBy | uuid FK → users.id | ON DELETE SET NULL |
+| assignedBy | uuid FK → users.id | NULLABLE, ON DELETE SET NULL. NULL means assigner was deleted. |
 | createdAt | timestamptz | default `now()` |
 
 **Constraint:** `UNIQUE(caseId, userId)` — one membership per user per case.
@@ -47,7 +47,7 @@ Backfill: for every case where `orgId IS NOT NULL`, insert `case_members(caseId,
 
 ## Permission System
 
-New module `src/server/trpc/lib/permissions.ts` replaces `assertCaseOwnership`.
+New module `src/server/trpc/lib/permissions.ts` replaces both `assertCaseOwnership` and `assertTaskOwnership` from `case-auth.ts`.
 
 ### Org-level permissions
 
@@ -67,6 +67,14 @@ Logic:
 2. If `user.role` is `owner` or `admin` → access all cases where `cases.orgId === user.orgId`
 3. If `user.role` is `member` → check `case_members` OR `cases.userId === user.id` (creator)
 
+### Task-level permissions
+
+```
+assertTaskAccess(ctx, taskId)
+```
+
+Logic: resolve task → get `caseId` → delegate to `assertCaseAccess(ctx, caseId)`. Replaces existing `assertTaskOwnership`.
+
 ### Case deletion
 
 ```
@@ -85,7 +93,7 @@ Logic:
 | Billing & org settings | Yes | No | No |
 | See all org cases | Yes | Yes | No (only assigned + own) |
 | Create cases | Yes | Yes | Yes |
-| Assign members to case | Yes | Yes | No |
+| Assign members to case | Yes | Yes | No (lead/contributor are display-only, no elevated permissions) |
 | Edit case | Yes | Yes | Yes (if assigned) |
 | Delete case | Yes | Yes | Only own (creator) |
 | Tasks: create/assign | Yes | Yes | Yes (in assigned cases) |
@@ -94,12 +102,16 @@ Logic:
 
 ### Migration of existing routers
 
-All case-related routers update `assertCaseOwnership` → `assertCaseAccess`:
-- `cases.ts` — list filtering by role, delete with `assertCaseDelete`
-- `case-tasks.ts` — access via case
-- `calendar.ts` — access via case
-- `documents.ts` — access via case
+Replace all `assertCaseOwnership` calls AND inline `eq(cases.userId, ctx.user.id)` patterns with `assertCaseAccess`. Replace `assertTaskOwnership` with `assertTaskAccess`.
+
+Routers to update:
+- `cases.ts` — list filtering by role, delete with `assertCaseDelete`, ~10 inline ownership checks
+- `case-tasks.ts` — 6 `assertTaskOwnership` call sites → `assertTaskAccess`
+- `calendar.ts` — mixed `assertCaseOwnership` + inline checks
+- `documents.ts` — ~4 inline ownership checks
+- `contracts.ts` — inline `cases.userId === ctx.user.id` check
 - `chat.ts` — access via case
+- `comparisons.ts`, `drafts.ts` — audit and update if any case-scoped checks exist
 
 ## Clerk Integration
 
@@ -112,13 +124,13 @@ Extend existing `/api/webhooks/clerk` with organization membership events:
 | `organizationMembership.created` | Set `users.orgId`, `users.role` (mapped from Clerk role) |
 | `organizationMembership.updated` | Update `users.role` |
 | `organizationMembership.deleted` | Clear `users.orgId` and `users.role`. Trigger Inngest cleanup job. |
-| `organization.deleted` | Clear all users' `orgId`, delete all `case_members`, delete `organizations` row |
+| `organization.deleted` | Clear all users' `orgId`, delete all `case_members`, delete `organizations` row. Cases are preserved with `orgId = NULL` (become solo-owned by their creator). |
 
 ### Role mapping (Clerk → DB)
 
 - Clerk `org:admin` → `"admin"`
 - Clerk `org:member` → `"member"`
-- Org creator (via onboarding) → `"owner"` (custom mapping, Clerk has no owner concept)
+- Org creator → `"owner"`. Mechanism: during onboarding, when the user creates an org via Clerk, our onboarding flow sets `users.role = "owner"` directly. In Clerk, this user has `org:admin` role. The webhook handler checks: if `organizationMembership.created` AND user is the `organizations.ownerUserId`, preserve `"owner"` role (don't downgrade to `"admin"`).
 
 ### Clerk API calls (server-side)
 
@@ -158,7 +170,7 @@ All procedures require `protectedProcedure` + org membership.
 ### Changes to existing routers
 
 **`cases.ts`:**
-- `cases.list` — filter by role: owner/admin see all org cases, member sees `case_members` + own
+- `cases.list` — filter by role: owner/admin see all org cases, member sees assigned cases via LEFT JOIN on `case_members` OR `cases.userId = user.id`
 - `cases.delete` — use `assertCaseDelete` instead of `assertCaseOwnership`
 
 **All case-related routers:**
