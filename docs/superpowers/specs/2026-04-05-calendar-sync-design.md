@@ -76,7 +76,25 @@ Per-case, per-kind sync filters. **Opt-in model:** absence of a row = case not s
 
 **Validation:** The tRPC router validates `kinds` against `CALENDAR_EVENT_KINDS` from `src/lib/calendar-events.ts` on every update.
 
-iCal feeds respect the same preferences: the feed joins on `calendar_sync_preferences` rows for any of the user's connections to determine which cases/kinds to include. If the user has no OAuth connections but has preferences from a previously disconnected provider, the iCal feed still uses those preferences. If no preferences exist at all, the iCal feed returns an empty calendar.
+**Reconnect behavior:** When a user disconnects and reconnects a provider, preferences are cascade-deleted with the old connection. The user must re-configure case preferences. This is acceptable — reconnect is rare, and preserving stale preferences across connection boundaries adds complexity without clear benefit.
+
+iCal feeds have their own preferences table (see `ical_feed_preferences` below), independent of OAuth connection preferences. This avoids cascade-delete issues when disconnecting a provider.
+
+### `ical_feed_preferences`
+
+Per-case, per-kind filters for the iCal feed, independent of OAuth connections.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| feedId | uuid FK → ical_feeds | cascade delete |
+| caseId | uuid FK → cases | cascade delete |
+| kinds | jsonb | default `["court_date","filing_deadline","meeting","reminder","other"]` |
+| createdAt | timestamptz | |
+
+**Constraint:** `UNIQUE(feedId, caseId)`.
+
+**Behavior:** Same opt-in model as `calendar_sync_preferences`. Managed separately in the iCal section of the Settings page. Disconnecting a Google/Outlook connection does NOT affect iCal feed preferences.
 
 ### `calendar_sync_log`
 
@@ -140,15 +158,15 @@ Outlook flow is identical, substituting Microsoft OAuth endpoints and Graph API.
 
 ### Disconnect
 
-Order: DB first (atomic), external cleanup after (best-effort).
+Order: disable first, then background cleanup handles external APIs + final DB delete.
 
-1. `DELETE cascade` from DB: `calendar_connections` → `calendar_sync_preferences` → `calendar_sync_log`. This atomically stops the sync engine from using this connection.
-2. Best-effort external cleanup via Inngest background job:
-   - Delete "ClearTerms" sub-calendar via provider API
-   - Revoke token via provider API
-   - Failures are logged but do not block the user
+1. Set `syncEnabled = false` on the connection row (immediate — stops sync engine from using it)
+2. Send `calendar/connection.disconnected` Inngest event with `{ connectionId }`
+3. Redirect user to Settings with "Disconnecting..." status
+4. Inngest cleanup job (see §Sync Engine, function 4) handles: decrypt tokens → delete sub-calendar → revoke token → DELETE cascade from DB
+5. If cleanup job fails: connection remains with `syncEnabled = false`, user can retry disconnect or it stays inert
 
-Note: `ical_feeds` is NOT deleted on OAuth disconnect — the iCal feed persists independently.
+Note: `ical_feeds` and `ical_feed_preferences` are NOT deleted on OAuth disconnect — the iCal feed persists independently.
 
 ## Token Encryption
 
@@ -208,9 +226,16 @@ Flow:
 ### 4. `calendar.connection.cleanup` — Disconnect Cleanup
 
 **Trigger:** event `calendar/connection.disconnected`
-**Payload:** `{ provider, externalCalendarId, accessToken, refreshToken }`
+**Payload:** `{ connectionId }` — tokens are NOT included in the payload (they are sensitive and Inngest event logs are visible in the dashboard)
 
-Best-effort: delete sub-calendar, revoke token. Failures logged, not retried.
+Flow:
+1. Fetch connection row by connectionId (row still exists at this point — disconnect sends the event before the DB delete, or the delete is deferred until after cleanup)
+2. Decrypt tokens from DB
+3. Best-effort: delete sub-calendar via provider API, revoke token
+4. Delete the `calendar_connections` row from DB (completing the disconnect)
+5. Failures logged, not retried — tokens will expire naturally
+
+**Revised disconnect order:** (1) Send `calendar/connection.disconnected` event with `connectionId`, (2) mark `syncEnabled = false` immediately (stops sync engine), (3) cleanup job handles external API calls + final DB delete.
 
 ### Integration with existing calendar router
 
@@ -242,9 +267,8 @@ interface ExternalEvent {
   title: string
   description?: string
   startsAt: Date
-  endsAt?: Date      // null = all-day event
+  endsAt?: Date      // null = all-day event. Adapters derive isAllDay from endsAt === null at call site.
   location?: string
-  isAllDay: boolean   // derived from endsAt === null
 }
 ```
 
@@ -281,7 +305,7 @@ Flow:
 5. Generate VCALENDAR/VEVENT using `ical-generator` library (handles RFC 5545 compliance: line-folding, CRLF, escaping, required fields)
 6. Return `Content-Type: text/calendar`, `Cache-Control: no-store, private`
 
-**Rate limiting:** 60 requests per token per hour (in-memory or edge middleware).
+**Rate limiting:** 60 requests per token per hour. Implementation: simple in-memory sliding window (Map<token, timestamps[]>) in the API route handler. Acceptable for single-instance dev/staging. For multi-instance production, migrate to Upstash Redis rate limiting (`@upstash/ratelimit`) — this is a follow-up optimization, not a blocker for 2.1.3b.
 
 ### RFC 5545 Compliance
 
@@ -349,7 +373,7 @@ Multi-provider: show both badges side by side (e.g., "G synced" + "O pending").
 | `getIcalFeed` | query | Get user's iCal feed URL and status |
 | `updatePreferences` | mutation | Add/remove cases and toggle kinds for a connection |
 | `regenerateIcalToken` | mutation | Generate new iCal token, invalidate old URL |
-| `retrySyncEvent` | mutation | Retry a failed sync_log entry |
+| `retrySyncEvent` | mutation | Retry a failed sync_log entry. Respects retryCount < 5 cap — returns error if exhausted. Resets retryCount to 0 to allow a fresh cycle. |
 | `getSyncStatus` | query | Get sync badges for a list of eventIds (batch) |
 
 Connect/disconnect handled by raw API routes (OAuth redirect flow), not tRPC.
@@ -364,6 +388,7 @@ src/server/db/schema/
   calendar-sync-preferences.ts
   calendar-sync-log.ts
   ical-feeds.ts
+  ical-feed-preferences.ts
 
 src/server/lib/
   crypto.ts
