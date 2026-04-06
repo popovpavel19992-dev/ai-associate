@@ -10,6 +10,7 @@ import {
   calendarEventCreateSchema,
   calendarEventUpdateSchema,
 } from "@/lib/calendar-events";
+import { inngest } from "@/server/inngest/client";
 
 async function assertEventOwnership(
   ctx: { db: typeof import("@/server/db").db; user: { id: string } },
@@ -96,6 +97,10 @@ export const calendarRouter = router({
           createdBy: ctx.user.id,
         })
         .returning();
+      await inngest.send({
+        name: "calendar/event.changed",
+        data: { eventId: event.id, action: "create", userId: ctx.user.id },
+      });
       return event;
     }),
 
@@ -121,6 +126,10 @@ export const calendarRouter = router({
         .set({ ...rest, updatedAt: new Date() })
         .where(eq(caseCalendarEvents.id, id))
         .returning();
+      await inngest.send({
+        name: "calendar/event.changed",
+        data: { eventId: updated.id, action: "update", userId: ctx.user.id },
+      });
       return updated;
     }),
 
@@ -131,6 +140,10 @@ export const calendarRouter = router({
       await ctx.db
         .delete(caseCalendarEvents)
         .where(eq(caseCalendarEvents.id, input.id));
+      await inngest.send({
+        name: "calendar/event.changed",
+        data: { eventId: input.id, action: "delete", userId: ctx.user.id },
+      });
       return { success: true };
     }),
 });
