@@ -6,5 +6,8 @@ import { contractGenerate } from "./functions/contract-generate";
 import { creditReset } from "./functions/credit-reset";
 import { autoDelete } from "./functions/auto-delete";
 import { calendarEventSync } from "./functions/calendar-event-sync";
+import { calendarSweep } from "./functions/calendar-sweep";
+import { calendarConnectionInit } from "./functions/calendar-connection-init";
+import { calendarConnectionCleanup } from "./functions/calendar-connection-cleanup";
 
-export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync];
+export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup];
