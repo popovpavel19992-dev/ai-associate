@@ -11,6 +11,8 @@ import { draftsRouter } from "./routers/drafts";
 import { caseTasksRouter } from "./routers/case-tasks";
 import { calendarRouter } from "./routers/calendar";
 import { calendarConnectionsRouter } from "./routers/calendar-connections";
+import { teamRouter } from "./routers/team";
+import { caseMembersRouter } from "./routers/case-members";
 
 export const appRouter = router({
   users: usersRouter,
@@ -25,6 +27,8 @@ export const appRouter = router({
   caseTasks: caseTasksRouter,
   calendar: calendarRouter,
   calendarConnections: calendarConnectionsRouter,
+  team: teamRouter,
+  caseMembers: caseMembersRouter,
 });
 
 export type AppRouter = typeof appRouter;
