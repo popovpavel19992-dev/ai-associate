@@ -984,7 +984,7 @@ Implement procedures per spec:
 - `getSyncStatus` — query: batch SELECT sync_log WHERE eventId IN (ids)
 
 Also add a `disconnect` mutation:
-- `disconnect` — mutation: per spec's §Sync Engine "Revised disconnect order" (which supersedes the §OAuth Flow section's order): (1) dispatch cleanup event first via `await inngest.send({ name: "calendar/connection.disconnected", data: { connectionId } })`, then (2) set `syncEnabled = false` on the connection. **Note:** The spec has two conflicting descriptions — §OAuth Flow says DB-first then event, but §Sync Engine's revised order says event-first then DB. Follow the revised order: dispatching the event first ensures the cleanup job is enqueued even if the process crashes before the DB update. The cleanup function (Task 19) handles external calendar deletion and DB row removal asynchronously.
+- `disconnect` — mutation: (1) set `syncEnabled = false` and await DB commit — this immediately stops the sync engine from using this connection, (2) then dispatch `await inngest.send({ name: "calendar/connection.disconnected", data: { connectionId } })`. **Order matters:** DB-first prevents a race condition where the sync engine pushes events while cleanup is deleting the sub-calendar. **Note:** The spec has two conflicting descriptions of this order (§OAuth Flow says DB-first, §Sync Engine "Revised disconnect order" says event-first). We follow DB-first (§OAuth Flow) because it eliminates the concurrent-sync race. The cleanup function (Task 19) handles external calendar deletion and DB row removal asynchronously.
 
 - [ ] **Step 2: Register router in root.ts**
 
@@ -1365,7 +1365,8 @@ import { inngest } from "../client";
 // Group by connectionId, process sequentially with step.sleep between batches
 // IMPORTANT: Every step.run and step.sleep inside loops MUST have unique, deterministic IDs:
 //   step.run(`sync-${entry.id}`, ...) — use sync_log entry ID, never loop index
-//   step.sleep(`sleep-after-${connectionId}`, "1s") — use connectionId for uniqueness
+//   step.sleep(`sleep-after-${entry.id}`, "1s") — sleep between EACH individual API call,
+//     not just between connection batches. Microsoft Graph enforces 4 req/s limit.
 // Same step ID stability rules as Task 16 apply here.
 ```
 
