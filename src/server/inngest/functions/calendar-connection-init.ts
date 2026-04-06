@@ -5,6 +5,7 @@ import { calendarSyncPreferences } from "../../db/schema/calendar-sync-preferenc
 import { caseCalendarEvents } from "../../db/schema/case-calendar-events";
 import { calendarSyncLog } from "../../db/schema/calendar-sync-log";
 import { getProvider } from "../../lib/calendar-providers/factory";
+import type { CalendarConnection } from "../../db/schema/calendar-connections";
 import { eq, and, inArray } from "drizzle-orm";
 
 export const calendarConnectionInit = inngest.createFunction(
@@ -76,7 +77,7 @@ export const calendarConnectionInit = inngest.createFunction(
     if (toSync.length === 0) return { backfilled: 0, reason: "already-synced" };
 
     let backfilled = 0;
-    const provider = getProvider(connection);
+    const provider = getProvider(connection as unknown as CalendarConnection);
 
     for (const calEvent of toSync) {
       await step.run(`push-${calEvent.id}`, async () => {
@@ -86,8 +87,8 @@ export const calendarConnectionInit = inngest.createFunction(
             {
               title: calEvent.title,
               description: calEvent.description ?? undefined,
-              startsAt: calEvent.startsAt,
-              endsAt: calEvent.endsAt ?? undefined,
+              startsAt: new Date(calEvent.startsAt),
+              endsAt: calEvent.endsAt != null ? new Date(calEvent.endsAt) : undefined,
               location: calEvent.location ?? undefined,
             },
           );

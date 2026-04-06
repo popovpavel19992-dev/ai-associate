@@ -6,6 +6,7 @@ import { calendarConnections } from "../../db/schema/calendar-connections";
 import { calendarSyncPreferences } from "../../db/schema/calendar-sync-preferences";
 import { calendarSyncLog } from "../../db/schema/calendar-sync-log";
 import { getProvider } from "../../lib/calendar-providers/factory";
+import type { CalendarConnection } from "../../db/schema/calendar-connections";
 
 export const calendarEventSync = inngest.createFunction(
   {
@@ -91,7 +92,7 @@ export const calendarEventSync = inngest.createFunction(
 
       // Push to external calendar
       await step.run(`push-${connection.id}`, async () => {
-        const provider = getProvider(connection);
+        const provider = getProvider(connection as unknown as CalendarConnection);
 
         try {
           if (action === "create" && calEvent) {
@@ -100,8 +101,8 @@ export const calendarEventSync = inngest.createFunction(
               {
                 title: calEvent.title,
                 description: calEvent.description ?? undefined,
-                startsAt: calEvent.startsAt,
-                endsAt: calEvent.endsAt ?? undefined,
+                startsAt: new Date(calEvent.startsAt),
+                endsAt: calEvent.endsAt != null ? new Date(calEvent.endsAt) : undefined,
                 location: calEvent.location ?? undefined,
               },
             );
@@ -143,8 +144,8 @@ export const calendarEventSync = inngest.createFunction(
                 {
                   title: calEvent.title,
                   description: calEvent.description ?? undefined,
-                  startsAt: calEvent.startsAt,
-                  endsAt: calEvent.endsAt ?? undefined,
+                  startsAt: new Date(calEvent.startsAt),
+                  endsAt: calEvent.endsAt != null ? new Date(calEvent.endsAt) : undefined,
                   location: calEvent.location ?? undefined,
                 },
               );
@@ -164,8 +165,8 @@ export const calendarEventSync = inngest.createFunction(
                 {
                   title: calEvent.title,
                   description: calEvent.description ?? undefined,
-                  startsAt: calEvent.startsAt,
-                  endsAt: calEvent.endsAt ?? undefined,
+                  startsAt: new Date(calEvent.startsAt),
+                  endsAt: calEvent.endsAt != null ? new Date(calEvent.endsAt) : undefined,
                   location: calEvent.location ?? undefined,
                 },
               );

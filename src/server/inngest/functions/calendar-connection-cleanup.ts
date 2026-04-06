@@ -4,6 +4,7 @@ import { calendarConnections } from "../../db/schema/calendar-connections";
 import { calendarSyncLog } from "../../db/schema/calendar-sync-log";
 import { calendarSyncPreferences } from "../../db/schema/calendar-sync-preferences";
 import { getProvider } from "../../lib/calendar-providers/factory";
+import type { CalendarConnection } from "../../db/schema/calendar-connections";
 import { eq } from "drizzle-orm";
 
 export const calendarConnectionCleanup = inngest.createFunction(
@@ -29,7 +30,7 @@ export const calendarConnectionCleanup = inngest.createFunction(
     // Best-effort: delete sub-calendar from external provider
     await step.run("delete-external-calendar", async () => {
       try {
-        const provider = getProvider(connection);
+        const provider = getProvider(connection as unknown as CalendarConnection);
         if (connection.externalCalendarId) {
           await provider.deleteCalendar(connection.externalCalendarId);
         }
@@ -41,7 +42,7 @@ export const calendarConnectionCleanup = inngest.createFunction(
     // Best-effort: revoke token
     await step.run("revoke-token", async () => {
       try {
-        const provider = getProvider(connection);
+        const provider = getProvider(connection as unknown as CalendarConnection);
         await provider.revokeToken();
       } catch {
         // Best-effort — Outlook has no revoke API, Google might fail
