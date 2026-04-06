@@ -84,7 +84,7 @@ MICROSOFT_CLIENT_SECRET=your-microsoft-client-secret
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/lib/env.ts .env.local
+git add src/lib/env.ts
 git commit -m "feat(env): add calendar sync env vars with Zod validation"
 ```
 
@@ -100,16 +100,24 @@ git commit -m "feat(env): add calendar sync env vars with Zod validation"
 
 ```typescript
 // tests/unit/crypto.test.ts
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { encrypt, decrypt } from "@/server/lib/crypto";
 
 describe("crypto", () => {
   // Set test key (64 hex chars = 32 bytes)
   const TEST_KEY = "a".repeat(64); // 64 hex chars
 
-  beforeAll(() => {
+  beforeEach(() => {
     process.env.CALENDAR_ENCRYPTION_KEY = TEST_KEY;
     process.env.CALENDAR_ENCRYPTION_KEY_VERSION = "1";
+    delete process.env.CALENDAR_ENCRYPTION_KEY_PREV;
+  });
+
+  afterEach(() => {
+    // Always restore to prevent env leaks between tests
+    process.env.CALENDAR_ENCRYPTION_KEY = TEST_KEY;
+    process.env.CALENDAR_ENCRYPTION_KEY_VERSION = "1";
+    delete process.env.CALENDAR_ENCRYPTION_KEY_PREV;
   });
 
   it("encrypts and decrypts a string", () => {
@@ -150,11 +158,7 @@ describe("crypto", () => {
     const newEncrypted = encrypt("new_token");
     expect(newEncrypted.startsWith("2:")).toBe(true);
     expect(decrypt(newEncrypted)).toBe("new_token");
-
-    // Restore
-    process.env.CALENDAR_ENCRYPTION_KEY = TEST_KEY;
-    process.env.CALENDAR_ENCRYPTION_KEY_VERSION = "1";
-    delete process.env.CALENDAR_ENCRYPTION_KEY_PREV;
+    // afterEach handles env restoration
   });
 
   it("throws on tampered ciphertext", () => {
@@ -212,7 +216,7 @@ export function decrypt(encrypted: string): string {
   const authTag = Buffer.from(authTagHex, "hex");
   const decipher = createDecipheriv(ALGORITHM, key, iv, { authTagLength: AUTH_TAG_LENGTH });
   decipher.setAuthTag(authTag);
-  return decipher.update(ciphertext) + decipher.final("utf8");
+  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8");
 }
 ```
 
@@ -303,6 +307,7 @@ export const calendarConnections = pgTable(
     provider: calendarProviderEnum("provider").notNull(),
     accessToken: text("access_token").notNull(),
     refreshToken: text("refresh_token").notNull(),
+    providerEmail: text("provider_email"),
     externalCalendarId: text("external_calendar_id"),
     scope: text("scope"),
     tokenExpiresAt: timestamp("token_expires_at", { withTimezone: true }),
@@ -472,6 +477,7 @@ CREATE TABLE IF NOT EXISTS "public"."calendar_connections" (
   "provider" "public"."calendar_provider" NOT NULL,
   "access_token" text NOT NULL,
   "refresh_token" text NOT NULL,
+  "provider_email" text,
   "external_calendar_id" text,
   "scope" text,
   "token_expires_at" timestamp with time zone,
@@ -611,7 +617,7 @@ git commit -m "feat(providers): CalendarProvider interface and ExternalEvent typ
 ```typescript
 // tests/unit/google-calendar-provider.test.ts
 import { describe, it, expect } from "vitest";
-import { mapToGoogleEvent, mapAllDayToGoogleEvent } from "@/server/lib/calendar-providers/google";
+import { mapToGoogleEvent } from "@/server/lib/calendar-providers/google";
 
 describe("GoogleCalendarProvider mapping", () => {
   it("maps timed event to Google format", () => {
@@ -915,7 +921,7 @@ export function generateIcalFeed(events: IcalEvent[]): string {
 
   for (const event of events) {
     const isAllDay = !event.endsAt;
-    const vevent = calendar.createEvent({
+    calendar.createEvent({
       id: `${event.id}@clearterms.app`,
       summary: event.title,
       start: event.startsAt,
@@ -927,7 +933,7 @@ export function generateIcalFeed(events: IcalEvent[]): string {
         "",
         `Kind: ${event.kind}`,
         "Managed by ClearTerms",
-      ].filter(Boolean).join("\n"),
+      ].filter((s) => s != null).join("\n"),
       location: event.location ?? undefined,
     });
   }
@@ -972,13 +978,13 @@ Read `src/server/trpc/routers/calendar.ts` for the exact pattern (imports, prote
 Implement procedures per spec:
 - `list` — query: SELECT calendar_connections WHERE userId, join sync_log for aggregation. Return shape: `{ connection: CalendarConnection, lastSyncAt: Date | null, eventCount: number }[]` — use `MAX(calendar_sync_log.updatedAt)` for lastSyncAt and `COUNT(*)` for eventCount, grouped by connectionId.
 - `getIcalFeed` — query: SELECT ical_feeds WHERE userId
-- `updatePreferences` — mutation: upsert/delete calendar_sync_preferences rows. Validate `kinds` input with `z.array(z.enum(["court_date", "filing_deadline", "meeting", "reminder", "other"]))` to prevent arbitrary strings.
+- `updatePreferences` — mutation: upsert/delete calendar_sync_preferences rows. Validate `kinds` by importing `CALENDAR_EVENT_KINDS` from `@/lib/calendar-events` and using `z.array(z.enum(CALENDAR_EVENT_KINDS))` — single source of truth, no hardcoded duplicates.
 - `regenerateIcalToken` — mutation: UPDATE ical_feeds SET token = crypto.randomUUID()
 - `retrySyncEvent` — mutation: validate retryCount < 5, send `calendar/event.changed` via Inngest
 - `getSyncStatus` — query: batch SELECT sync_log WHERE eventId IN (ids)
 
 Also add a `disconnect` mutation:
-- `disconnect` — mutation: set `syncEnabled = false` on the connection, then dispatch cleanup via `await inngest.send({ name: "calendar/connection.disconnected", data: { connectionId } })`. The cleanup function (Task 19) handles external calendar deletion and DB row removal asynchronously.
+- `disconnect` — mutation: per spec's revised disconnect order: (1) dispatch cleanup event first via `await inngest.send({ name: "calendar/connection.disconnected", data: { connectionId } })`, then (2) set `syncEnabled = false` on the connection. Order matters: dispatching the event first ensures the cleanup job is enqueued even if the process crashes before the DB update. The cleanup function (Task 19) handles external calendar deletion and DB row removal asynchronously.
 
 - [ ] **Step 2: Register router in root.ts**
 
@@ -1014,6 +1020,8 @@ Add at top:
 ```typescript
 import { inngest } from "@/server/inngest/client";
 ```
+
+**Important:** Verify that `ctx.user.id` in the tRPC context is the internal DB UUID (not the Clerk ID). Check the tRPC context creation in the existing `calendar.ts` router. The `calendar_connections.userId` column stores the internal UUID, so the Inngest event must use the same ID.
 
 In each mutation (create, update, delete), after the DB operation returns successfully but before the procedure returns, add:
 
@@ -1169,10 +1177,10 @@ git commit -m "feat(oauth): Outlook Calendar connect + callback routes"
 
 Read `src/middleware.ts`. Add these patterns to the `createRouteMatcher()` array:
 - `"/api/ical(.*)"` — public iCal feed (token-authenticated, no Clerk session)
-- `"/api/auth/google(.*)"` — Google OAuth callback (no Clerk session during redirect)
-- `"/api/auth/outlook(.*)"` — Outlook OAuth callback (no Clerk session during redirect)
+- `"/api/auth/google/callback"` — Google OAuth callback (provider redirects here without Clerk session)
+- `"/api/auth/outlook/callback"` — Outlook OAuth callback (provider redirects here without Clerk session)
 
-**Note:** The connect routes (`/api/auth/google/connect`) check `auth()` internally. The callback routes receive the redirect from the provider with no Clerk session cookie, so they MUST be public to avoid 401.
+**Note:** Only the callback routes need to be public — the connect routes (`/api/auth/google/connect`, `/api/auth/outlook/connect`) call `auth()` internally and benefit from Clerk middleware protection. Use exact callback paths, NOT wildcards like `"/api/auth/google(.*)"`, to avoid accidentally making future routes under that prefix public.
 
 - [ ] **Step 2: Create iCal route**
 
@@ -1299,10 +1307,11 @@ import { inngest } from "../client";
 ```
 
 Key steps:
-1. `step.run("load-connections")` — query calendar_connections for userId where syncEnabled=true
-2. For each connection, `step.run("check-prefs-{connectionId}")` — check sync_preferences for caseId + kind
-3. `step.run("push-{connectionId}")` — call `getProvider(connection).createEvent/updateEvent/deleteEvent`
-4. `step.run("log-{connectionId}")` — upsert sync_log
+1. `step.run("load-event")` — load the `case_calendar_events` row by eventId to get `caseId` and `kind` (needed for preference filtering). For delete actions, also load the `calendar_sync_log` rows to get `externalEventId` for each connection.
+2. `step.run("load-connections")` — query calendar_connections for userId where syncEnabled=true
+3. For each connection, `step.run("check-prefs-{connectionId}")` — check sync_preferences for caseId + kind match. If no matching preference row exists (opt-in model), skip this connection.
+4. `step.run("push-{connectionId}")` — call `getProvider(connection).createEvent/updateEvent/deleteEvent`. For delete: use `externalEventId` from sync_log loaded in step 1.
+5. `step.run("log-{connectionId}")` — upsert sync_log (set status to "synced" on success, "failed" on error)
 
 Retries: `{ retries: 3 }` in function config.
 
@@ -1328,7 +1337,11 @@ git commit -m "feat(inngest): calendar.event.sync — realtime push to external 
 import { inngest } from "../client";
 // Trigger: { cron: "*/15 * * * *" }
 // Query sync_log WHERE status IN ('pending','failed') AND retryCount < 5 LIMIT 200
-// Group by connectionId, process sequentially with step.sleep('1s') between calls
+// Group by connectionId, process sequentially with step.sleep between batches
+// IMPORTANT: Every step.run and step.sleep inside loops MUST have unique, deterministic IDs:
+//   step.run(`sync-${entry.id}`, ...) — use sync_log entry ID, never loop index
+//   step.sleep(`sleep-after-${connectionId}`, "1s") — use connectionId for uniqueness
+// Same step ID stability rules as Task 16 apply here.
 ```
 
 - [ ] **Step 2: Commit**
@@ -1350,7 +1363,13 @@ git commit -m "feat(inngest): calendar.sweep — 15-min cron safety net for fail
 ```typescript
 import { inngest } from "../client";
 // Trigger: event "calendar/connection.created"
-// Load events, filter by preferences, idempotency check on sync_log, bulk push
+// Load events from user's cases, filter by calendar_sync_preferences (opt-in rows only),
+// idempotency check on sync_log (skip if entry already exists for event+connection), bulk push.
+//
+// NOTE: On first connect, the calendar_sync_preferences table will be empty for this
+// connection (user hasn't configured preferences yet). This means backfill correctly
+// pushes zero events — this is expected behavior, NOT a bug. Events will sync as the
+// user enables cases/kinds in the preferences UI.
 ```
 
 - [ ] **Step 2: Commit**
@@ -1413,9 +1432,11 @@ git commit -m "chore(inngest): register 4 calendar sync functions"
 
 Read existing UI components in `src/components/calendar/` and `src/components/ui/` for component patterns (shadcn/ui, lucide-react icons).
 
+**Note:** The `calendar_connections` schema has no `email` column. The OAuth callback routes (Tasks 13/14) should save the user's provider email (fetched from the Google/Microsoft userinfo endpoint during token exchange) into a new `providerEmail` text column on `calendar_connections`. Add `providerEmail: text("provider_email")` to the schema (Task 4) and migration (Task 5) if not already present. The UI needs this to display "connected as user@gmail.com" on the card.
+
 Build the page with:
 - Provider cards (Google, Outlook, iCal) using the card layout from the design spec
-- Connect/Disconnect buttons that link to OAuth routes
+- Connect/Disconnect buttons that link to OAuth routes (disconnect calls `trpc.calendarConnections.disconnect.useMutation()`)
 - Expandable sync preferences section with kind chips + case checkboxes
 - iCal URL display with Copy + Regenerate buttons
 - Use `trpc.calendarConnections.list.useQuery()` for data
@@ -1442,15 +1463,23 @@ git commit -m "feat(ui): Settings → Integrations page with provider cards + si
 **Files:**
 - Modify: `src/components/calendar/calendar-event-card.tsx` (verify exact path with `ls src/components/calendar/`)
 
-**Data-flow architecture:** The parent calendar view (month/week) should batch-query sync status for all visible event IDs using `trpc.calendarConnections.getSyncStatus.useQuery({ eventIds })`, then pass a `syncStatusMap: Map<eventId, SyncLogEntry[]>` down to each event card as a prop. Do NOT query sync status inside each card individually.
+**Data-flow architecture:** react-big-calendar renders event cards via `components={{ event: CalendarEventCard }}`. The card receives `EventProps<RBCEvent>` — you CANNOT add custom props directly. Instead, use a closure pattern in `CalendarViewInner`:
 
-- [ ] **Step 1: Read calendar event card component**
+1. In `CalendarViewInner`, batch-query sync status for all visible event IDs
+2. Create the event component inside a `useMemo` that closes over the sync status data
+3. Pass the closure component to react-big-calendar's `components` prop
 
-Run `ls src/components/calendar/` to find the exact component that renders event cards. Read it.
+The sync status data flows: `tRPC query → useMemo closure → CalendarEventCard render`.
 
-- [ ] **Step 2: Add sync status query to parent calendar view**
+Return type from `getSyncStatus`: use `Record<string, SyncLogEntry[]>` (not `Map` — Maps are not JSON-serializable over tRPC).
 
-In the parent component that renders the calendar grid, add:
+- [ ] **Step 1: Read calendar components**
+
+Run `ls src/components/calendar/` to find the exact event card component and `CalendarViewInner`. Read both files to understand the current `components` prop wiring and `RBCEvent` type.
+
+- [ ] **Step 2: Add sync status query to CalendarViewInner**
+
+In `CalendarViewInner` (the component that renders `<Calendar components={...}>`), add the batch query:
 
 ```typescript
 const eventIds = events.map((e) => e.id);
@@ -1458,13 +1487,23 @@ const { data: syncStatusMap } = trpc.calendarConnections.getSyncStatus.useQuery(
   { eventIds },
   { enabled: eventIds.length > 0 },
 );
-```
 
-Pass `syncStatusMap` as a prop to each event card.
+// Create event component that closes over syncStatusMap
+const EventComponent = useMemo(
+  () =>
+    function CalendarEventCardWithSync(props: EventProps<RBCEvent>) {
+      const statuses = syncStatusMap?.[props.event.resource?.id ?? ""] ?? [];
+      return <CalendarEventCard {...props} syncStatuses={statuses} />;
+    },
+  [syncStatusMap],
+);
+
+// Pass to react-big-calendar: components={{ event: EventComponent, ... }}
+```
 
 - [ ] **Step 3: Add sync badge pills to event card**
 
-Receive `syncStatus` prop. Render badge pills below event title:
+Update `CalendarEventCard` to accept an optional `syncStatuses` prop alongside `EventProps<RBCEvent>`. Render badge pills below event title:
 - Green pill: `G synced` (#166534 bg, #bbf7d0 text)
 - Yellow pill: `G pending` (#854d0e bg, #fef08a text)
 - Red pill: `G failed ↻` (#991b1b bg, #fecaca text) — clickable, calls `retrySyncEvent`
@@ -1474,7 +1513,7 @@ Event card backgrounds: `#1e293b`, titles: `#f1f5f9` font-weight 600.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/components/calendar/calendar-event-card.tsx src/components/calendar/
+git add src/components/calendar/calendar-event-card.tsx src/components/calendar/calendar-view-inner.tsx
 git commit -m "feat(ui): sync status badge pills on calendar events"
 ```
 
