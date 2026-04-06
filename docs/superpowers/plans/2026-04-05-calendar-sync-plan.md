@@ -670,7 +670,7 @@ Key implementation points:
 - `deleteEvent` → `calendar.events.delete({ calendarId, eventId })`
 - `refreshToken` → `oauth2Client.refreshAccessToken()`
 - `revokeToken` → `oauth2Client.revokeToken(token)`
-- All-day: use `{ date: "YYYY-MM-DD" }` instead of `{ dateTime: "..." }`
+- All-day: use `{ date: "YYYY-MM-DD" }` instead of `{ dateTime: "..." }`. Per RFC 5545, `end.date` must be the calendar day AFTER `start.date` (e.g., start `2026-04-22` → end `2026-04-23`). Use `addDays(startsAt, 1)` from `"date-fns"` and format with `.toISOString().slice(0, 10)`.
 - Description footer: `"\n\nManaged by ClearTerms\nView in ClearTerms: {caseUrl}"`
 
 - [ ] **Step 4: Run test — expect PASS**
@@ -980,11 +980,11 @@ Implement procedures per spec:
 - `getIcalFeed` — query: SELECT ical_feeds WHERE userId
 - `updatePreferences` — mutation: upsert/delete calendar_sync_preferences rows. Validate `kinds` by importing `CALENDAR_EVENT_KINDS` from `@/lib/calendar-events` and using `z.array(z.enum(CALENDAR_EVENT_KINDS))` — single source of truth, no hardcoded duplicates.
 - `regenerateIcalToken` — mutation: UPDATE ical_feeds SET token = crypto.randomUUID()
-- `retrySyncEvent` — mutation: validate retryCount < 5, send `calendar/event.changed` via Inngest
+- `retrySyncEvent` — mutation: validate retryCount < 5, send `calendar/event.changed` via Inngest. If `retryCount >= 5`, throw `TRPCError({ code: "BAD_REQUEST", message: "Max retry attempts reached" })` — do NOT silently no-op.
 - `getSyncStatus` — query: batch SELECT sync_log WHERE eventId IN (ids)
 
 Also add a `disconnect` mutation:
-- `disconnect` — mutation: per spec's revised disconnect order: (1) dispatch cleanup event first via `await inngest.send({ name: "calendar/connection.disconnected", data: { connectionId } })`, then (2) set `syncEnabled = false` on the connection. Order matters: dispatching the event first ensures the cleanup job is enqueued even if the process crashes before the DB update. The cleanup function (Task 19) handles external calendar deletion and DB row removal asynchronously.
+- `disconnect` — mutation: per spec's §Sync Engine "Revised disconnect order" (which supersedes the §OAuth Flow section's order): (1) dispatch cleanup event first via `await inngest.send({ name: "calendar/connection.disconnected", data: { connectionId } })`, then (2) set `syncEnabled = false` on the connection. **Note:** The spec has two conflicting descriptions — §OAuth Flow says DB-first then event, but §Sync Engine's revised order says event-first then DB. Follow the revised order: dispatching the event first ensures the cleanup job is enqueued even if the process crashes before the DB update. The cleanup function (Task 19) handles external calendar deletion and DB row removal asynchronously.
 
 - [ ] **Step 2: Register router in root.ts**
 
@@ -1107,7 +1107,29 @@ export async function GET() {
 
 - [ ] **Step 3: Create callback route**
 
-Callback exchanges code for tokens, encrypts, inserts calendar_connections, creates sub-calendar, creates ical_feeds row. Read `src/server/lib/crypto.ts` encrypt function. Use googleapis SDK for token exchange and calendar creation.
+Callback must:
+
+1. **Validate CSRF state** (before anything else):
+```typescript
+const cookieStore = await cookies();
+const storedState = cookieStore.get("oauth_state")?.value;
+const urlState = new URL(request.url).searchParams.get("state");
+if (!storedState || storedState !== urlState) {
+  return new Response("Invalid state parameter", { status: 400 });
+}
+cookieStore.delete("oauth_state");
+```
+
+2. Exchange authorization code for tokens using googleapis SDK
+3. Fetch user email from Google userinfo endpoint (`oauth2Client.request({ url: "https://www.googleapis.com/oauth2/v2/userinfo" })`) → save as `providerEmail`
+4. Encrypt access/refresh tokens with `encrypt()` from `@/server/lib/crypto`
+5. Create "ClearTerms" sub-calendar via `calendar.calendars.insert({ requestBody: { summary: "ClearTerms" } })`
+6. Insert `calendar_connections` row with encrypted tokens, externalCalendarId, providerEmail
+7. Upsert `ical_feeds` row for the user (if not exists)
+8. Dispatch `calendar/connection.created` Inngest event (see below)
+9. Redirect to `/settings/integrations`
+
+Read `src/server/lib/crypto.ts` encrypt function. Use googleapis SDK for token exchange and calendar creation.
 
 **After inserting the `calendar_connections` row**, dispatch the backfill event:
 
@@ -1146,8 +1168,11 @@ Same pattern as Google, but using Microsoft OAuth endpoints:
 
 - [ ] **Step 2: Create callback route**
 
-Token exchange URL: `https://login.microsoftonline.com/common/oauth2/v2.0/token`
-Then create sub-calendar via Graph API, encrypt tokens, insert calendar_connections.
+Same callback pattern as Task 13:
+1. **Validate CSRF state** first (same cookie check as Google callback)
+2. Token exchange URL: `https://login.microsoftonline.com/common/oauth2/v2.0/token`
+3. Fetch user email from Microsoft Graph (`/me` endpoint → `mail` or `userPrincipalName`) → save as `providerEmail`
+4. Create sub-calendar via Graph API, encrypt tokens, insert calendar_connections
 
 **After inserting the `calendar_connections` row**, dispatch the backfill event (same as Task 13):
 
