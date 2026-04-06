@@ -9,8 +9,16 @@ import {
   getItemColorClass,
   type RBCEvent,
 } from "./calendar-item-utils";
+import type { CalendarSyncLogEntry } from "@/server/db/schema/calendar-sync-log";
 
-export function CalendarEventCard({ event }: EventProps<RBCEvent>) {
+interface CalendarEventCardProps extends EventProps<RBCEvent> {
+  syncStatuses?: CalendarSyncLogEntry[];
+}
+
+export function CalendarEventCard({
+  event,
+  syncStatuses = [],
+}: CalendarEventCardProps) {
   const item = event.resource;
   const color = getItemColorClass(item);
   const border = getBorderClass(item);
@@ -30,6 +38,36 @@ export function CalendarEventCard({ event }: EventProps<RBCEvent>) {
     >
       {Icon && <Icon className="h-3 w-3 shrink-0" />}
       <span className="truncate">{event.title}</span>
+      {syncStatuses.length > 0 && (
+        <div className="ml-auto flex gap-0.5 shrink-0">
+          {syncStatuses.map((s) => (
+            <SyncBadge key={s.id} entry={s} />
+          ))}
+        </div>
+      )}
     </div>
+  );
+}
+
+function SyncBadge({ entry }: { entry: CalendarSyncLogEntry }) {
+  const statusConfig = {
+    synced: { bg: "bg-green-900", text: "text-green-300", label: "synced" },
+    pending: { bg: "bg-yellow-900", text: "text-yellow-300", label: "pending" },
+    failed: { bg: "bg-red-900", text: "text-red-300", label: "failed" },
+  } as const;
+
+  const config = statusConfig[entry.status];
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-1 py-0 text-[9px] leading-tight font-medium",
+        config.bg,
+        config.text,
+      )}
+      title={entry.errorMessage ?? undefined}
+    >
+      {config.label}
+    </span>
   );
 }
