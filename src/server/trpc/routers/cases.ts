@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { eq, and, desc, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, sql, inArray, or } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../trpc";
 import { cases } from "../../db/schema/cases";
@@ -7,11 +7,13 @@ import { documents } from "../../db/schema/documents";
 import { documentAnalyses } from "../../db/schema/document-analyses";
 import { contracts } from "../../db/schema/contracts";
 import { caseStages, stageTaskTemplates, caseEvents } from "../../db/schema/case-stages";
+import { caseMembers } from "../../db/schema/case-members";
 import { createTasksFromTemplatesInternal } from "./case-tasks";
 import { calculateCredits, checkCredits, decrementCredits, refundCredits } from "../../services/credits";
 import { generateDocx, generatePlainTextReport } from "../../services/export";
 import { inngest } from "../../inngest/client";
 import { CASE_TYPES, AUTO_DELETE_DAYS, CASE_TYPE_LABELS } from "@/lib/constants";
+import { assertCaseAccess, assertCaseDelete } from "../lib/permissions";
 import type { CaseType } from "@/lib/case-stages";
 import type { AnalysisOutput } from "@/lib/schemas";
 
@@ -40,6 +42,16 @@ export const casesRouter = router({
           deleteAt,
         })
         .returning();
+
+      // Auto-add creator as case lead when in an org
+      if (ctx.user.orgId) {
+        await ctx.db.insert(caseMembers).values({
+          caseId: created.id,
+          userId: ctx.user.id,
+          role: "lead",
+          assignedBy: ctx.user.id,
+        });
+      }
 
       // Auto-set Intake stage
       const resolvedType = input.caseType ?? "general";
@@ -81,6 +93,15 @@ export const casesRouter = router({
       const limit = input?.limit ?? 20;
       const offset = input?.offset ?? 0;
 
+      const whereClause = !ctx.user.orgId
+        ? eq(cases.userId, ctx.user.id)
+        : ctx.user.role === "owner" || ctx.user.role === "admin"
+          ? eq(cases.orgId, ctx.user.orgId)
+          : or(
+              eq(cases.userId, ctx.user.id),
+              inArray(cases.id, ctx.db.select({ caseId: caseMembers.caseId }).from(caseMembers).where(eq(caseMembers.userId, ctx.user.id))),
+            )!;
+
       const userCases = await ctx.db
         .select({
           id: cases.id,
@@ -93,7 +114,7 @@ export const casesRouter = router({
           docCount: sql<number>`(SELECT count(*) FROM documents WHERE case_id = ${cases.id})`,
         })
         .from(cases)
-        .where(eq(cases.userId, ctx.user.id))
+        .where(whereClause)
         .orderBy(desc(cases.createdAt))
         .limit(limit)
         .offset(offset);
@@ -104,10 +125,12 @@ export const casesRouter = router({
   getById: protectedProcedure
     .input(z.object({ caseId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
+      await assertCaseAccess(ctx, input.caseId);
+
       const [caseRecord] = await ctx.db
         .select()
         .from(cases)
-        .where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)))
+        .where(eq(cases.id, input.caseId))
         .limit(1);
 
       if (!caseRecord) {
@@ -136,7 +159,7 @@ export const casesRouter = router({
           createdAt: contracts.createdAt,
         })
         .from(contracts)
-        .where(and(eq(contracts.linkedCaseId, input.caseId), eq(contracts.userId, ctx.user.id)))
+        .where(eq(contracts.linkedCaseId, input.caseId))
         .orderBy(contracts.createdAt);
 
       const resolvedType = (caseRecord.overrideCaseType ?? caseRecord.detectedCaseType ?? "general") as CaseType;
@@ -211,10 +234,12 @@ export const casesRouter = router({
   changeStage: protectedProcedure
     .input(z.object({ caseId: z.string().uuid(), stageId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
+      await assertCaseAccess(ctx, input.caseId);
+
       const [caseRecord] = await ctx.db
         .select()
         .from(cases)
-        .where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)))
+        .where(eq(cases.id, input.caseId))
         .limit(1);
 
       if (!caseRecord) {
@@ -305,15 +330,7 @@ export const casesRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const [caseRecord] = await ctx.db
-        .select({ id: cases.id })
-        .from(cases)
-        .where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)))
-        .limit(1);
-
-      if (!caseRecord) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
-      }
+      await assertCaseAccess(ctx, input.caseId);
 
       const [countResult] = await ctx.db
         .select({ count: sql<number>`count(*)` })
@@ -341,15 +358,7 @@ export const casesRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const [caseRecord] = await ctx.db
-        .select({ id: cases.id })
-        .from(cases)
-        .where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)))
-        .limit(1);
-
-      if (!caseRecord) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
-      }
+      await assertCaseAccess(ctx, input.caseId);
 
       const [event] = await ctx.db
         .insert(caseEvents)
@@ -369,10 +378,12 @@ export const casesRouter = router({
   analyze: protectedProcedure
     .input(z.object({ caseId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
+      await assertCaseAccess(ctx, input.caseId);
+
       const [caseRecord] = await ctx.db
         .select()
         .from(cases)
-        .where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)))
+        .where(eq(cases.id, input.caseId))
         .limit(1);
 
       if (!caseRecord) {
@@ -428,10 +439,12 @@ export const casesRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCaseAccess(ctx, input.caseId);
+
       const [caseRecord] = await ctx.db
         .select()
         .from(cases)
-        .where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)))
+        .where(eq(cases.id, input.caseId))
         .limit(1);
 
       if (!caseRecord) {
@@ -448,7 +461,7 @@ export const casesRouter = router({
       const [updated] = await ctx.db
         .update(cases)
         .set({ selectedSections: input.selectedSections, updatedAt: new Date() })
-        .where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)))
+        .where(eq(cases.id, input.caseId))
         .returning();
 
       return updated;
@@ -457,6 +470,7 @@ export const casesRouter = router({
   exportDocx: protectedProcedure
     .input(z.object({ caseId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
+      await assertCaseAccess(ctx, input.caseId);
       const exportData = await buildExportData(ctx, input.caseId);
       const buffer = await generateDocx(exportData);
       return { buffer: buffer.toString("base64") };
@@ -465,6 +479,7 @@ export const casesRouter = router({
   exportText: protectedProcedure
     .input(z.object({ caseId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
+      await assertCaseAccess(ctx, input.caseId);
       const exportData = await buildExportData(ctx, input.caseId);
       const text = generatePlainTextReport(exportData);
       return { text };
@@ -473,30 +488,21 @@ export const casesRouter = router({
   delete: protectedProcedure
     .input(z.object({ caseId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const [caseRecord] = await ctx.db
-        .select({ id: cases.id })
-        .from(cases)
-        .where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)))
-        .limit(1);
-
-      if (!caseRecord) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
-      }
-
-      await ctx.db.delete(cases).where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)));
+      await assertCaseDelete(ctx, input.caseId);
+      await ctx.db.delete(cases).where(eq(cases.id, input.caseId));
       return { success: true };
     }),
 });
 
 // Helper for export procedures
 async function buildExportData(
-  ctx: { db: typeof import("../../db").db; user: { id: string } },
+  ctx: { db: typeof import("../../db").db; user: { id: string; orgId: string | null; role: string | null } },
   caseId: string,
 ) {
   const [caseRecord] = await ctx.db
     .select()
     .from(cases)
-    .where(and(eq(cases.id, caseId), eq(cases.userId, ctx.user.id)))
+    .where(eq(cases.id, caseId))
     .limit(1);
 
   if (!caseRecord) {

@@ -5,7 +5,7 @@ import { and, asc, eq, gte, lte, inArray } from "drizzle-orm";
 import { protectedProcedure, router } from "../trpc";
 import { caseCalendarEvents } from "@/server/db/schema/case-calendar-events";
 import { cases } from "@/server/db/schema/cases";
-import { assertCaseOwnership } from "../lib/case-auth";
+import { assertCaseAccess } from "../lib/permissions";
 import {
   calendarEventCreateSchema,
   calendarEventUpdateSchema,
@@ -13,22 +13,17 @@ import {
 import { inngest } from "@/server/inngest/client";
 
 async function assertEventOwnership(
-  ctx: { db: typeof import("@/server/db").db; user: { id: string } },
+  ctx: { db: typeof import("@/server/db").db; user: { id: string; orgId: string | null; role: string | null } },
   eventId: string,
 ) {
   const [row] = await ctx.db
     .select({ event: caseCalendarEvents })
     .from(caseCalendarEvents)
-    .innerJoin(cases, eq(cases.id, caseCalendarEvents.caseId))
-    .where(
-      and(
-        eq(caseCalendarEvents.id, eventId),
-        eq(cases.userId, ctx.user.id),
-      ),
-    )
+    .where(eq(caseCalendarEvents.id, eventId))
     .limit(1);
   if (!row)
     throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+  await assertCaseAccess(ctx, row.event.caseId);
   return row.event;
 }
 
@@ -36,7 +31,7 @@ export const calendarRouter = router({
   list: protectedProcedure
     .input(z.object({ caseId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      await assertCaseOwnership(ctx, input.caseId);
+      await assertCaseAccess(ctx, input.caseId);
       return ctx.db
         .select()
         .from(caseCalendarEvents)
@@ -53,8 +48,14 @@ export const calendarRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
+      const userFilter = !ctx.user.orgId
+        ? eq(cases.userId, ctx.user.id)
+        : ctx.user.role === "owner" || ctx.user.role === "admin"
+          ? eq(cases.orgId, ctx.user.orgId)
+          : eq(cases.userId, ctx.user.id);
+
       const conditions = [
-        eq(cases.userId, ctx.user.id),
+        userFilter,
         gte(caseCalendarEvents.startsAt, input.from),
         lte(caseCalendarEvents.startsAt, input.to),
       ];
@@ -82,7 +83,7 @@ export const calendarRouter = router({
   create: protectedProcedure
     .input(calendarEventCreateSchema)
     .mutation(async ({ ctx, input }) => {
-      await assertCaseOwnership(ctx, input.caseId);
+      await assertCaseAccess(ctx, input.caseId);
       const [event] = await ctx.db
         .insert(caseCalendarEvents)
         .values({

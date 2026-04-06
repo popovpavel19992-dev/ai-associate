@@ -7,6 +7,7 @@ import { documentAnalyses } from "../../db/schema/document-analyses";
 import { cases } from "../../db/schema/cases";
 import { caseEvents } from "../../db/schema/case-stages";
 import { deleteObject } from "../../services/s3";
+import { assertCaseAccess } from "../lib/permissions";
 
 export const documentsRouter = router({
   confirmUpload: protectedProcedure
@@ -21,13 +22,12 @@ export const documentsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify case belongs to user
+      await assertCaseAccess(ctx, input.caseId);
+
       const [caseRecord] = await ctx.db
         .select()
         .from(cases)
-        .where(
-          and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)),
-        )
+        .where(eq(cases.id, input.caseId))
         .limit(1);
 
       if (!caseRecord) {
@@ -98,18 +98,7 @@ export const documentsRouter = router({
   listByCase: protectedProcedure
     .input(z.object({ caseId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      // Verify case ownership
-      const [caseRecord] = await ctx.db
-        .select({ id: cases.id })
-        .from(cases)
-        .where(
-          and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)),
-        )
-        .limit(1);
-
-      if (!caseRecord) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
-      }
+      await assertCaseAccess(ctx, input.caseId);
 
       return ctx.db
         .select()
@@ -124,12 +113,7 @@ export const documentsRouter = router({
       const [doc] = await ctx.db
         .select()
         .from(documents)
-        .where(
-          and(
-            eq(documents.id, input.documentId),
-            eq(documents.userId, ctx.user.id),
-          ),
-        )
+        .where(eq(documents.id, input.documentId))
         .limit(1);
 
       if (!doc) {
@@ -138,6 +122,9 @@ export const documentsRouter = router({
           message: "Document not found",
         });
       }
+
+      // Verify access via the document's case
+      await assertCaseAccess(ctx, doc.caseId);
 
       const [analysis] = await ctx.db
         .select()
@@ -159,12 +146,7 @@ export const documentsRouter = router({
       const [doc] = await ctx.db
         .select()
         .from(documents)
-        .where(
-          and(
-            eq(documents.id, input.documentId),
-            eq(documents.userId, ctx.user.id),
-          ),
-        )
+        .where(eq(documents.id, input.documentId))
         .limit(1);
 
       if (!doc) {
@@ -174,24 +156,11 @@ export const documentsRouter = router({
         });
       }
 
-      // Verify target case ownership
-      const [targetCase] = await ctx.db
-        .select({ id: cases.id })
-        .from(cases)
-        .where(
-          and(
-            eq(cases.id, input.targetCaseId),
-            eq(cases.userId, ctx.user.id),
-          ),
-        )
-        .limit(1);
+      // Verify access to source case
+      await assertCaseAccess(ctx, doc.caseId);
 
-      if (!targetCase) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Target case not found",
-        });
-      }
+      // Verify access to target case
+      await assertCaseAccess(ctx, input.targetCaseId);
 
       const oldCaseId = doc.caseId;
 
@@ -244,18 +213,8 @@ export const documentsRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Analysis not found" });
       }
 
-      // Verify ownership through case
-      const [caseRecord] = await ctx.db
-        .select({ id: cases.id })
-        .from(cases)
-        .where(
-          and(eq(cases.id, analysis.caseId), eq(cases.userId, ctx.user.id)),
-        )
-        .limit(1);
-
-      if (!caseRecord) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
-      }
+      // Verify access through case
+      await assertCaseAccess(ctx, analysis.caseId);
 
       const currentEdits = (analysis.userEdits ?? {}) as Record<string, unknown>;
       const updatedEdits = { ...currentEdits, [input.sectionName]: input.edits };
@@ -275,12 +234,7 @@ export const documentsRouter = router({
       const [doc] = await ctx.db
         .select()
         .from(documents)
-        .where(
-          and(
-            eq(documents.id, input.documentId),
-            eq(documents.userId, ctx.user.id),
-          ),
-        )
+        .where(eq(documents.id, input.documentId))
         .limit(1);
 
       if (!doc) {
@@ -289,6 +243,9 @@ export const documentsRouter = router({
           message: "Document not found",
         });
       }
+
+      // Verify access via case
+      await assertCaseAccess(ctx, doc.caseId);
 
       // Delete from S3
       await deleteObject(doc.s3Key);

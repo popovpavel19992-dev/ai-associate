@@ -11,6 +11,16 @@ import { checkCredits, decrementCredits, refundCredits } from "../../services/cr
 import { inngest } from "../../inngest/client";
 import { CONTRACT_REVIEW_CREDITS, COMPARISON_DIFF_CREDITS } from "@/lib/constants";
 
+function contractFilter(ctx: { user: { id: string; orgId: string | null; role: string | null } }) {
+  if (!ctx.user.orgId) return eq(contracts.userId, ctx.user.id);
+  return eq(contracts.orgId, ctx.user.orgId);
+}
+
+function comparisonFilter(ctx: { user: { id: string; orgId: string | null; role: string | null } }) {
+  if (!ctx.user.orgId) return eq(contractComparisons.userId, ctx.user.id);
+  return eq(contractComparisons.orgId, ctx.user.orgId);
+}
+
 export const comparisonsRouter = router({
   create: protectedProcedure
     .input(
@@ -20,11 +30,11 @@ export const comparisonsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify ownership of both contracts
+      // Verify access to both contracts
       const [contractA] = await ctx.db
         .select()
         .from(contracts)
-        .where(and(eq(contracts.id, input.contractAId), eq(contracts.userId, ctx.user.id)))
+        .where(and(eq(contracts.id, input.contractAId), contractFilter(ctx)))
         .limit(1);
 
       if (!contractA) {
@@ -34,7 +44,7 @@ export const comparisonsRouter = router({
       const [contractB] = await ctx.db
         .select()
         .from(contracts)
-        .where(and(eq(contracts.id, input.contractBId), eq(contracts.userId, ctx.user.id)))
+        .where(and(eq(contracts.id, input.contractBId), contractFilter(ctx)))
         .limit(1);
 
       if (!contractB) {
@@ -103,7 +113,7 @@ export const comparisonsRouter = router({
         .where(
           and(
             eq(contractComparisons.id, input.comparisonId),
-            eq(contractComparisons.userId, ctx.user.id),
+            comparisonFilter(ctx),
           ),
         )
         .limit(1);
@@ -162,7 +172,7 @@ export const comparisonsRouter = router({
           updatedAt: contractComparisons.updatedAt,
         })
         .from(contractComparisons)
-        .where(eq(contractComparisons.userId, ctx.user.id))
+        .where(comparisonFilter(ctx))
         .orderBy(desc(contractComparisons.createdAt))
         .limit(limit)
         .offset(offset);
@@ -201,7 +211,7 @@ export const comparisonsRouter = router({
         .where(
           and(
             eq(contractComparisons.id, input.comparisonId),
-            eq(contractComparisons.userId, ctx.user.id),
+            comparisonFilter(ctx),
           ),
         )
         .limit(1);
@@ -212,12 +222,7 @@ export const comparisonsRouter = router({
 
       await ctx.db
         .delete(contractComparisons)
-        .where(
-          and(
-            eq(contractComparisons.id, input.comparisonId),
-            eq(contractComparisons.userId, ctx.user.id),
-          ),
-        );
+        .where(eq(contractComparisons.id, input.comparisonId));
 
       return { success: true };
     }),
