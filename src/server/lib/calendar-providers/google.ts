@@ -32,7 +32,7 @@ export function mapToGoogleEvent(
 }
 
 export class GoogleCalendarProvider implements CalendarProvider {
-  private auth: ReturnType<typeof google.auth.OAuth2.prototype.constructor>;
+  private auth: InstanceType<typeof google.auth.OAuth2>;
   private calendar: ReturnType<typeof google.calendar>;
 
   constructor(
@@ -89,7 +89,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
   }
 
   async refreshToken(): Promise<{ accessToken: string; expiresAt: Date }> {
-    const { credentials } = await (this.auth as InstanceType<typeof google.auth.OAuth2>).refreshAccessToken();
+    const { credentials } = await this.auth.refreshAccessToken();
     return {
       accessToken: credentials.access_token!,
       expiresAt: new Date(credentials.expiry_date!),
@@ -97,6 +97,6 @@ export class GoogleCalendarProvider implements CalendarProvider {
   }
 
   async revokeToken(): Promise<void> {
-    await (this.auth as InstanceType<typeof google.auth.OAuth2>).revokeToken(this.accessToken);
+    await this.auth.revokeToken(this.accessToken);
   }
 }

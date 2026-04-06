@@ -12,8 +12,8 @@ describe("GoogleCalendarProvider mapping", () => {
     }, "https://app.clearterms.com/cases/abc");
 
     expect(result.summary).toBe("Court Hearing");
-    expect(result.start?.dateTime).toBe("2026-04-22T09:00:00.000Z");
-    expect(result.end?.dateTime).toBe("2026-04-22T10:00:00.000Z");
+    expect((result.start as any).dateTime).toBe("2026-04-22T09:00:00.000Z");
+    expect((result.end as any).dateTime).toBe("2026-04-22T10:00:00.000Z");
     expect(result.location).toBe("District Court, Room 4B");
     expect(result.description).toContain("Smith v. Jones");
     expect(result.description).toContain("Managed by ClearTerms");
@@ -26,8 +26,8 @@ describe("GoogleCalendarProvider mapping", () => {
       startsAt: new Date("2026-04-22T00:00:00Z"),
     }, "https://app.clearterms.com/cases/abc");
 
-    expect(result.start?.date).toBe("2026-04-22");
-    expect(result.end?.date).toBe("2026-04-23");
-    expect(result.start?.dateTime).toBeUndefined();
+    expect((result.start as any).date).toBe("2026-04-22");
+    expect((result.end as any).date).toBe("2026-04-23");
+    expect((result.start as any).dateTime).toBeUndefined();
   });
 });

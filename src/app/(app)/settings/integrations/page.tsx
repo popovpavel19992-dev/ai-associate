@@ -5,7 +5,7 @@ import { Calendar, Copy, RefreshCw, Unplug, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -100,20 +100,22 @@ function ProviderCard({
             </div>
 
             <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="gap-1.5"
-                  disabled={isDisconnecting}
-                >
-                  {isDisconnecting ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : (
-                    <Unplug className="size-3.5" />
-                  )}
-                  Disconnect
-                </Button>
+              <DialogTrigger
+                render={
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="gap-1.5"
+                    disabled={isDisconnecting}
+                  />
+                }
+              >
+                {isDisconnecting ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Unplug className="size-3.5" />
+                )}
+                Disconnect
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
@@ -143,9 +145,12 @@ function ProviderCard({
             </Dialog>
           </>
         ) : (
-          <Button asChild size="sm">
-            <a href={connectHref}>Connect {label}</a>
-          </Button>
+          <a
+            href={connectHref}
+            className={buttonVariants({ size: "sm" })}
+          >
+            Connect {label}
+          </a>
         )}
       </CardContent>
     </Card>
@@ -229,11 +234,17 @@ function IcalFeedSection() {
         </div>
 
         <Dialog open={regenOpen} onOpenChange={setRegenOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-1.5 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
-              <RefreshCw className="size-3.5" />
-              Regenerate Token
-            </Button>
+          <DialogTrigger
+            render={
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+              />
+            }
+          >
+            <RefreshCw className="size-3.5" />
+            Regenerate Token
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
