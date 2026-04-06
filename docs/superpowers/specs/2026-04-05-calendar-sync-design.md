@@ -132,7 +132,8 @@ User clicks "Connect Google Calendar"
   → Resolve internal userId: call auth() from @clerk/nextjs/server,
     then SELECT id FROM users WHERE clerk_id = clerkUserId.
     If not found → 401 redirect.
-  → Generate state token (CSRF) containing userId, store in httpOnly cookie
+  → Generate state token (CSRF), store in httpOnly cookie:
+    Set-Cookie: oauth_state=<token>; HttpOnly; SameSite=Lax; Secure (prod); Max-Age=600; Path=/api/auth
   → Redirect → Google OAuth consent screen
     Scopes: calendar.events, calendar.calendars
   → Google redirects → GET /api/auth/google/callback?code=...&state=...
@@ -160,8 +161,8 @@ Outlook flow is identical, substituting Microsoft OAuth endpoints and Graph API.
 
 Order: disable first, then background cleanup handles external APIs + final DB delete.
 
-1. Set `syncEnabled = false` on the connection row (immediate — stops sync engine from using it)
-2. Send `calendar/connection.disconnected` Inngest event with `{ connectionId }`
+1. Set `syncEnabled = false` on the connection row and **await DB commit** (immediate — stops sync engine from using it)
+2. After DB commit: send `calendar/connection.disconnected` Inngest event with `{ connectionId }` (order matters — disable before dispatch)
 3. Redirect user to Settings with "Disconnecting..." status
 4. Inngest cleanup job (see §Sync Engine, function 4) handles: decrypt tokens → delete sub-calendar → revoke token → DELETE cascade from DB
 5. If cleanup job fails: connection remains with `syncEnabled = false`, user can retry disconnect or it stays inert
@@ -297,11 +298,13 @@ Factory pattern: sync engine calls `getProvider(connection).createEvent(...)` wi
 
 **Endpoint:** `GET /api/ical/[token].ics`
 
+**Middleware:** This route MUST be added to `isPublicRoute` in `src/middleware.ts` (pattern: `/api/ical/(.*)`). External calendar clients (Apple Calendar, Thunderbird) poll this URL without a Clerk session — if not public, every poll gets 401/redirect.
+
 Flow:
 1. Lookup `ical_feeds` by token
 2. Not found → 404
 3. Found but `enabled = false` → 403
-4. Load user's events filtered by `calendar_sync_preferences` (same opt-in logic)
+4. Load user's events filtered by `ical_feed_preferences` (keyed on `feedId`, independent of OAuth connections)
 5. Generate VCALENDAR/VEVENT using `ical-generator` library (handles RFC 5545 compliance: line-folding, CRLF, escaping, required fields)
 6. Return `Content-Type: text/calendar`, `Cache-Control: no-store, private`
 
@@ -330,7 +333,7 @@ Both properties emitted for cross-client compatibility (Apple Calendar uses `X-P
 ### Constraints
 
 - Events within ±6 months of current date (not full history)
-- Same `sync_preferences` filtering as push sync
+- Same opt-in model as push sync; uses `ical_feed_preferences`, not `calendar_sync_preferences`
 
 ### Management
 
@@ -373,7 +376,7 @@ Multi-provider: show both badges side by side (e.g., "G synced" + "O pending").
 | `getIcalFeed` | query | Get user's iCal feed URL and status |
 | `updatePreferences` | mutation | Add/remove cases and toggle kinds for a connection |
 | `regenerateIcalToken` | mutation | Generate new iCal token, invalidate old URL |
-| `retrySyncEvent` | mutation | Retry a failed sync_log entry. Respects retryCount < 5 cap — returns error if exhausted. Resets retryCount to 0 to allow a fresh cycle. |
+| `retrySyncEvent` | mutation | Retry a failed sync_log entry. Dispatches `calendar/event.changed` to re-trigger realtime push (3 attempts via Inngest). Does NOT reset sweep retryCount — sweep cap (5) is lifetime per sync_log row. Manual retry uses the realtime path, not the sweep path. |
 | `getSyncStatus` | query | Get sync badges for a list of eventIds (batch) |
 
 Connect/disconnect handled by raw API routes (OAuth redirect flow), not tRPC.
@@ -442,6 +445,8 @@ migrations/
 | `MICROSOFT_CLIENT_ID` | Microsoft OAuth client ID |
 | `MICROSOFT_CLIENT_SECRET` | Microsoft OAuth client secret |
 | `NEXT_PUBLIC_APP_URL` | Already exists — used for deep-link in event descriptions |
+
+**Registration:** All new env vars MUST be added to `src/lib/env.ts` Zod schema (project convention — validated at startup, not at runtime). Validations: `CALENDAR_ENCRYPTION_KEY`: `z.string().length(64)` (64 hex chars = 32 bytes). `CALENDAR_ENCRYPTION_KEY_VERSION`: `z.coerce.number().int().positive().default(1)`. `CALENDAR_ENCRYPTION_KEY_PREV`: `z.string().length(64).optional()`. OAuth client IDs/secrets: `z.string().min(1)`.
 
 ## New Dependencies
 
