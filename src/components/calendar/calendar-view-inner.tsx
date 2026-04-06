@@ -6,6 +6,7 @@ import {
   Calendar as RBCalendar,
   dateFnsLocalizer,
   type Components,
+  type EventProps,
   type SlotInfo,
   type View,
 } from "react-big-calendar";
@@ -16,6 +17,8 @@ import { enUS } from "date-fns/locale";
 import { CalendarEventCard } from "./calendar-event-card";
 import { CalendarToolbar } from "./calendar-toolbar";
 import type { CalendarItem, RBCEvent } from "./calendar-item-utils";
+import { trpc } from "@/lib/trpc";
+import type { CalendarSyncLogEntry } from "@/server/db/schema/calendar-sync-log";
 
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./calendar-theme.css";
@@ -60,9 +63,36 @@ export default function CalendarViewInner({
     [items],
   );
 
+  // Batch query sync status for all visible event IDs
+  const eventIds = useMemo(
+    () => items.filter((i) => i.source === "event").map((i) => i.id),
+    [items],
+  );
+
+  const { data: syncStatusData } = trpc.calendarConnections.getSyncStatus.useQuery(
+    { eventIds },
+    { enabled: eventIds.length > 0 },
+  );
+
+  // Build a map: eventId → sync log entries
+  const syncStatusMap = useMemo(() => {
+    if (!syncStatusData) return new Map<string, CalendarSyncLogEntry[]>();
+    const map = new Map<string, CalendarSyncLogEntry[]>();
+    for (const entry of syncStatusData) {
+      const existing = map.get(entry.eventId) ?? [];
+      existing.push(entry);
+      map.set(entry.eventId, existing);
+    }
+    return map;
+  }, [syncStatusData]);
+
   const components: Components<RBCEvent> = useMemo(
     () => ({
-      event: CalendarEventCard,
+      event: function CalendarEventCardWithSync(props: EventProps<RBCEvent>) {
+        const item = props.event.resource;
+        const statuses = item.source === "event" ? (syncStatusMap.get(item.id) ?? []) : [];
+        return <CalendarEventCard {...props} syncStatuses={statuses} />;
+      },
       toolbar: (props) => (
         <CalendarToolbar
           {...props}
@@ -71,7 +101,7 @@ export default function CalendarViewInner({
         />
       ),
     }),
-    [onAddEvent],
+    [onAddEvent, syncStatusMap],
   );
 
   return (

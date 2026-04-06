@@ -23,6 +23,14 @@ const envSchema = z.object({
   INNGEST_SIGNING_KEY: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
   SENTRY_DSN: z.string().optional(),
+  // Calendar sync (2.1.3b)
+  CALENDAR_ENCRYPTION_KEY: z.string().length(64),
+  CALENDAR_ENCRYPTION_KEY_VERSION: z.coerce.number().int().positive().default(1),
+  CALENDAR_ENCRYPTION_KEY_PREV: z.string().length(64).optional(),
+  GOOGLE_CLIENT_ID: z.string().min(1),
+  GOOGLE_CLIENT_SECRET: z.string().min(1),
+  MICROSOFT_CLIENT_ID: z.string().min(1),
+  MICROSOFT_CLIENT_SECRET: z.string().min(1),
 });
 
 export type Env = z.infer<typeof envSchema>;
