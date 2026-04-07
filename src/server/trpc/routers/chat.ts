@@ -8,6 +8,7 @@ import { documents } from "../../db/schema/documents";
 import { documentAnalyses } from "../../db/schema/document-analyses";
 import { contracts, contractClauses } from "../../db/schema/contracts";
 import { contractDrafts, draftClauses } from "../../db/schema/contract-drafts";
+import { assertCaseAccess } from "../lib/permissions";
 import {
   CHAT_RATE_LIMIT_PER_HOUR,
   PLAN_LIMITS,
@@ -28,6 +29,16 @@ function getClient(): Anthropic {
     _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
   }
   return _client;
+}
+
+function contractFilter(ctx: { user: { id: string; orgId: string | null; role: string | null } }) {
+  if (!ctx.user.orgId) return eq(contracts.userId, ctx.user.id);
+  return eq(contracts.orgId, ctx.user.orgId);
+}
+
+function draftFilter(ctx: { user: { id: string; orgId: string | null; role: string | null } }) {
+  if (!ctx.user.orgId) return eq(contractDrafts.userId, ctx.user.id);
+  return eq(contractDrafts.orgId, ctx.user.orgId);
 }
 
 function buildChatSystemPrompt(
@@ -133,13 +144,15 @@ export const chatRouter = router({
       let scopeDraftId: string | null = null;
 
       if (input.caseId) {
-        // --- Case-scoped chat (existing logic) ---
+        // --- Case-scoped chat ---
         scopeCaseId = input.caseId;
+
+        await assertCaseAccess(ctx, input.caseId);
 
         const [caseRecord] = await ctx.db
           .select()
           .from(cases)
-          .where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)))
+          .where(eq(cases.id, input.caseId))
           .limit(1);
 
         if (!caseRecord) {
@@ -211,7 +224,7 @@ export const chatRouter = router({
         const [contract] = await ctx.db
           .select()
           .from(contracts)
-          .where(and(eq(contracts.id, scopeContractId), eq(contracts.userId, ctx.user.id)))
+          .where(and(eq(contracts.id, scopeContractId), contractFilter(ctx)))
           .limit(1);
 
         if (!contract) {
@@ -280,7 +293,7 @@ export const chatRouter = router({
         const [draft] = await ctx.db
           .select()
           .from(contractDrafts)
-          .where(and(eq(contractDrafts.id, scopeDraftId), eq(contractDrafts.userId, ctx.user.id)))
+          .where(and(eq(contractDrafts.id, scopeDraftId), draftFilter(ctx)))
           .limit(1);
 
         if (!draft) {
@@ -454,11 +467,11 @@ export const chatRouter = router({
       let conditions: ReturnType<typeof eq>[] = [];
 
       if (input.draftId) {
-        // Verify draft ownership
+        // Verify draft access via org-aware filter
         const [draft] = await ctx.db
           .select({ id: contractDrafts.id })
           .from(contractDrafts)
-          .where(and(eq(contractDrafts.id, input.draftId), eq(contractDrafts.userId, ctx.user.id)))
+          .where(and(eq(contractDrafts.id, input.draftId), draftFilter(ctx)))
           .limit(1);
 
         if (!draft) {
@@ -467,16 +480,8 @@ export const chatRouter = router({
 
         conditions = [eq(chatMessages.draftId, input.draftId)];
       } else {
-        // Verify case ownership
-        const [caseRecord] = await ctx.db
-          .select({ id: cases.id })
-          .from(cases)
-          .where(and(eq(cases.id, input.caseId!), eq(cases.userId, ctx.user.id)))
-          .limit(1);
-
-        if (!caseRecord) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
-        }
+        // Verify case access
+        await assertCaseAccess(ctx, input.caseId!);
 
         conditions = [eq(chatMessages.caseId, input.caseId!)];
 

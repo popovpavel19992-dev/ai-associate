@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus, Zap, FileCheck, GitCompareArrows, PenLine } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { CaseList } from "@/components/cases/case-list";
 import { ContractList } from "@/components/contracts/contract-list";
 import { DraftList } from "@/components/drafts/draft-list";

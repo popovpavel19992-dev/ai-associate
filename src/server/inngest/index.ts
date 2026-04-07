@@ -9,5 +9,6 @@ import { calendarEventSync } from "./functions/calendar-event-sync";
 import { calendarSweep } from "./functions/calendar-sweep";
 import { calendarConnectionInit } from "./functions/calendar-connection-init";
 import { calendarConnectionCleanup } from "./functions/calendar-connection-cleanup";
+import { teamMembershipCleanup } from "./functions/team-membership-cleanup";
 
-export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup];
+export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup];

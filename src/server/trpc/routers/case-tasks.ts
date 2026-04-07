@@ -5,7 +5,7 @@ import { caseTasks } from "@/server/db/schema/case-tasks";
 import { caseStages, caseEvents, stageTaskTemplates } from "@/server/db/schema/case-stages";
 import { checklistSchema } from "@/lib/case-tasks";
 import { cases } from "@/server/db/schema/cases";
-import { assertCaseOwnership, assertTaskOwnership } from "../lib/case-auth";
+import { assertCaseAccess, assertTaskAccess } from "../lib/permissions";
 
 export const caseTasksRouter = router({
   listByCaseId: protectedProcedure
@@ -16,7 +16,7 @@ export const caseTasksRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      await assertCaseOwnership(ctx, input.caseId);
+      await assertCaseAccess(ctx, input.caseId);
 
       const rows = await ctx.db
         .select({
@@ -41,7 +41,7 @@ export const caseTasksRouter = router({
   getById: protectedProcedure
     .input(z.object({ taskId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      return assertTaskOwnership(ctx, input.taskId);
+      return assertTaskAccess(ctx, input.taskId);
     }),
 
   create: protectedProcedure
@@ -59,7 +59,7 @@ export const caseTasksRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCaseOwnership(ctx, input.caseId);
+      await assertCaseAccess(ctx, input.caseId);
 
       const result = await ctx.db.transaction(async (tx) => {
         const [task] = await tx
@@ -109,7 +109,7 @@ export const caseTasksRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const existing = await assertTaskOwnership(ctx, input.taskId);
+      const existing = await assertTaskAccess(ctx, input.taskId);
 
       const now = new Date();
       let completedAt: Date | null | undefined;
@@ -146,7 +146,7 @@ export const caseTasksRouter = router({
   toggleAssign: protectedProcedure
     .input(z.object({ taskId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const task = await assertTaskOwnership(ctx, input.taskId);
+      const task = await assertTaskAccess(ctx, input.taskId);
       const newAssignee = task.assignedTo === ctx.user.id ? null : ctx.user.id;
 
       const [updated] = await ctx.db
@@ -160,7 +160,7 @@ export const caseTasksRouter = router({
   delete: protectedProcedure
     .input(z.object({ taskId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const task = await assertTaskOwnership(ctx, input.taskId);
+      const task = await assertTaskAccess(ctx, input.taskId);
 
       await ctx.db.transaction(async (tx) => {
         await tx.delete(caseTasks).where(eq(caseTasks.id, input.taskId));
@@ -192,7 +192,7 @@ export const caseTasksRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCaseOwnership(ctx, input.caseId);
+      await assertCaseAccess(ctx, input.caseId);
 
       await ctx.db.transaction(async (tx) => {
         for (const item of input.columnItems) {
@@ -223,7 +223,7 @@ export const caseTasksRouter = router({
   createFromTemplates: protectedProcedure
     .input(z.object({ caseId: z.string().uuid(), stageId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      await assertCaseOwnership(ctx, input.caseId);
+      await assertCaseAccess(ctx, input.caseId);
       return createTasksFromTemplatesInternal(ctx.db, input.caseId, input.stageId);
     }),
 
@@ -236,14 +236,20 @@ export const caseTasksRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
+      const userFilter = !ctx.user.orgId
+        ? eq(cases.userId, ctx.user.id)
+        : ctx.user.role === "owner" || ctx.user.role === "admin"
+          ? eq(cases.orgId, ctx.user.orgId)
+          : eq(cases.userId, ctx.user.id);
+
       const conditions = [
-        eq(cases.userId, ctx.user.id),
+        userFilter,
         isNotNull(caseTasks.dueDate),
         gte(caseTasks.dueDate, input.from),
         lte(caseTasks.dueDate, input.to),
       ];
       if (input.caseId) {
-        await assertCaseOwnership(ctx, input.caseId);
+        await assertCaseAccess(ctx, input.caseId);
         conditions.push(eq(caseTasks.caseId, input.caseId));
       }
 

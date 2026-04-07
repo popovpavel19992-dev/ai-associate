@@ -2,11 +2,20 @@ import { z } from "zod/v4";
 import { eq } from "drizzle-orm";
 import { router, protectedProcedure } from "../trpc";
 import { users } from "../../db/schema/users";
+import { organizations } from "../../db/schema/organizations";
 import { PRACTICE_AREAS, CASE_TYPES, US_STATES } from "@/lib/constants";
 
 export const usersRouter = router({
-  getProfile: protectedProcedure.query(({ ctx }) => {
-    return ctx.user;
+  getProfile: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.orgId) {
+      const [org] = await ctx.db
+        .select({ maxSeats: organizations.maxSeats })
+        .from(organizations)
+        .where(eq(organizations.id, ctx.user.orgId))
+        .limit(1);
+      return { ...ctx.user, maxSeats: org?.maxSeats ?? 5 };
+    }
+    return { ...ctx.user, maxSeats: null as number | null };
   }),
 
   updateProfile: protectedProcedure

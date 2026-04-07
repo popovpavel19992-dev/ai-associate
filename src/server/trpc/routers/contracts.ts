@@ -8,6 +8,12 @@ import { caseEvents } from "../../db/schema/case-stages";
 import { checkCredits, decrementCredits, refundCredits } from "../../services/credits";
 import { inngest } from "../../inngest/client";
 import { AUTO_DELETE_DAYS, CONTRACT_REVIEW_CREDITS, CONTRACT_TYPES } from "@/lib/constants";
+import { assertCaseAccess } from "../lib/permissions";
+
+function contractFilter(ctx: { user: { id: string; orgId: string | null; role: string | null } }) {
+  if (!ctx.user.orgId) return eq(contracts.userId, ctx.user.id);
+  return eq(contracts.orgId, ctx.user.orgId);
+}
 
 export const contractsRouter = router({
   create: protectedProcedure
@@ -78,7 +84,7 @@ export const contractsRouter = router({
           clauseCount: sql<number>`(SELECT count(*) FROM contract_clauses WHERE contract_id = ${contracts.id})`,
         })
         .from(contracts)
-        .where(eq(contracts.userId, ctx.user.id))
+        .where(contractFilter(ctx))
         .orderBy(desc(contracts.createdAt))
         .limit(limit)
         .offset(offset);
@@ -92,7 +98,7 @@ export const contractsRouter = router({
       const [contract] = await ctx.db
         .select()
         .from(contracts)
-        .where(and(eq(contracts.id, input.contractId), eq(contracts.userId, ctx.user.id)))
+        .where(and(eq(contracts.id, input.contractId), contractFilter(ctx)))
         .limit(1);
 
       if (!contract) {
@@ -125,7 +131,7 @@ export const contractsRouter = router({
       const [contract] = await ctx.db
         .select()
         .from(contracts)
-        .where(and(eq(contracts.id, input.contractId), eq(contracts.userId, ctx.user.id)))
+        .where(and(eq(contracts.id, input.contractId), contractFilter(ctx)))
         .limit(1);
 
       if (!contract) {
@@ -174,7 +180,7 @@ export const contractsRouter = router({
       const [contract] = await ctx.db
         .select()
         .from(contracts)
-        .where(and(eq(contracts.id, input.contractId), eq(contracts.userId, ctx.user.id)))
+        .where(and(eq(contracts.id, input.contractId), contractFilter(ctx)))
         .limit(1);
 
       if (!contract) {
@@ -191,7 +197,7 @@ export const contractsRouter = router({
       const [updated] = await ctx.db
         .update(contracts)
         .set({ selectedSections: input.selectedSections, updatedAt: new Date() })
-        .where(and(eq(contracts.id, input.contractId), eq(contracts.userId, ctx.user.id)))
+        .where(eq(contracts.id, input.contractId))
         .returning();
 
       return updated;
@@ -203,7 +209,7 @@ export const contractsRouter = router({
       const [contract] = await ctx.db
         .select({ id: contracts.id })
         .from(contracts)
-        .where(and(eq(contracts.id, input.contractId), eq(contracts.userId, ctx.user.id)))
+        .where(and(eq(contracts.id, input.contractId), contractFilter(ctx)))
         .limit(1);
 
       if (!contract) {
@@ -212,7 +218,7 @@ export const contractsRouter = router({
 
       await ctx.db
         .delete(contracts)
-        .where(and(eq(contracts.id, input.contractId), eq(contracts.userId, ctx.user.id)));
+        .where(eq(contracts.id, input.contractId));
 
       return { success: true };
     }),
@@ -221,36 +227,28 @@ export const contractsRouter = router({
     .input(z.object({ contractId: z.string().uuid(), caseId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const [contract] = await ctx.db
-        .select({ id: contracts.id })
+        .select({ id: contracts.id, name: contracts.name })
         .from(contracts)
-        .where(and(eq(contracts.id, input.contractId), eq(contracts.userId, ctx.user.id)))
+        .where(and(eq(contracts.id, input.contractId), contractFilter(ctx)))
         .limit(1);
 
       if (!contract) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Contract not found" });
       }
 
-      // Verify case ownership
-      const [caseRecord] = await ctx.db
-        .select({ id: cases.id })
-        .from(cases)
-        .where(and(eq(cases.id, input.caseId), eq(cases.userId, ctx.user.id)))
-        .limit(1);
-
-      if (!caseRecord) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
-      }
+      // Verify case access
+      await assertCaseAccess(ctx, input.caseId);
 
       const [updated] = await ctx.db
         .update(contracts)
         .set({ linkedCaseId: input.caseId, updatedAt: new Date() })
-        .where(and(eq(contracts.id, input.contractId), eq(contracts.userId, ctx.user.id)))
+        .where(eq(contracts.id, input.contractId))
         .returning();
 
       await ctx.db.insert(caseEvents).values({
         caseId: input.caseId,
         type: "contract_linked",
-        title: `Contract linked: ${updated.name}`,
+        title: `Contract linked: ${contract.name}`,
         actorId: ctx.user.id,
       });
 
@@ -263,7 +261,7 @@ export const contractsRouter = router({
       const [contract] = await ctx.db
         .select({ id: contracts.id })
         .from(contracts)
-        .where(and(eq(contracts.id, input.contractId), eq(contracts.userId, ctx.user.id)))
+        .where(and(eq(contracts.id, input.contractId), contractFilter(ctx)))
         .limit(1);
 
       if (!contract) {
@@ -273,7 +271,7 @@ export const contractsRouter = router({
       const [updated] = await ctx.db
         .update(contracts)
         .set({ linkedCaseId: null, updatedAt: new Date() })
-        .where(and(eq(contracts.id, input.contractId), eq(contracts.userId, ctx.user.id)))
+        .where(eq(contracts.id, input.contractId))
         .returning();
 
       return updated;

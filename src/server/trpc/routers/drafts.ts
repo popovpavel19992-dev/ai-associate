@@ -16,6 +16,11 @@ import {
   GENERATION_CREDITS,
 } from "@/lib/constants";
 
+function draftFilter(ctx: { user: { id: string; orgId: string | null; role: string | null } }) {
+  if (!ctx.user.orgId) return eq(contractDrafts.userId, ctx.user.id);
+  return eq(contractDrafts.orgId, ctx.user.orgId);
+}
+
 export const draftsRouter = router({
   create: protectedProcedure
     .input(
@@ -127,7 +132,7 @@ export const draftsRouter = router({
           updatedAt: contractDrafts.updatedAt,
         })
         .from(contractDrafts)
-        .where(eq(contractDrafts.userId, ctx.user.id))
+        .where(draftFilter(ctx))
         .orderBy(desc(contractDrafts.createdAt))
         .limit(limit)
         .offset(offset);
@@ -141,7 +146,7 @@ export const draftsRouter = router({
       const [draft] = await ctx.db
         .select()
         .from(contractDrafts)
-        .where(and(eq(contractDrafts.id, input.draftId), eq(contractDrafts.userId, ctx.user.id)))
+        .where(and(eq(contractDrafts.id, input.draftId), draftFilter(ctx)))
         .limit(1);
 
       if (!draft) {
@@ -173,7 +178,7 @@ export const draftsRouter = router({
       const [draft] = await ctx.db
         .select()
         .from(contractDrafts)
-        .where(and(eq(contractDrafts.id, input.draftId), eq(contractDrafts.userId, ctx.user.id)))
+        .where(and(eq(contractDrafts.id, input.draftId), draftFilter(ctx)))
         .limit(1);
 
       if (!draft) {
@@ -245,7 +250,7 @@ export const draftsRouter = router({
       const [draft] = await ctx.db
         .select({ id: contractDrafts.id })
         .from(contractDrafts)
-        .where(and(eq(contractDrafts.id, clause.draftId), eq(contractDrafts.userId, ctx.user.id)))
+        .where(and(eq(contractDrafts.id, clause.draftId), draftFilter(ctx)))
         .limit(1);
 
       if (!draft) {
@@ -287,7 +292,7 @@ export const draftsRouter = router({
       const [draft] = await ctx.db
         .select()
         .from(contractDrafts)
-        .where(and(eq(contractDrafts.id, clause.draftId), eq(contractDrafts.userId, ctx.user.id)))
+        .where(and(eq(contractDrafts.id, clause.draftId), draftFilter(ctx)))
         .limit(1);
 
       if (!draft) {
@@ -317,7 +322,7 @@ export const draftsRouter = router({
       const [draft] = await ctx.db
         .select()
         .from(contractDrafts)
-        .where(and(eq(contractDrafts.id, input.draftId), eq(contractDrafts.userId, ctx.user.id)))
+        .where(and(eq(contractDrafts.id, input.draftId), draftFilter(ctx)))
         .limit(1);
 
       if (!draft) {
@@ -403,7 +408,7 @@ export const draftsRouter = router({
       const [draft] = await ctx.db
         .select({ id: contractDrafts.id })
         .from(contractDrafts)
-        .where(and(eq(contractDrafts.id, input.draftId), eq(contractDrafts.userId, ctx.user.id)))
+        .where(and(eq(contractDrafts.id, input.draftId), draftFilter(ctx)))
         .limit(1);
 
       if (!draft) {
@@ -412,7 +417,7 @@ export const draftsRouter = router({
 
       await ctx.db
         .delete(contractDrafts)
-        .where(and(eq(contractDrafts.id, input.draftId), eq(contractDrafts.userId, ctx.user.id)));
+        .where(eq(contractDrafts.id, input.draftId));
 
       return { success: true };
     }),

@@ -12,6 +12,7 @@ import { CaseTimeline } from "@/components/cases/case-timeline";
 import { CaseOverview } from "@/components/cases/case-overview";
 import { TasksTab } from "@/components/cases/tasks/tasks-tab";
 import { CaseCalendar } from "@/components/calendar/case-calendar";
+import { CaseTeamPanel } from "@/components/cases/case-team-panel";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -33,6 +34,7 @@ export default function CaseDetailPage({
   const { id } = use(params);
   const utils = trpc.useUtils();
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const { data: profile } = trpc.users.getProfile.useQuery();
 
   const { data: caseData, isLoading } = trpc.cases.getById.useQuery(
     { caseId: id },
@@ -146,7 +148,8 @@ export default function CaseDetailPage({
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
         {activeTab === "overview" && (
           <CaseOverview
             stage={currentStage}
@@ -195,6 +198,12 @@ export default function CaseDetailPage({
               linkedContracts={linkedContracts ?? []}
               caseId={caseData.id}
             />
+          </div>
+        )}
+        </div>
+        {caseData.orgId && (
+          <div className="hidden w-56 shrink-0 overflow-y-auto border-l border-zinc-800 p-4 lg:block">
+            <CaseTeamPanel caseId={id} userRole={profile?.role ?? null} />
           </div>
         )}
       </div>

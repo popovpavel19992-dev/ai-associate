@@ -13,11 +13,13 @@ import {
   PenLine,
   Briefcase,
   Calendar as CalendarIcon,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { trpc } from "@/lib/trpc";
 import { NotificationBell } from "./notification-bell";
 
 const navItems = [
@@ -33,6 +35,8 @@ const navItems = [
 
 function NavContent() {
   const pathname = usePathname();
+  const { data: profile } = trpc.users.getProfile.useQuery();
+  const isTeamAdmin = profile?.role === "owner" || profile?.role === "admin";
 
   return (
     <div className="flex h-full flex-col">
@@ -47,8 +51,9 @@ function NavContent() {
 
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navItems.map((item) => {
-          const isActive =
-            pathname === item.href || pathname.startsWith(item.href + "/");
+          const isActive = item.href === "/settings"
+            ? pathname === "/settings"
+            : pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.label}
@@ -65,6 +70,20 @@ function NavContent() {
             </Link>
           );
         })}
+        {isTeamAdmin && (
+          <Link
+            href="/settings/team"
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              pathname === "/settings/team"
+                ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
+                : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-50",
+            )}
+          >
+            <Users className="h-4 w-4" />
+            Team
+          </Link>
+        )}
       </nav>
 
       <Separator />
