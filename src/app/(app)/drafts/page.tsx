@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PenLine } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { DraftList } from "@/components/drafts/draft-list";
 import { cn } from "@/lib/utils";
 

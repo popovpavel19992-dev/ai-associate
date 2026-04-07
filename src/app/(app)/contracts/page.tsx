@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus, GitCompareArrows } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { ContractList } from "@/components/contracts/contract-list";
 import { cn } from "@/lib/utils";
 
