@@ -70,30 +70,24 @@ function makeMockDb() {
   const insertCalls: { values?: unknown }[] = [];
   const updateCalls: { set?: unknown }[] = [];
 
-  const selectChain: {
-    from: () => typeof selectChain;
-    where: () => typeof selectChain;
-    orderBy: () => typeof selectChain;
-    limit: () => typeof selectChain;
-    offset: () => typeof selectChain;
-    then: (
-      resolve: (v: SelectResponse) => void,
-      reject: (e: Error) => void,
-    ) => void;
-  } = {
-    from: () => selectChain,
-    where: () => selectChain,
-    orderBy: () => selectChain,
-    limit: () => selectChain,
-    offset: () => selectChain,
-    then: (resolve, reject) => {
-      const v = selectQueue.shift();
-      if (v === undefined) {
-        reject(new Error("mock db: select queue exhausted"));
-        return;
-      }
-      resolve(v);
-    },
+  const makeSelectChain = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const chain: any = {
+      from: () => chain,
+      where: () => chain,
+      orderBy: () => chain,
+      limit: () => chain,
+      offset: () => chain,
+      then: (resolve: (v: SelectResponse) => void, reject: (e: Error) => void) => {
+        const v = selectQueue.shift();
+        if (v === undefined) {
+          reject(new Error("mock db: select queue exhausted"));
+          return;
+        }
+        resolve(v);
+      },
+    };
+    return chain;
   };
 
   interface InsertChain {
@@ -125,7 +119,7 @@ function makeMockDb() {
   });
 
   const db = {
-    select: () => selectChain,
+    select: () => makeSelectChain(),
     insert: () => {
       const call: { values?: unknown } = {};
       insertCalls.push(call);
