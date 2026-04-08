@@ -1,6 +1,5 @@
 // src/server/trpc/routers/clients.ts
 import { z } from "zod/v4";
-import { TRPCError } from "@trpc/server";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { router, protectedProcedure } from "../trpc";
 import { clients } from "@/server/db/schema/clients";
@@ -136,8 +135,20 @@ export const clientsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existing = await assertClientEdit(ctx, input.id);
 
-      // Recompute displayName if name fields changed.
-      const merged = { ...existing, ...input.patch };
+      // `updateClientSchema` is a flat object with both individual and
+      // organization fields. Drop any keys that don't belong to the existing
+      // client's type so a patch can't cross-contaminate the row or the
+      // trigger-maintained search_vector. clientType itself is immutable.
+      const INDIVIDUAL_ONLY = ["firstName", "lastName", "dateOfBirth"] as const;
+      const ORGANIZATION_ONLY = ["companyName", "ein", "industry", "website"] as const;
+      const dropKeys: readonly string[] =
+        existing.clientType === "individual" ? ORGANIZATION_ONLY : INDIVIDUAL_ONLY;
+      const safePatch = Object.fromEntries(
+        Object.entries(input.patch).filter(([key]) => !dropKeys.includes(key)),
+      ) as typeof input.patch;
+
+      // Recompute displayName from the existing row merged with the filtered patch.
+      const merged = { ...existing, ...safePatch };
       const displayName =
         existing.clientType === "individual"
           ? deriveDisplayName({
@@ -153,7 +164,7 @@ export const clientsRouter = router({
       const [updated] = await ctx.db
         .update(clients)
         .set({
-          ...input.patch,
+          ...safePatch,
           displayName,
           updatedAt: new Date(),
         })
