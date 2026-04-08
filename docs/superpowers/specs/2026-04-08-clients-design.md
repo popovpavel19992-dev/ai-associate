@@ -59,7 +59,7 @@ Centralized client management for law firms and solo lawyers. Client is a first-
 | `zip_code` | `text` | NULLABLE |
 | `country` | `text` | NULLABLE, default `'US'` |
 | `notes` | `text` | NULLABLE, freeform, max 5000 chars (app enforced) |
-| `search_vector` | `tsvector` | populated by BEFORE INSERT/UPDATE trigger |
+| `search_vector` | `tsvector` | Postgres generated column (STORED) from `display_name`, `company_name`, `first_name`, `last_name`, `industry`, `notes` |
 | `created_at` | `timestamptz` | default `now()` |
 | `updated_at` | `timestamptz` | default `now()`, updated by app on mutation |
 
@@ -114,37 +114,31 @@ ALTER TABLE cases
   REFERENCES clients(id) ON DELETE SET NULL;
 ```
 
-**No backfill.** Existing cases keep `client_id = NULL`. The column is nullable at the DB level; the tRPC `cases.create` procedure enforces required `clientId` via Zod so new cases always have a client. `cases.update` allows changing `clientId` to any valid client the user can access, or to `null` (not exposed in UI initially but allowed in API for future needs).
+**No backfill.** Existing cases keep `client_id = NULL`. The column is nullable at the DB level; the tRPC `cases.create` procedure enforces required `clientId` via Zod so new cases always have a client. `cases.update` allows **swapping** `clientId` to another valid client the user can access, but **cannot set it to `null`** — clearing is YAGNI for MVP. Nullability at the DB level exists only to preserve legacy rows and to support `ON DELETE SET NULL` if a client is ever hard-deleted in the future.
 
 **Index:**
 
 - `idx_cases_client` — `(client_id) WHERE client_id IS NOT NULL` — "cases for this client"
 
-### Search vector trigger
+### Search vector (generated column)
+
+`search_vector` is a Postgres generated (STORED) column — simpler and safer than a trigger. Postgres auto-recomputes it whenever any source column changes, and it's always consistent with row state.
 
 ```sql
-CREATE FUNCTION clients_search_vector_update() RETURNS trigger AS $$
-BEGIN
-  NEW.search_vector :=
-    setweight(to_tsvector('english', coalesce(NEW.display_name, '')), 'A') ||
-    setweight(to_tsvector('english', coalesce(NEW.company_name, '')), 'A') ||
-    setweight(to_tsvector('english',
-      coalesce(NEW.first_name, '') || ' ' || coalesce(NEW.last_name, '')
-    ), 'A') ||
-    setweight(to_tsvector('english', coalesce(NEW.industry, '')), 'B') ||
-    setweight(to_tsvector('english', coalesce(NEW.notes, '')), 'C');
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER clients_search_vector_trigger
-  BEFORE INSERT OR UPDATE OF display_name, company_name, first_name, last_name, industry, notes
-  ON clients
-  FOR EACH ROW
-  EXECUTE FUNCTION clients_search_vector_update();
+search_vector tsvector GENERATED ALWAYS AS (
+  setweight(to_tsvector('english', coalesce(display_name, '')), 'A') ||
+  setweight(to_tsvector('english', coalesce(company_name, '')), 'A') ||
+  setweight(to_tsvector('english',
+    coalesce(first_name, '') || ' ' || coalesce(last_name, '')
+  ), 'A') ||
+  setweight(to_tsvector('english', coalesce(industry, '')), 'B') ||
+  setweight(to_tsvector('english', coalesce(notes, '')), 'C')
+) STORED
 ```
 
-Contact email/phone are **not** included in the tsvector. If contact-based search is needed later, add a separate query path that joins `client_contacts` with trigram matching on email.
+Contact email/phone are **not** included in the tsvector. If contact-based search is needed later, add a separate query path that joins `client_contacts` with trigram matching on email (hence the `pg_trgm` extension enabled in the migration).
+
+**Drizzle note:** Drizzle supports generated columns via `.generatedAlwaysAs(sql\`...\`)`. The schema file will use that API; if it proves problematic, fall back to defining the column as plain tsvector in Drizzle and managing the generation purely at the SQL-migration level (Drizzle will see it as a normal column and never write to it in practice because the router never sets `searchVector` on insert/update).
 
 ### New enums
 
@@ -163,23 +157,36 @@ CREATE TYPE client_status AS ENUM ('active', 'archived');
 
 ### New helpers in `src/server/trpc/lib/permissions.ts`
 
+Signatures follow the existing convention in this module: helpers take `(ctx: Ctx, id: string)`, perform the DB lookup themselves, throw `TRPCError` on denial, and return the fetched row. The existing `Ctx` type (`{ db, user: { id, orgId, role } }`) and `assertOrgRole` helper are reused.
+
 ```ts
 type ClientRow = typeof clients.$inferSelect;
 
-// Read access — needed for getById, getCases, list item exposure
-export function assertClientRead(client: ClientRow, user: AuthUser): void;
+// Read access — used by getById, getCases, update, and as a building block
+// for assertClientEdit. Throws NOT_FOUND if the client doesn't exist or is
+// out of scope for the current user. Returns the full row.
+export async function assertClientRead(ctx: Ctx, clientId: string): Promise<ClientRow>;
 
-// Create/edit (all firm members; solo creator only)
-export function assertClientEdit(client: ClientRow, user: AuthUser): void;
+// Create/edit access (all firm members; solo creator only).
+// Internally calls assertClientRead — firm scoping already gives all members
+// edit access, so this is currently equivalent to assertClientRead. Kept as a
+// separate function so future rule changes (e.g., members can only edit their
+// own) don't ripple through every call site.
+export async function assertClientEdit(ctx: Ctx, clientId: string): Promise<ClientRow>;
 
-// Archive/restore (firm owner+admin; solo creator only)
-export function assertClientManage(client: ClientRow, user: AuthUser): void;
+// Archive/restore access (firm owner+admin; solo creator only).
+// Internally composes assertClientRead + assertOrgRole(['owner','admin']) for
+// firm clients. Solo clients fall through to read check (creator == user).
+export async function assertClientManage(ctx: Ctx, clientId: string): Promise<ClientRow>;
 
-// Scope helper for list queries — returns Drizzle where clause
-export function clientListScope(user: AuthUser): SQL;
+// Scope helper for list queries. Returns a Drizzle SQL where clause that
+// restricts rows to what the current user can see. This is the one
+// deviation from the existing (ctx, id) pattern — list queries need
+// composable where clauses. Documented in a doc comment at the definition.
+export function clientListScope(ctx: Ctx): SQL;
 ```
 
-All throw `TRPCError({ code: 'FORBIDDEN' })` with a stable message when denied. Each helper has unit tests covering firm member, firm non-member, solo creator, solo non-creator, and cross-org boundary cases.
+Each helper has unit tests covering firm member, firm non-member, solo creator, solo non-creator, cross-org boundary, and missing-client cases. `assertClientManage` tests also cover owner/admin pass + member 403 within the same org.
 
 ## API (tRPC)
 
@@ -187,14 +194,14 @@ All throw `TRPCError({ code: 'FORBIDDEN' })` with a stable message when denied. 
 
 | Procedure | Input | Output | Permission |
 |-----------|-------|--------|------------|
-| `list` | `{ search?: string, type?: 'individual' \| 'organization', status?: 'active' \| 'archived', limit: number (max 100, default 25), offset: number }` | `{ clients: ClientListItem[], total: number }` | Scoped via `clientListScope(user)` |
-| `getById` | `{ id: string }` | `{ client: ClientRow, contacts: ClientContact[], caseCount: number }` | `assertClientRead` |
+| `list` | `{ search?: string, type?: 'individual' \| 'organization', status?: 'active' \| 'archived', limit: number (max 100, default 25), offset: number }` | `{ clients: ClientListItem[], total: number }` | Scoped via `clientListScope(ctx)` |
+| `getById` | `{ id: string }` | `{ client: ClientRow, contacts: ClientContact[], caseCount: number }` | `assertClientRead(ctx, id)` |
 | `create` | `createClientSchema` (discriminated union, see below) | `{ client: ClientRow }` | Authenticated |
-| `update` | `{ id: string } & Partial<createClientSchema without clientType>` | `{ client: ClientRow }` | `assertClientEdit` — `clientType` is immutable after creation |
-| `archive` | `{ id: string }` | `{ client: ClientRow }` | `assertClientManage` |
-| `restore` | `{ id: string }` | `{ client: ClientRow }` | `assertClientManage` |
-| `searchForPicker` | `{ q: string, limit: number (default 10, max 20) }` | `{ clients: Array<{ id, displayName, clientType, caseCount }> }` | Scoped via `clientListScope(user)` |
-| `getCases` | `{ clientId: string }` | `{ cases: CaseSummary[] }` | `assertClientRead` |
+| `update` | `{ id: string } & Partial<createClientSchema without clientType>` | `{ client: ClientRow }` | `assertClientEdit(ctx, id)` — `clientType` is immutable after creation |
+| `archive` | `{ id: string }` | `{ client: ClientRow }` | `assertClientManage(ctx, id)` |
+| `restore` | `{ id: string }` | `{ client: ClientRow }` | `assertClientManage(ctx, id)` |
+| `searchForPicker` | `{ q: string, limit: number (default 10, max 20) }` | `{ clients: Array<{ id, displayName, clientType }> }` | Scoped via `clientListScope(ctx)` — does NOT return `caseCount` (avoids per-query join on hot path) |
+| `getCases` | `{ clientId: string }` | `{ cases: CaseSummary[] }` | `assertClientRead(ctx, clientId)` |
 
 **`displayName` derivation** (computed in router on create/update):
 
@@ -214,13 +221,15 @@ All throw `TRPCError({ code: 'FORBIDDEN' })` with a stable message when denied. 
 ### Zod schemas
 
 ```ts
+// Country is ISO-3166-1 alpha-2 (2 chars). Always defaulted, never omitted.
+// Other address fields are fully optional for partial addresses.
 const addressSchema = {
   addressLine1: z.string().max(200).optional(),
   addressLine2: z.string().max(200).optional(),
   city: z.string().max(100).optional(),
   state: z.string().max(50).optional(),
   zipCode: z.string().max(20).optional(),
-  country: z.string().max(2).default('US').optional(),
+  country: z.string().length(2).default('US'),
 };
 
 const createClientSchema = z.discriminatedUnion('clientType', [
@@ -271,9 +280,9 @@ if (input.search?.trim()) {
 
 **`src/server/trpc/routers/cases.ts`:**
 
-- `create` mutation: add required `clientId: z.string().uuid()` to input schema. Verify client exists and `assertClientRead(client, user)` succeeds before insert. Store `clientId` on case row.
-- `update` mutation: optional `clientId: z.string().uuid().nullable()`. Same access check when provided.
-- `getById`: when `clientId IS NOT NULL`, include the client record in response (single join or follow-up select).
+- `create` mutation: add required `clientId: z.string().uuid()` to input schema. Call `assertClientRead(ctx, input.clientId)` before insert; the helper throws if the client doesn't exist or is out of scope. Store `clientId` on the case row.
+- `update` mutation: optional non-nullable `clientId: z.string().uuid().optional()`. When provided, call `assertClientRead(ctx, input.clientId)`. **Not allowed to be set to `null`** — once a case has a client, it keeps one. Clearing is YAGNI for MVP; revisit if a use case emerges.
+- `getById`: when `clientId IS NOT NULL`, include the client record in the response via a single LEFT JOIN. Returns `null` for legacy cases without a client.
 - Existing list queries: no change; returning `clientId` as part of case row is sufficient.
 
 **`src/server/trpc/root.ts`:**
@@ -358,14 +367,13 @@ Single transaction, ordered steps:
 1. `CREATE EXTENSION IF NOT EXISTS pg_trgm;` (idempotent — enables future contact trigram search without a second migration)
 2. `CREATE TYPE client_type AS ENUM ('individual', 'organization');`
 3. `CREATE TYPE client_status AS ENUM ('active', 'archived');`
-4. `CREATE TABLE clients (...);` with all columns including `search_vector tsvector`
+4. `CREATE TABLE clients (...);` — includes `search_vector tsvector GENERATED ALWAYS AS (...) STORED`
 5. `CREATE TABLE client_contacts (...);`
 6. `ALTER TABLE cases ADD COLUMN client_id uuid REFERENCES clients(id) ON DELETE SET NULL;`
-7. Create all indexes listed above
-8. Create `clients_search_vector_update()` function + trigger
-9. Create partial unique index on `client_contacts(client_id) WHERE is_primary = true`
+7. Create all indexes listed above (including `GIN(search_vector)`)
+8. Create partial unique index on `client_contacts(client_id) WHERE is_primary = true`
 
-No data backfill. Legacy cases remain with `client_id = NULL`.
+No trigger is needed — the generated column handles updates automatically. No data backfill. Legacy cases remain with `client_id = NULL`.
 
 **Drizzle schema updates:**
 
@@ -381,9 +389,9 @@ No data backfill. Legacy cases remain with `client_id = NULL`.
 ALTER TABLE cases DROP COLUMN IF EXISTS client_id;
 DROP TABLE IF EXISTS client_contacts;
 DROP TABLE IF EXISTS clients;
-DROP FUNCTION IF EXISTS clients_search_vector_update();
 DROP TYPE IF EXISTS client_status;
 DROP TYPE IF EXISTS client_type;
+-- pg_trgm extension intentionally NOT dropped — may be used by other features
 ```
 
 ## Testing
@@ -445,10 +453,10 @@ DROP TYPE IF EXISTS client_type;
 
 | Risk | Mitigation |
 |------|-----------|
-| tsvector trigger overhead on large updates | Benchmark with 10k synthetic rows before merge; if slow, convert `search_vector` to a generated column (Postgres 12+) |
+| Generated tsvector overhead on writes | Benchmark with 10k synthetic rows before merge; generated columns are evaluated per row on write but this is typically negligible at MVP scale |
 | `pg_trgm` not enabled on Supabase | Migration includes `CREATE EXTENSION IF NOT EXISTS pg_trgm` (idempotent and allowed on Supabase) |
 | Existing cases without client break UI | Client block and detail sections render only when `clientId IS NOT NULL`; picker required only in `create`, not `update` |
-| Combobox lag with many results | `searchForPicker` hard-capped at 20, debounced 200 ms, rank-ordered on server |
+| Combobox lag with many results | `searchForPicker` hard-capped at 20, debounced 200 ms, rank-ordered on server, no per-row `caseCount` aggregation |
 | Primary contact race condition | Partial unique index enforces single primary; updates run in transaction (unset → set) |
 | Orphaned contacts on client delete | `ON DELETE CASCADE` on `client_contacts.client_id` |
 | Solo user joins an org later — orphaned solo clients | Out of scope; future "join org" flow will decide migration strategy |
