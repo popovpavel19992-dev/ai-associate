@@ -14,6 +14,7 @@ import { calendarConnectionsRouter } from "./routers/calendar-connections";
 import { teamRouter } from "./routers/team";
 import { caseMembersRouter } from "./routers/case-members";
 import { clientsRouter } from "./routers/clients";
+import { clientContactsRouter } from "./routers/client-contacts";
 
 export const appRouter = router({
   users: usersRouter,
@@ -31,6 +32,7 @@ export const appRouter = router({
   team: teamRouter,
   caseMembers: caseMembersRouter,
   clients: clientsRouter,
+  clientContacts: clientContactsRouter,
 });
 
 export type AppRouter = typeof appRouter;
