@@ -1,9 +1,14 @@
 -- Phase 2.1.5: Clients & Profiles (Client CRM)
 --
 -- Adds clients + client_contacts tables, client_id FK on cases, and a
--- Postgres GENERATED tsvector column for full-text search. Hand-written
+-- trigger-maintained tsvector column for full-text search. Hand-written
 -- delta migration (this project is not baselined with drizzle-kit generate;
 -- see header of 0003_calendar_sync.sql).
+--
+-- NOTE: search_vector is a plain tsvector column maintained by a BEFORE
+-- INSERT/UPDATE trigger (not GENERATED ALWAYS AS STORED). Postgres requires
+-- IMMUTABLE expressions for stored generated columns, and to_tsvector('english', ...)
+-- is not immutable. Trigger approach is the standard workaround.
 --
 -- Dependencies (must already exist): users, organizations, cases
 
@@ -33,13 +38,7 @@ CREATE TABLE "clients" (
 	"zip_code" text,
 	"country" text DEFAULT 'US',
 	"notes" text,
-	"search_vector" tsvector GENERATED ALWAYS AS (
-		setweight(to_tsvector('english', coalesce(display_name, '')), 'A') ||
-		setweight(to_tsvector('english', coalesce(company_name, '')), 'A') ||
-		setweight(to_tsvector('english', coalesce(first_name, '') || ' ' || coalesce(last_name, '')), 'A') ||
-		setweight(to_tsvector('english', coalesce(industry, '')), 'B') ||
-		setweight(to_tsvector('english', coalesce(notes, '')), 'C')
-	) STORED,
+	"search_vector" tsvector,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "clients_type_required_fields" CHECK (
@@ -56,6 +55,25 @@ CREATE INDEX "idx_clients_org_active" ON "clients" ("org_id") WHERE status = 'ac
 CREATE INDEX "idx_clients_solo_active" ON "clients" ("user_id") WHERE org_id IS NULL AND status = 'active';--> statement-breakpoint
 CREATE INDEX "idx_clients_search_vector" ON "clients" USING GIN ("search_vector");--> statement-breakpoint
 CREATE INDEX "idx_clients_updated_at" ON "clients" ("updated_at" DESC);--> statement-breakpoint
+
+-- Trigger to maintain clients.search_vector on INSERT/UPDATE.
+-- Cannot use GENERATED ALWAYS AS STORED because to_tsvector('english', ...)
+-- is not IMMUTABLE.
+CREATE OR REPLACE FUNCTION clients_search_vector_update() RETURNS trigger AS $$
+BEGIN
+	NEW.search_vector :=
+		setweight(to_tsvector('english'::regconfig, coalesce(NEW.display_name, '')), 'A') ||
+		setweight(to_tsvector('english'::regconfig, coalesce(NEW.company_name, '')), 'A') ||
+		setweight(to_tsvector('english'::regconfig, coalesce(NEW.first_name, '') || ' ' || coalesce(NEW.last_name, '')), 'A') ||
+		setweight(to_tsvector('english'::regconfig, coalesce(NEW.industry, '')), 'B') ||
+		setweight(to_tsvector('english'::regconfig, coalesce(NEW.notes, '')), 'C');
+	RETURN NEW;
+END
+$$ LANGUAGE plpgsql;--> statement-breakpoint
+
+CREATE TRIGGER clients_search_vector_trigger
+BEFORE INSERT OR UPDATE ON "clients"
+FOR EACH ROW EXECUTE FUNCTION clients_search_vector_update();--> statement-breakpoint
 
 CREATE TABLE "client_contacts" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,

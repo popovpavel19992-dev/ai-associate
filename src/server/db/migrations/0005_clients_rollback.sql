@@ -6,6 +6,10 @@ DROP INDEX IF EXISTS "idx_cases_client";
 ALTER TABLE "cases" DROP COLUMN IF EXISTS "client_id";
 
 DROP TABLE IF EXISTS "client_contacts";
+
+DROP TRIGGER IF EXISTS "clients_search_vector_trigger" ON "clients";
+DROP FUNCTION IF EXISTS "clients_search_vector_update"();
+
 DROP TABLE IF EXISTS "clients";
 
 DROP TYPE IF EXISTS "client_status";

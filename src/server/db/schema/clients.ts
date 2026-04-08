@@ -17,8 +17,10 @@ export const clientTypeEnum = pgEnum("client_type", ["individual", "organization
 export const clientStatusEnum = pgEnum("client_status", ["active", "archived"]);
 
 // Drizzle has no built-in tsvector type — declare a thin custom type so the
-// column type-checks. The router never writes to this column; it's a
-// Postgres GENERATED ALWAYS STORED column maintained by the DB.
+// column type-checks. The router never writes to this column; it's maintained
+// by a BEFORE INSERT/UPDATE trigger (clients_search_vector_trigger) that
+// recomputes the value from display_name, company_name, first/last_name,
+// industry, and notes. See migration 0005_clients.sql for the trigger body.
 const tsvector = customType<{ data: string; driverData: string }>({
   dataType() {
     return "tsvector";
@@ -58,16 +60,11 @@ export const clients = pgTable(
 
     notes: text("notes"),
 
-    // Generated tsvector — maintained by Postgres, never written by app code.
-    searchVector: tsvector("search_vector").generatedAlwaysAs(
-      sql`(
-        setweight(to_tsvector('english', coalesce(display_name, '')), 'A') ||
-        setweight(to_tsvector('english', coalesce(company_name, '')), 'A') ||
-        setweight(to_tsvector('english', coalesce(first_name, '') || ' ' || coalesce(last_name, '')), 'A') ||
-        setweight(to_tsvector('english', coalesce(industry, '')), 'B') ||
-        setweight(to_tsvector('english', coalesce(notes, '')), 'C')
-      )`,
-    ),
+    // Trigger-maintained tsvector — populated by clients_search_vector_trigger
+    // on INSERT/UPDATE. Never written by app code. Plain column (not GENERATED)
+    // because Postgres requires IMMUTABLE expressions for STORED generated
+    // columns and to_tsvector('english', ...) is not immutable.
+    searchVector: tsvector("search_vector"),
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
