@@ -291,13 +291,13 @@ describe("clientContacts.update", () => {
     });
 
     // Only one update call (no demote). The set-target update applies the
-    // patch fields as-is. Note: contactSchema.partial() still applies the
-    // default `isPrimary: false`, so the set may include `isPrimary: false`
-    // — but because `existing.isPrimary === true`, the demote branch
-    // (patch.isPrimary === true && !existing.isPrimary) does NOT fire.
+    // patch fields as-is and must NOT include `isPrimary` when the caller
+    // omitted it — otherwise a rename of a primary contact would silently
+    // demote it.
     expect(updateCalls).toHaveLength(1);
     const setVals = updateCalls[0]!.set as Record<string, unknown>;
     expect(setVals.name).toBe("Renamed");
+    expect(Object.prototype.hasOwnProperty.call(setVals, "isPrimary")).toBe(false);
   });
 });
 

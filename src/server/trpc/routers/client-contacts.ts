@@ -61,7 +61,7 @@ export const clientContactsRouter = router({
             title: fields.title ?? null,
             email: fields.email ?? null,
             phone: fields.phone ?? null,
-            isPrimary: fields.isPrimary,
+            isPrimary: fields.isPrimary ?? false,
             notes: fields.notes ?? null,
           })
           .returning();

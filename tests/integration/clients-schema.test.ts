@@ -111,8 +111,8 @@ describe("contactSchema", () => {
     expect(bad.success).toBe(false);
   });
 
-  it("isPrimary defaults to false", () => {
+  it("isPrimary is omitted when not provided", () => {
     const result = contactSchema.parse({ name: "John" });
-    expect(result.isPrimary).toBe(false);
+    expect(result.isPrimary).toBeUndefined();
   });
 });

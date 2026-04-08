@@ -73,7 +73,7 @@ export const contactSchema = z.object({
   title: z.string().max(100).optional(),
   email: z.email().max(320).optional(),
   phone: z.string().max(50).optional(),
-  isPrimary: z.boolean().default(false),
+  isPrimary: z.boolean().optional(),
   notes: z.string().max(1000).optional(),
 });
 
