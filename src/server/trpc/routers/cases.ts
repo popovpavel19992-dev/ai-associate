@@ -143,6 +143,9 @@ export const casesRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
       }
 
+      // No assertClientRead — the caller already passed assertCaseAccess.
+      // clientId is an attribute of the case they can read; the FK write-path
+      // (cases.create / cases.update) enforces assertClientRead at link time.
       const linkedClient = caseRecord.clientId
         ? (await ctx.db
             .select()
