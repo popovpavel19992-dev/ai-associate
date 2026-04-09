@@ -13,12 +13,14 @@ import type { db as realDb } from "@/server/db";
 import type { clients } from "@/server/db/schema/clients";
 import type { cases } from "@/server/db/schema/cases";
 import { casesRouter } from "@/server/trpc/routers/cases";
+import { AUTO_DELETE_DAYS } from "@/lib/constants";
 
 type ClientRow = typeof clients.$inferSelect;
 type CaseRow = typeof cases.$inferSelect;
 
 // Minimal user shape understood by the permission helpers inside the router.
-type MockUser = { id: string; orgId: string | null; role: string | null };
+// plan is read by cases.create (ctx.user.plan ?? "trial") to compute deleteAt.
+type MockUser = { id: string; orgId: string | null; role: string | null; plan?: string | null };
 type Ctx = { db: typeof realDb; user: MockUser };
 
 // ---------------------------------------------------------------------------
@@ -269,6 +271,29 @@ describe("cases.create — clientId linkage", () => {
     expect(setVals.stageId).toBe("stage-intake-uuid");
   });
 
+  it("solo-plan user: deleteAt is further in the future than trial would give", async () => {
+    const { db, enqueueSelect, insertCalls } = makeMockDb();
+    // solo plan → AUTO_DELETE_DAYS.solo = 60 days (vs trial = 30 days)
+    const ctx: Ctx = { db, user: { id: ID.user, orgId: null, role: null, plan: "solo" } };
+
+    // (1) assertClientRead SELECT — solo client
+    enqueueSelect([makeClientRow({ id: ID.client, orgId: null, userId: ID.user })]);
+    // (2) SELECT caseStages for intake → empty
+    enqueueSelect([]);
+
+    await caller(ctx).create({ clientId: ID.client, name: "Solo Plan Case" });
+
+    expect(insertCalls).toHaveLength(1);
+    const vals = insertCalls[0]!.values as Record<string, unknown>;
+    expect(vals.deleteAt).toBeInstanceOf(Date);
+
+    const MS_PER_DAY = 24 * 60 * 60 * 1000;
+    const trialDays = AUTO_DELETE_DAYS.trial; // 30
+    const trialCutoff = Date.now() + trialDays * MS_PER_DAY;
+    // A solo-plan deleteAt (60 days out) must exceed a trial cutoff (30 days out)
+    expect((vals.deleteAt as Date).getTime()).toBeGreaterThan(trialCutoff);
+  });
+
   it("foreign clientId: assertClientRead throws NOT_FOUND, no DB inserts occur", async () => {
     const { db, enqueueSelect, insertCalls } = makeMockDb();
     const ctx: Ctx = { db, user: { id: ID.user, orgId: ID.org, role: "owner" } };
@@ -340,6 +365,24 @@ describe("cases.update — clientId swap and rename", () => {
     expect(updateCalls).toHaveLength(0);
   });
 
+  it("rename + clientId swap in one call writes both fields", async () => {
+    const { db, enqueueSelect, updateCalls } = makeMockDb();
+    const ctx: Ctx = { db, user: { id: ID.user, orgId: ID.org, role: "owner" } };
+
+    // (1) assertCaseAccess SELECT
+    enqueueSelect([{ id: ID.case }]);
+    // (2) assertClientRead SELECT for new client
+    enqueueSelect([makeClientRow({ id: ID.newClient, orgId: ID.org, userId: ID.user })]);
+
+    await caller(ctx).update({ caseId: ID.case, clientId: ID.newClient, name: "Both" });
+
+    expect(updateCalls).toHaveLength(1);
+    const setVals = updateCalls[0]!.set as Record<string, unknown>;
+    expect(setVals.clientId).toBe(ID.newClient);
+    expect(setVals.name).toBe("Both");
+    expect(setVals.updatedAt).toBeInstanceOf(Date);
+  });
+
   it("no-op update (neither name nor clientId): UPDATE still called with just updatedAt", async () => {
     const { db, enqueueSelect, updateCalls } = makeMockDb();
     const ctx: Ctx = { db, user: { id: ID.user, orgId: ID.org, role: "owner" } };
@@ -384,9 +427,9 @@ describe("cases.getById — hydrated client field", () => {
     enqueueSelect([]);
     // (7) SELECT caseStages WHERE caseType (stages for the pipeline bar)
     enqueueSelect([]);
-    // (8) stageTaskTemplates — skipped because currentStage is null (stageId=null + stages=[])
-    // (9) SELECT caseEvents WHERE caseId
+    // (8) SELECT caseEvents WHERE caseId (recentEvents — unconditional)
     enqueueSelect([]);
+    // (9) stageTaskTemplates — skipped because currentStage is null (stageId=null + stages=[])
 
     const result = await caller(ctx).getById({ caseId: ID.case });
 
@@ -415,9 +458,9 @@ describe("cases.getById — hydrated client field", () => {
     enqueueSelect([]);
     // (7) SELECT caseStages
     enqueueSelect([]);
-    // (8) stageTaskTemplates — skipped (no currentStage)
-    // (9) SELECT caseEvents
+    // (8) SELECT caseEvents (recentEvents — unconditional)
     enqueueSelect([]);
+    // (9) stageTaskTemplates — skipped (no currentStage)
 
     const result = await caller(ctx).getById({ caseId: ID.case });
 
