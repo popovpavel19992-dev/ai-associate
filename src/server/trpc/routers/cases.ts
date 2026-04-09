@@ -472,6 +472,36 @@ export const casesRouter = router({
       return updated;
     }),
 
+  update: protectedProcedure
+    .input(
+      z.object({
+        caseId: z.string().uuid(),
+        clientId: z.string().uuid().optional(),
+        name: z.string().min(1).max(200).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertCaseAccess(ctx, input.caseId);
+
+      // Verify the new client is accessible. Setting clientId to null is
+      // not supported (YAGNI for MVP).
+      if (input.clientId) {
+        await assertClientRead(ctx, input.clientId);
+      }
+
+      const patch: Record<string, unknown> = { updatedAt: new Date() };
+      if (input.clientId) patch.clientId = input.clientId;
+      if (input.name) patch.name = input.name;
+
+      const [updated] = await ctx.db
+        .update(cases)
+        .set(patch)
+        .where(eq(cases.id, input.caseId))
+        .returning();
+
+      return updated;
+    }),
+
   exportDocx: protectedProcedure
     .input(z.object({ caseId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
