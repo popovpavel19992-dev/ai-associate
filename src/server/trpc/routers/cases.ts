@@ -8,6 +8,7 @@ import { documentAnalyses } from "../../db/schema/document-analyses";
 import { contracts } from "../../db/schema/contracts";
 import { caseStages, stageTaskTemplates, caseEvents } from "../../db/schema/case-stages";
 import { caseMembers } from "../../db/schema/case-members";
+import { clients } from "../../db/schema/clients";
 import { createTasksFromTemplatesInternal } from "./case-tasks";
 import { calculateCredits, checkCredits, decrementCredits, refundCredits } from "../../services/credits";
 import { generateDocx, generatePlainTextReport } from "../../services/export";
@@ -142,6 +143,14 @@ export const casesRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
       }
 
+      const linkedClient = caseRecord.clientId
+        ? (await ctx.db
+            .select()
+            .from(clients)
+            .where(eq(clients.id, caseRecord.clientId))
+            .limit(1))[0] ?? null
+        : null;
+
       const docs = await ctx.db
         .select()
         .from(documents)
@@ -200,6 +209,7 @@ export const casesRouter = router({
 
       return {
         ...caseRecord,
+        client: linkedClient,
         documents: docs,
         analyses,
         linkedContracts,
