@@ -13,7 +13,7 @@ import { calculateCredits, checkCredits, decrementCredits, refundCredits } from 
 import { generateDocx, generatePlainTextReport } from "../../services/export";
 import { inngest } from "../../inngest/client";
 import { CASE_TYPES, AUTO_DELETE_DAYS, CASE_TYPE_LABELS } from "@/lib/constants";
-import { assertCaseAccess, assertCaseDelete } from "../lib/permissions";
+import { assertCaseAccess, assertCaseDelete, assertClientRead } from "../lib/permissions";
 import type { CaseType } from "@/lib/case-stages";
 import type { AnalysisOutput } from "@/lib/schemas";
 
@@ -21,12 +21,16 @@ export const casesRouter = router({
   create: protectedProcedure
     .input(
       z.object({
+        clientId: z.string().uuid(),
         name: z.string().min(1).max(200),
         caseType: z.enum(CASE_TYPES).optional(),
         selectedSections: z.array(z.string()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Permission check + scope verification.
+      await assertClientRead(ctx, input.clientId);
+
       const plan = ctx.user.plan ?? "trial";
       const deleteDays = AUTO_DELETE_DAYS[plan as keyof typeof AUTO_DELETE_DAYS] ?? 30;
       const deleteAt = new Date(Date.now() + deleteDays * 24 * 60 * 60 * 1000);
@@ -36,6 +40,7 @@ export const casesRouter = router({
         .values({
           userId: ctx.user.id,
           orgId: ctx.user.orgId,
+          clientId: input.clientId,
           name: input.name,
           overrideCaseType: input.caseType ?? null,
           selectedSections: input.selectedSections ?? null,
