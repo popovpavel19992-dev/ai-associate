@@ -13,6 +13,7 @@ import { CaseOverview } from "@/components/cases/case-overview";
 import { TasksTab } from "@/components/cases/tasks/tasks-tab";
 import { CaseCalendar } from "@/components/calendar/case-calendar";
 import { CaseTeamPanel } from "@/components/cases/case-team-panel";
+import { CaseClientBlock } from "@/components/cases/case-client-block";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -201,9 +202,10 @@ export default function CaseDetailPage({
           </div>
         )}
         </div>
-        {caseData.orgId && (
-          <div className="hidden w-56 shrink-0 overflow-y-auto border-l border-zinc-800 p-4 lg:block">
-            <CaseTeamPanel caseId={id} userRole={profile?.role ?? null} />
+        {(caseData.client || caseData.orgId) && (
+          <div className="hidden w-56 shrink-0 space-y-4 overflow-y-auto border-l border-zinc-800 p-4 lg:block">
+            {caseData.client && <CaseClientBlock client={caseData.client} />}
+            {caseData.orgId && <CaseTeamPanel caseId={id} userRole={profile?.role ?? null} />}
           </div>
         )}
       </div>
