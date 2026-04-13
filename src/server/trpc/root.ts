@@ -15,6 +15,9 @@ import { teamRouter } from "./routers/team";
 import { caseMembersRouter } from "./routers/case-members";
 import { clientsRouter } from "./routers/clients";
 import { clientContactsRouter } from "./routers/client-contacts";
+import { timeEntriesRouter } from "./routers/time-entries";
+import { expensesRouter } from "./routers/expenses";
+import { billingRatesRouter } from "./routers/billing-rates";
 
 export const appRouter = router({
   users: usersRouter,
@@ -33,6 +36,9 @@ export const appRouter = router({
   caseMembers: caseMembersRouter,
   clients: clientsRouter,
   clientContacts: clientContactsRouter,
+  timeEntries: timeEntriesRouter,
+  expenses: expensesRouter,
+  billingRates: billingRatesRouter,
 });
 
 export type AppRouter = typeof appRouter;
