@@ -28,6 +28,7 @@ const navItems = [
   { href: "/drafts", label: "Drafts", icon: PenLine },
   { href: "/quick-analysis", label: "Quick Analysis", icon: Zap },
   { href: "/cases", label: "Cases", icon: Briefcase },
+  { href: "/clients", label: "Clients", icon: Users },
   { href: "/calendar", label: "Calendar", icon: CalendarIcon },
   { href: "/settings/templates", label: "Templates", icon: FileText },
   { href: "/settings", label: "Settings", icon: Settings },

@@ -4,8 +4,10 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
 import { UploadDropzone } from "@/components/documents/upload-dropzone";
+import { ClientPicker } from "@/components/clients/client-picker";
 
 export default function QuickAnalysisPage() {
   const router = useRouter();
@@ -13,6 +15,11 @@ export default function QuickAnalysisPage() {
   const [status, setStatus] = useState<"idle" | "creating" | "uploading" | "analyzing">("idle");
   const [error, setError] = useState<string | null>(null);
   const [caseId, setCaseId] = useState<string | null>(null);
+  const [client, setClient] = useState<{
+    id: string;
+    displayName: string;
+    clientType: "individual" | "organization";
+  } | null>(null);
 
   const createCase = trpc.cases.create.useMutation();
   const analyze = trpc.cases.analyze.useMutation();
@@ -34,6 +41,11 @@ export default function QuickAnalysisPage() {
     async (files: FileList | null) => {
       if (!files || files.length === 0) return;
 
+      if (!client) {
+        setError("Please select a client first.");
+        return;
+      }
+
       setError(null);
 
       try {
@@ -41,7 +53,10 @@ export default function QuickAnalysisPage() {
         setStatus("creating");
         const file = files[0];
         const caseName = file.name.replace(/\.[^.]+$/, "");
-        const created = await createCase.mutateAsync({ name: caseName });
+        const created = await createCase.mutateAsync({
+          clientId: client.id,
+          name: caseName,
+        });
         setCaseId(created.id);
         setStatus("uploading");
       } catch (err) {
@@ -49,7 +64,7 @@ export default function QuickAnalysisPage() {
         setStatus("idle");
       }
     },
-    [createCase],
+    [client, createCase],
   );
 
   // If we have a caseId, show the upload dropzone (auto-created case)
@@ -106,6 +121,11 @@ export default function QuickAnalysisPage() {
             Upload a single document for instant AI analysis. A case will be
             auto-created and analysis starts immediately.
           </p>
+
+          <div className="space-y-2">
+            <Label>Client</Label>
+            <ClientPicker value={client} onChange={setClient} />
+          </div>
 
           <QuickDropzone onFiles={handleFileDrop} />
 
