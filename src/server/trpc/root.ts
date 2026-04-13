@@ -18,6 +18,7 @@ import { clientContactsRouter } from "./routers/client-contacts";
 import { timeEntriesRouter } from "./routers/time-entries";
 import { expensesRouter } from "./routers/expenses";
 import { billingRatesRouter } from "./routers/billing-rates";
+import { invoicesRouter } from "./routers/invoices";
 
 export const appRouter = router({
   users: usersRouter,
@@ -39,6 +40,7 @@ export const appRouter = router({
   timeEntries: timeEntriesRouter,
   expenses: expensesRouter,
   billingRates: billingRatesRouter,
+  invoices: invoicesRouter,
 });
 
 export type AppRouter = typeof appRouter;
