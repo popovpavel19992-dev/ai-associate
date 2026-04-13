@@ -1,7 +1,7 @@
 // src/components/clients/contact-form-dialog.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,18 @@ export function ContactFormDialog({ open, onOpenChange, clientId, initial }: Pro
   const [phone, setPhone] = useState(initial?.phone ?? "");
   const [isPrimary, setIsPrimary] = useState(initial?.isPrimary ?? false);
   const [notes, setNotes] = useState(initial?.notes ?? "");
+
+  // Reset form state each time the dialog opens (fixes stale data on re-open)
+  useEffect(() => {
+    if (open) {
+      setName(initial?.name ?? "");
+      setTitle(initial?.title ?? "");
+      setEmail(initial?.email ?? "");
+      setPhone(initial?.phone ?? "");
+      setIsPrimary(initial?.isPrimary ?? false);
+      setNotes(initial?.notes ?? "");
+    }
+  }, [open, initial]);
 
   const onDone = () => {
     utils.clients.getById.invalidate({ id: clientId });
