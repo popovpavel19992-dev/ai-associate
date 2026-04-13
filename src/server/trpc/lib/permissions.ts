@@ -45,34 +45,43 @@ export async function assertCaseAccess(ctx: Ctx, caseId: string) {
     return c;
   }
 
-  // Owner/admin: any case in their org
+  // Legacy case fallback: cases created before the user joined an org have
+  // org_id = NULL. Allow access if the current user is the original creator.
+  const legacyOwned = and(isNull(cases.orgId), eq(cases.userId, ctx.user.id));
+
+  // Owner/admin: any case in their org + own legacy cases
   if (ctx.user.role === "owner" || ctx.user.role === "admin") {
     const [c] = await ctx.db
       .select({ id: cases.id })
       .from(cases)
-      .where(and(eq(cases.id, caseId), eq(cases.orgId, ctx.user.orgId)))
+      .where(and(eq(cases.id, caseId), or(eq(cases.orgId, ctx.user.orgId), legacyOwned)))
       .limit(1);
     if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
     return c;
   }
 
-  // Member: case_members or creator
+  // Member: case_members or creator (in org or legacy)
   const [c] = await ctx.db
     .select({ id: cases.id })
     .from(cases)
     .where(
       and(
         eq(cases.id, caseId),
-        eq(cases.orgId, ctx.user.orgId),
         or(
-          eq(cases.userId, ctx.user.id),
-          inArray(
-            cases.id,
-            ctx.db
-              .select({ caseId: caseMembers.caseId })
-              .from(caseMembers)
-              .where(eq(caseMembers.userId, ctx.user.id)),
+          and(
+            eq(cases.orgId, ctx.user.orgId),
+            or(
+              eq(cases.userId, ctx.user.id),
+              inArray(
+                cases.id,
+                ctx.db
+                  .select({ caseId: caseMembers.caseId })
+                  .from(caseMembers)
+                  .where(eq(caseMembers.userId, ctx.user.id)),
+              ),
+            ),
           ),
+          legacyOwned,
         ),
       ),
     )
@@ -98,22 +107,24 @@ export async function assertCaseDelete(ctx: Ctx, caseId: string) {
     return c;
   }
 
+  const legacyOwned = and(isNull(cases.orgId), eq(cases.userId, ctx.user.id));
+
   if (ctx.user.role === "owner" || ctx.user.role === "admin") {
     const [c] = await ctx.db
       .select({ id: cases.id })
       .from(cases)
-      .where(and(eq(cases.id, caseId), eq(cases.orgId, ctx.user.orgId)))
+      .where(and(eq(cases.id, caseId), or(eq(cases.orgId, ctx.user.orgId), legacyOwned)))
       .limit(1);
     if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
     return c;
   }
 
-  // Member: only their own
+  // Member: only their own (in org or legacy)
   const [c] = await ctx.db
     .select({ id: cases.id })
     .from(cases)
     .where(
-      and(eq(cases.id, caseId), eq(cases.orgId, ctx.user.orgId), eq(cases.userId, ctx.user.id)),
+      and(eq(cases.id, caseId), eq(cases.userId, ctx.user.id), or(eq(cases.orgId, ctx.user.orgId), isNull(cases.orgId))),
     )
     .limit(1);
   if (!c)

@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { eq, and, desc, sql, inArray, or } from "drizzle-orm";
+import { eq, and, desc, sql, inArray, or, isNull } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../trpc";
 import { cases } from "../../db/schema/cases";
@@ -99,13 +99,19 @@ export const casesRouter = router({
       const limit = input?.limit ?? 20;
       const offset = input?.offset ?? 0;
 
+      // Legacy fallback: cases created before the user joined an org (org_id IS NULL).
+      const legacyOwned = and(isNull(cases.orgId), eq(cases.userId, ctx.user.id));
+
       const whereClause = !ctx.user.orgId
         ? eq(cases.userId, ctx.user.id)
         : ctx.user.role === "owner" || ctx.user.role === "admin"
-          ? eq(cases.orgId, ctx.user.orgId)
+          ? or(eq(cases.orgId, ctx.user.orgId), legacyOwned)!
           : or(
-              eq(cases.userId, ctx.user.id),
-              inArray(cases.id, ctx.db.select({ caseId: caseMembers.caseId }).from(caseMembers).where(eq(caseMembers.userId, ctx.user.id))),
+              and(eq(cases.orgId, ctx.user.orgId), or(
+                eq(cases.userId, ctx.user.id),
+                inArray(cases.id, ctx.db.select({ caseId: caseMembers.caseId }).from(caseMembers).where(eq(caseMembers.userId, ctx.user.id))),
+              )),
+              legacyOwned,
             )!;
 
       const userCases = await ctx.db
