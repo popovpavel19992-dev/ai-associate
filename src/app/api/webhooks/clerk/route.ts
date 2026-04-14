@@ -80,7 +80,7 @@ export async function POST(req: Request) {
       if (!org) break;
 
       const [user] = await db
-        .select({ id: users.id })
+        .select({ id: users.id, name: users.name })
         .from(users)
         .where(eq(users.clerkId, clerkUserId))
         .limit(1);
@@ -92,6 +92,28 @@ export async function POST(req: Request) {
         .update(users)
         .set({ orgId: org.id, role: mappedRole })
         .where(eq(users.clerkId, clerkUserId));
+
+      // Notify other org members that a new member has joined
+      const otherMembers = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.orgId, org.id));
+
+      for (const member of otherMembers) {
+        if (member.id === user.id) continue;
+        await inngest.send({
+          name: "notification/send",
+          data: {
+            userId: member.id,
+            orgId: org.id,
+            type: "team_member_joined",
+            title: `${user.name} joined the team`,
+            body: `${user.name} has joined your organization`,
+            actionUrl: "/team",
+            metadata: { memberName: user.name },
+          },
+        });
+      }
       break;
     }
 
