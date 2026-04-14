@@ -19,6 +19,10 @@ import { timeEntriesRouter } from "./routers/time-entries";
 import { expensesRouter } from "./routers/expenses";
 import { billingRatesRouter } from "./routers/billing-rates";
 import { invoicesRouter } from "./routers/invoices";
+import { notificationsRouter } from "./routers/notifications";
+import { notificationPreferencesRouter } from "./routers/notification-preferences";
+import { notificationMutesRouter } from "./routers/notification-mutes";
+import { pushSubscriptionsRouter } from "./routers/push-subscriptions";
 
 export const appRouter = router({
   users: usersRouter,
@@ -41,6 +45,10 @@ export const appRouter = router({
   expenses: expensesRouter,
   billingRates: billingRatesRouter,
   invoices: invoicesRouter,
+  notifications: notificationsRouter,
+  notificationPreferences: notificationPreferencesRouter,
+  notificationMutes: notificationMutesRouter,
+  pushSubscriptions: pushSubscriptionsRouter,
 });
 
 export type AppRouter = typeof appRouter;
