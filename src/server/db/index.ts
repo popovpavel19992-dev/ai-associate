@@ -12,6 +12,10 @@ import * as contracts from "./schema/contracts";
 import * as contractComparisons from "./schema/contract-comparisons";
 import * as contractDrafts from "./schema/contract-drafts";
 import * as caseStages from "./schema/case-stages";
+import * as notificationsSchema from "./schema/notifications";
+import * as notificationPreferences from "./schema/notification-preferences";
+import * as notificationMutes from "./schema/notification-mutes";
+import * as pushSubscriptions from "./schema/push-subscriptions";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -29,5 +33,9 @@ export const db = drizzle(client, {
     ...contractComparisons,
     ...contractDrafts,
     ...caseStages,
+    ...notificationsSchema,
+    ...notificationPreferences,
+    ...notificationMutes,
+    ...pushSubscriptions,
   },
 });
