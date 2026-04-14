@@ -31,6 +31,10 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().min(1),
   MICROSOFT_CLIENT_ID: z.string().min(1),
   MICROSOFT_CLIENT_SECRET: z.string().min(1),
+  // Notifications (2.1.7)
+  VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+  VAPID_PRIVATE_KEY: z.string().min(1).optional(),
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
