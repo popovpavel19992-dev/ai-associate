@@ -31,7 +31,17 @@ export const notificationsRouter = router({
       }
 
       const rows = await ctx.db
-        .select()
+        .select({
+          id: notifications.id,
+          type: notifications.type,
+          title: notifications.title,
+          body: notifications.body,
+          caseId: notifications.caseId,
+          actionUrl: notifications.actionUrl,
+          isRead: notifications.isRead,
+          readAt: notifications.readAt,
+          createdAt: notifications.createdAt,
+        })
         .from(notifications)
         .where(and(...conditions))
         .orderBy(desc(notifications.createdAt))

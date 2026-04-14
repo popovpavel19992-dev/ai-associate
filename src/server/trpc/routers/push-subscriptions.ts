@@ -25,10 +25,10 @@ export const pushSubscriptionsRouter = router({
         .onConflictDoUpdate({
           target: [pushSubscriptions.endpoint],
           set: {
-            userId: ctx.user.id,
             p256dh: input.p256dh,
             auth: input.auth,
           },
+          setWhere: eq(pushSubscriptions.userId, ctx.user.id),
         });
       return { success: true };
     }),
