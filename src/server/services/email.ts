@@ -130,6 +130,208 @@ export async function sendAutoDeleteWarningEmail(
   });
 }
 
+export async function sendStageChangedEmail(
+  to: string,
+  caseName: string,
+  fromStage: string,
+  toStage: string,
+  caseId: string,
+) {
+  await sendEmail({
+    to,
+    subject: `Case Stage Updated: ${caseName}`,
+    html: emailLayout(`
+      <h1>Case stage updated</h1>
+      <p>The case <strong>${escapeHtml(caseName)}</strong> has moved from <strong>${escapeHtml(fromStage)}</strong> to <strong>${escapeHtml(toStage)}</strong>.</p>
+      <a href="${appUrl(`/cases/${caseId}`)}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#fff;border-radius:6px;text-decoration:none;font-weight:500;">View Case</a>
+    `),
+  });
+}
+
+export async function sendTaskAssignedEmail(
+  to: string,
+  taskTitle: string,
+  caseName: string,
+  caseId: string,
+) {
+  await sendEmail({
+    to,
+    subject: `Task Assigned: ${taskTitle}`,
+    html: emailLayout(`
+      <h1>You've been assigned a task</h1>
+      <p>Task <strong>${escapeHtml(taskTitle)}</strong> in case <strong>${escapeHtml(caseName)}</strong> has been assigned to you.</p>
+      <a href="${appUrl(`/cases/${caseId}`)}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#fff;border-radius:6px;text-decoration:none;font-weight:500;">View Case</a>
+    `),
+  });
+}
+
+export async function sendTaskOverdueEmail(
+  to: string,
+  taskTitle: string,
+  caseName: string,
+  caseId: string,
+) {
+  await sendEmail({
+    to,
+    subject: `Task Overdue: ${taskTitle}`,
+    html: emailLayout(`
+      <h1>Task is overdue</h1>
+      <p>Task <strong>${escapeHtml(taskTitle)}</strong> in case <strong>${escapeHtml(caseName)}</strong> is past its due date.</p>
+      <a href="${appUrl(`/cases/${caseId}`)}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#fff;border-radius:6px;text-decoration:none;font-weight:500;">View Task</a>
+    `),
+  });
+}
+
+export async function sendInvoiceSentEmail(
+  to: string,
+  invoiceNumber: string,
+  clientName: string,
+  amount: string,
+) {
+  await sendEmail({
+    to,
+    subject: `Invoice Sent: ${invoiceNumber}`,
+    html: emailLayout(`
+      <h1>Invoice sent</h1>
+      <p>Invoice <strong>${escapeHtml(invoiceNumber)}</strong> for <strong>${escapeHtml(clientName)}</strong> totaling <strong>${escapeHtml(amount)}</strong> has been sent.</p>
+      <a href="${appUrl("/invoices")}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#fff;border-radius:6px;text-decoration:none;font-weight:500;">View Invoices</a>
+    `),
+  });
+}
+
+export async function sendInvoicePaidEmail(
+  to: string,
+  invoiceNumber: string,
+  clientName: string,
+  amount: string,
+) {
+  await sendEmail({
+    to,
+    subject: `Invoice Paid: ${invoiceNumber}`,
+    html: emailLayout(`
+      <h1>Invoice paid</h1>
+      <p>Invoice <strong>${escapeHtml(invoiceNumber)}</strong> from <strong>${escapeHtml(clientName)}</strong> for <strong>${escapeHtml(amount)}</strong> has been marked as paid.</p>
+      <a href="${appUrl("/invoices")}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#fff;border-radius:6px;text-decoration:none;font-weight:500;">View Invoices</a>
+    `),
+  });
+}
+
+export async function sendInvoiceOverdueEmail(
+  to: string,
+  invoiceNumber: string,
+  clientName: string,
+  amount: string,
+  dueDate: string,
+) {
+  await sendEmail({
+    to,
+    subject: `Invoice Overdue: ${invoiceNumber}`,
+    html: emailLayout(`
+      <h1>Invoice is overdue</h1>
+      <p>Invoice <strong>${escapeHtml(invoiceNumber)}</strong> for <strong>${escapeHtml(clientName)}</strong> totaling <strong>${escapeHtml(amount)}</strong> was due on <strong>${escapeHtml(dueDate)}</strong>.</p>
+      <a href="${appUrl("/invoices")}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#fff;border-radius:6px;text-decoration:none;font-weight:500;">View Invoice</a>
+    `),
+  });
+}
+
+export async function sendEventReminderEmail(
+  to: string,
+  eventTitle: string,
+  startTime: string,
+  minutesBefore: number,
+) {
+  await sendEmail({
+    to,
+    subject: `Reminder: ${eventTitle}`,
+    html: emailLayout(`
+      <h1>Upcoming event reminder</h1>
+      <p><strong>${escapeHtml(eventTitle)}</strong> starts at <strong>${escapeHtml(startTime)}</strong> — in <strong>${minutesBefore} minutes</strong>.</p>
+      <a href="${appUrl("/calendar")}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#fff;border-radius:6px;text-decoration:none;font-weight:500;">View Calendar</a>
+    `),
+  });
+}
+
+export async function sendTeamMemberInvitedEmail(
+  to: string,
+  inviterName: string,
+  orgName: string,
+) {
+  await sendEmail({
+    to,
+    subject: `You've been invited to join ${orgName}`,
+    html: emailLayout(`
+      <h1>You've been invited</h1>
+      <p><strong>${escapeHtml(inviterName)}</strong> has invited you to join <strong>${escapeHtml(orgName)}</strong> on ClearTerms.</p>
+      <a href="${appUrl("/dashboard")}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#fff;border-radius:6px;text-decoration:none;font-weight:500;">Accept Invitation</a>
+    `),
+  });
+}
+
+export async function sendTeamMemberJoinedEmail(
+  to: string,
+  memberName: string,
+) {
+  await sendEmail({
+    to,
+    subject: `New team member: ${memberName}`,
+    html: emailLayout(`
+      <h1>New team member joined</h1>
+      <p><strong>${escapeHtml(memberName)}</strong> has joined your organization on ClearTerms.</p>
+      <a href="${appUrl("/settings/team")}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#fff;border-radius:6px;text-decoration:none;font-weight:500;">View Team</a>
+    `),
+  });
+}
+
+export async function sendAddedToCaseEmail(
+  to: string,
+  caseName: string,
+  addedBy: string,
+  caseId: string,
+) {
+  await sendEmail({
+    to,
+    subject: `Added to case: ${caseName}`,
+    html: emailLayout(`
+      <h1>You've been added to a case</h1>
+      <p><strong>${escapeHtml(addedBy)}</strong> has added you to case <strong>${escapeHtml(caseName)}</strong>.</p>
+      <a href="${appUrl(`/cases/${caseId}`)}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#fff;border-radius:6px;text-decoration:none;font-weight:500;">View Case</a>
+    `),
+  });
+}
+
+export async function sendTaskCompletedEmail(
+  to: string,
+  taskTitle: string,
+  caseName: string,
+  completedBy: string,
+  caseId: string,
+) {
+  await sendEmail({
+    to,
+    subject: `Task Completed: ${taskTitle}`,
+    html: emailLayout(`
+      <h1>Task completed</h1>
+      <p><strong>${escapeHtml(completedBy)}</strong> completed task <strong>${escapeHtml(taskTitle)}</strong> in case <strong>${escapeHtml(caseName)}</strong>.</p>
+      <a href="${appUrl(`/cases/${caseId}`)}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#fff;border-radius:6px;text-decoration:none;font-weight:500;">View Case</a>
+    `),
+  });
+}
+
+export async function sendCalendarSyncFailedEmail(
+  to: string,
+  providerName: string,
+) {
+  await sendEmail({
+    to,
+    subject: "Calendar sync failed",
+    html: emailLayout(`
+      <h1>Calendar sync failed</h1>
+      <p>We were unable to sync your <strong>${escapeHtml(providerName)}</strong> calendar. Please reconnect your calendar to resume syncing.</p>
+      <a href="${appUrl("/settings/integrations")}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#fff;border-radius:6px;text-decoration:none;font-weight:500;">Reconnect Calendar</a>
+    `),
+  });
+}
+
 function appUrl(path: string): string {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   return `${base}${path}`;
