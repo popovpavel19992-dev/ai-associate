@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { formatHours, formatCents } from "@/lib/billing";
@@ -97,25 +97,32 @@ export function TimeEntriesTable({ caseId }: TimeEntriesTableProps) {
                   {entry.isBillable ? formatCents(entry.amountCents) : "Non-billable"}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0 text-zinc-400 hover:text-zinc-200"
-                      onClick={() => handleEdit(entry)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0 text-zinc-400 hover:text-red-400"
-                      onClick={() => handleDelete(entry.id)}
-                      disabled={deleteEntry.isPending}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
+                  {entry.isInvoiced ? (
+                    <span className="inline-flex items-center gap-1 rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">
+                      <Lock className="h-3 w-3" />
+                      Invoiced
+                    </span>
+                  ) : (
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-zinc-400 hover:text-zinc-200"
+                        onClick={() => handleEdit(entry)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-zinc-400 hover:text-red-400"
+                        onClick={() => handleDelete(entry.id)}
+                        disabled={deleteEntry.isPending}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}

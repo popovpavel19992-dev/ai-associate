@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Play } from "lucide-react";
+import { Plus, Play, DollarSign } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { formatCents, formatHours } from "@/lib/billing";
 import { SummaryCards } from "./summary-cards";
@@ -11,6 +11,7 @@ import { TimeEntryFormDialog } from "./time-entry-form-dialog";
 import { TimeEntriesTable } from "./time-entries-table";
 import { ExpensesTable } from "./expenses-table";
 import { ExpenseFormDialog } from "./expense-form-dialog";
+import { RateOverrideDialog } from "./rate-override-dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
@@ -22,6 +23,7 @@ export function CaseTimeTab({ caseId }: CaseTimeTabProps) {
   const [timerDialogOpen, setTimerDialogOpen] = useState(false);
   const [addEntryOpen, setAddEntryOpen] = useState(false);
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
+  const [rateOverrideOpen, setRateOverrideOpen] = useState(false);
 
   const { data: entriesData } = trpc.timeEntries.list.useQuery({ caseId, limit: 200 });
   const { data: expensesData } = trpc.expenses.list.useQuery({ caseId, limit: 200 });
@@ -67,6 +69,14 @@ export function CaseTimeTab({ caseId }: CaseTimeTabProps) {
           <Plus className="mr-1.5 h-3.5 w-3.5" />
           Add Entry
         </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setRateOverrideOpen(true)}
+        >
+          <DollarSign className="mr-1.5 h-3.5 w-3.5" />
+          Set Rates
+        </Button>
       </div>
 
       {/* Time Entries */}
@@ -104,6 +114,11 @@ export function CaseTimeTab({ caseId }: CaseTimeTabProps) {
         caseId={caseId}
         open={addExpenseOpen}
         onOpenChange={setAddExpenseOpen}
+      />
+      <RateOverrideDialog
+        caseId={caseId}
+        open={rateOverrideOpen}
+        onOpenChange={setRateOverrideOpen}
       />
     </div>
   );

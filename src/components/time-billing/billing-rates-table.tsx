@@ -8,9 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pencil, Check, X } from "lucide-react";
 
+type MergedRow = {
+  userId: string;
+  userName: string;
+  rateCents: number;
+  hasRate: boolean;
+};
+
 export function BillingRatesTable() {
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.billingRates.list.useQuery();
+  const { data: members = [], isLoading: membersLoading } = trpc.team.list.useQuery();
   const upsert = trpc.billingRates.upsert.useMutation({
     onSuccess: () => {
       utils.billingRates.list.invalidate();
@@ -39,19 +47,42 @@ export function BillingRatesTable() {
     setEditValue("");
   }
 
-  if (isLoading) {
+  if (isLoading || membersLoading) {
     return <p className="py-8 text-center text-sm text-zinc-500">Loading…</p>;
   }
 
   const rates = data?.rates ?? [];
-
-  // Deduplicate to show only default rates (caseId IS NULL) per user
   const defaultRates = rates.filter((r) => r.caseId === null);
 
-  if (defaultRates.length === 0) {
+  // Merge: show all team members, with their rate if it exists
+  const rateMap = new Map(defaultRates.map((r) => [r.userId, r]));
+  const rows: MergedRow[] = members.map((m) => {
+    const existing = rateMap.get(m.id);
+    return {
+      userId: m.id,
+      userName: m.name ?? m.email ?? "Unknown",
+      rateCents: existing?.rateCents ?? 0,
+      hasRate: !!existing,
+    };
+  });
+
+  // If solo user (no team members from team.list), show self from rates if available
+  if (rows.length === 0 && defaultRates.length > 0) {
+    for (const rate of defaultRates) {
+      rows.push({
+        userId: rate.userId,
+        userName: rate.userName ?? "You",
+        rateCents: rate.rateCents,
+        hasRate: true,
+      });
+    }
+  }
+
+  // Solo user with no team and no rates — show a message with a way to set own rate
+  if (rows.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-zinc-500">
-        No billing rates configured. Rates are created automatically when time entries are added.
+        No team members found. Billing rates will appear here once you have team members or create time entries.
       </p>
     );
   }
@@ -67,11 +98,11 @@ export function BillingRatesTable() {
           </tr>
         </thead>
         <tbody>
-          {defaultRates.map((rate) => (
-            <tr key={rate.id} className="border-b border-zinc-800/50 hover:bg-zinc-900/30">
-              <td className="px-4 py-3 text-zinc-300">{rate.userName}</td>
+          {rows.map((row) => (
+            <tr key={row.userId} className="border-b border-zinc-800/50 hover:bg-zinc-900/30">
+              <td className="px-4 py-3 text-zinc-300">{row.userName}</td>
               <td className="px-4 py-3 text-right">
-                {editId === rate.userId ? (
+                {editId === row.userId ? (
                   <Input
                     type="number"
                     min="0"
@@ -82,17 +113,19 @@ export function BillingRatesTable() {
                     autoFocus
                   />
                 ) : (
-                  <span className="font-medium text-zinc-200">{formatCents(rate.rateCents)}</span>
+                  <span className={`font-medium ${row.hasRate ? "text-zinc-200" : "text-zinc-500"}`}>
+                    {row.hasRate ? formatCents(row.rateCents) : "Not set"}
+                  </span>
                 )}
               </td>
               <td className="px-4 py-3 text-right">
-                {editId === rate.userId ? (
+                {editId === row.userId ? (
                   <div className="flex items-center justify-end gap-1">
                     <Button
                       size="sm"
                       variant="ghost"
                       className="h-7 w-7 p-0 text-emerald-400 hover:text-emerald-300"
-                      onClick={() => saveEdit(rate.userId)}
+                      onClick={() => saveEdit(row.userId)}
                       disabled={upsert.isPending}
                     >
                       <Check className="h-3.5 w-3.5" />
@@ -111,7 +144,7 @@ export function BillingRatesTable() {
                     size="sm"
                     variant="ghost"
                     className="h-7 w-7 p-0 text-zinc-400 hover:text-zinc-200"
-                    onClick={() => startEdit(rate.userId, rate.rateCents)}
+                    onClick={() => startEdit(row.userId, row.rateCents)}
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>

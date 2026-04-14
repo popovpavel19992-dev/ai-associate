@@ -1,11 +1,12 @@
 // src/server/trpc/routers/time-entries.ts
 import { z } from "zod/v4";
-import { and, eq, desc, isNull, isNotNull, sql } from "drizzle-orm";
+import { and, eq, desc, isNull, isNotNull, ne, sql } from "drizzle-orm";
 import { router, protectedProcedure } from "../trpc";
 import { timeEntries } from "@/server/db/schema/time-entries";
 import { billingRates } from "@/server/db/schema/billing-rates";
 import { cases } from "@/server/db/schema/cases";
 import { invoiceLineItems } from "@/server/db/schema/invoice-line-items";
+import { invoices } from "@/server/db/schema/invoices";
 import {
   assertCaseAccess,
   assertTimeEntryAccess,
@@ -38,14 +39,25 @@ export const timeEntriesRouter = router({
       if (input.isBillable !== undefined) conditions.push(eq(timeEntries.isBillable, input.isBillable));
 
       const rows = await ctx.db
-        .select()
+        .select({
+          entry: timeEntries,
+          invoiceLineItemId: invoiceLineItems.id,
+          invoiceStatus: invoices.status,
+        })
         .from(timeEntries)
+        .leftJoin(invoiceLineItems, eq(invoiceLineItems.timeEntryId, timeEntries.id))
+        .leftJoin(invoices, eq(invoices.id, invoiceLineItems.invoiceId))
         .where(and(...conditions))
         .orderBy(desc(timeEntries.entryDate), desc(timeEntries.createdAt))
         .limit(input.limit)
         .offset(input.offset);
 
-      return { entries: rows };
+      const entries = rows.map((row) => ({
+        ...row.entry,
+        isInvoiced: row.invoiceLineItemId != null && row.invoiceStatus !== "draft",
+      }));
+
+      return { entries };
     }),
 
   create: protectedProcedure
