@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { inngest } from "../client";
 import { db } from "../../db";
 import { documents } from "../../db/schema/documents";
+import { cases } from "../../db/schema/cases";
 import { getObject } from "../../services/s3";
 import { extractText } from "../../services/extraction";
 
@@ -17,6 +18,43 @@ export const extractDocument = inngest.createFunction(
           .update(documents)
           .set({ status: "failed" })
           .where(eq(documents.id, documentId));
+
+        // Emit document_failed notification
+        const [doc] = await db
+          .select({
+            userId: documents.userId,
+            filename: documents.filename,
+            caseId: documents.caseId,
+          })
+          .from(documents)
+          .where(eq(documents.id, documentId))
+          .limit(1);
+
+        if (doc) {
+          const [caseRecord] = await db
+            .select({ name: cases.name, orgId: cases.orgId })
+            .from(cases)
+            .where(eq(cases.id, doc.caseId))
+            .limit(1);
+
+          await inngest.send({
+            name: "notification/send",
+            data: {
+              userId: doc.userId,
+              orgId: caseRecord?.orgId ?? undefined,
+              type: "document_failed",
+              title: "Document processing failed",
+              body: `${doc.filename} in ${caseRecord?.name ?? "Unknown case"} could not be processed`,
+              caseId: doc.caseId,
+              actionUrl: `/cases/${doc.caseId}`,
+              metadata: {
+                caseName: caseRecord?.name ?? "Unknown case",
+                documentName: doc.filename,
+                error: "Processing failed after retries",
+              },
+            },
+          });
+        }
       }
     },
   },
