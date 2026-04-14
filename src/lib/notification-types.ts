@@ -37,7 +37,7 @@ export function getCategoryForType(type: NotificationType): NotificationCategory
   for (const [category, types] of Object.entries(NOTIFICATION_CATEGORIES)) {
     if ((types as readonly string[]).includes(type)) return category as NotificationCategory;
   }
-  return "cases";
+  throw new Error(`No category found for notification type: ${type}`);
 }
 
 export type NotificationMetadata = {

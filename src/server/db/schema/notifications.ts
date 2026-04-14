@@ -24,9 +24,9 @@ export const notifications = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
-    index("notifications_user_read_created_idx").on(table.userId, table.isRead, table.createdAt),
-    index("notifications_user_type_created_idx").on(table.userId, table.type, table.createdAt),
-    index("notifications_user_created_idx").on(table.userId, table.createdAt),
+    index("notifications_user_read_created_idx").on(table.userId, table.isRead, table.createdAt.desc()),
+    index("notifications_user_type_created_idx").on(table.userId, table.type, table.createdAt.desc()),
+    index("notifications_user_created_idx").on(table.userId, table.createdAt.desc()),
     uniqueIndex("notifications_dedup_key_unique")
       .on(table.dedupKey)
       .where(sql`dedup_key IS NOT NULL`),
