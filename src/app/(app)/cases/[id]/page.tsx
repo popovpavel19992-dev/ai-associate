@@ -15,6 +15,7 @@ import { CaseCalendar } from "@/components/calendar/case-calendar";
 import { CaseTeamPanel } from "@/components/cases/case-team-panel";
 import { CaseClientBlock } from "@/components/cases/case-client-block";
 import { CaseTimeTab } from "@/components/time-billing/case-time-tab";
+import { CaseMuteButton } from "@/components/notifications/case-mute-button";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -140,14 +141,17 @@ export default function CaseDetailPage({
             </button>
           ))}
         </div>
-        {stages.length > 0 && (
-          <StageSelector
-            stages={stages}
-            currentStageId={caseData.stageId ?? null}
-            onSelect={(stageId) => changeStage.mutate({ caseId: id, stageId })}
-            disabled={changeStage.isPending}
-          />
-        )}
+        <div className="flex items-center gap-2">
+          <CaseMuteButton caseId={id} />
+          {stages.length > 0 && (
+            <StageSelector
+              stages={stages}
+              currentStageId={caseData.stageId ?? null}
+              onSelect={(stageId) => changeStage.mutate({ caseId: id, stageId })}
+              disabled={changeStage.isPending}
+            />
+          )}
+        </div>
       </div>
 
       {/* Tab Content */}
