@@ -9,6 +9,7 @@ import { cases } from "@/server/db/schema/cases";
 import { eq, and, sql } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
+import { inngest } from "@/server/inngest/client";
 
 export const teamRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -75,6 +76,33 @@ export const teamRouter = router({
         emailAddress: input.email,
         role: input.role === "admin" ? "org:admin" : "org:member",
         inviterUserId: ctx.clerkId!,
+      });
+
+      // Emit email-only invite notification
+      const [inviter] = await ctx.db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, ctx.user.id))
+        .limit(1);
+      const [orgRecord] = await ctx.db
+        .select({ name: organizations.name })
+        .from(organizations)
+        .where(eq(organizations.id, ctx.user.orgId!))
+        .limit(1);
+      await inngest.send({
+        name: "notification/send",
+        data: {
+          type: "team_member_invited",
+          title: "You've been invited to join a team",
+          body: `${inviter?.name ?? "Someone"} invited you to join ${orgRecord?.name ?? "an organization"}`,
+          recipientEmail: input.email,
+          orgId: ctx.user.orgId ?? undefined,
+          actionUrl: "/sign-up",
+          metadata: {
+            inviterName: inviter?.name ?? "",
+            orgName: orgRecord?.name ?? "",
+          },
+        },
       });
 
       return { invitationId: invitation.id };

@@ -6,6 +6,7 @@ import { caseStages, caseEvents, stageTaskTemplates } from "@/server/db/schema/c
 import { checklistSchema } from "@/lib/case-tasks";
 import { cases } from "@/server/db/schema/cases";
 import { assertCaseAccess, assertTaskAccess } from "../lib/permissions";
+import { inngest } from "@/server/inngest/client";
 
 export const caseTasksRouter = router({
   listByCaseId: protectedProcedure
@@ -140,6 +141,56 @@ export const caseTasksRouter = router({
         });
       }
 
+      // Notify new assignee if assignedTo changed to a different user
+      if (
+        input.assignedTo &&
+        input.assignedTo !== existing.assignedTo &&
+        input.assignedTo !== ctx.user.id
+      ) {
+        const [caseRecord] = await ctx.db
+          .select({ name: cases.name, orgId: cases.orgId, userId: cases.userId })
+          .from(cases)
+          .where(eq(cases.id, existing.caseId))
+          .limit(1);
+        await inngest.send({
+          name: "notification/send",
+          data: {
+            userId: input.assignedTo,
+            orgId: caseRecord?.orgId ?? undefined,
+            type: "task_assigned",
+            title: `Task assigned: ${updated.title}`,
+            body: `You've been assigned to "${updated.title}" in ${caseRecord?.name ?? "a case"}`,
+            caseId: existing.caseId,
+            actionUrl: `/cases/${existing.caseId}`,
+            metadata: { taskTitle: updated.title, caseName: caseRecord?.name ?? "" },
+          },
+        });
+      }
+
+      // Notify case creator when task is completed (if not actor)
+      if (!wasCompleted && willBeCompleted) {
+        const [caseRecord] = await ctx.db
+          .select({ name: cases.name, orgId: cases.orgId, userId: cases.userId })
+          .from(cases)
+          .where(eq(cases.id, existing.caseId))
+          .limit(1);
+        if (caseRecord && caseRecord.userId !== ctx.user.id) {
+          await inngest.send({
+            name: "notification/send",
+            data: {
+              userId: caseRecord.userId,
+              orgId: caseRecord.orgId ?? undefined,
+              type: "task_completed",
+              title: `Task completed: ${updated.title}`,
+              body: `"${updated.title}" in ${caseRecord.name} was marked complete`,
+              caseId: existing.caseId,
+              actionUrl: `/cases/${existing.caseId}`,
+              metadata: { taskTitle: updated.title, caseName: caseRecord.name, completedBy: ctx.user.id },
+            },
+          });
+        }
+      }
+
       return updated;
     }),
 
@@ -154,6 +205,29 @@ export const caseTasksRouter = router({
         .set({ assignedTo: newAssignee, updatedAt: new Date() })
         .where(eq(caseTasks.id, input.taskId))
         .returning();
+
+      // Notify when assigning (not unassigning) and assignee != actor
+      if (newAssignee && newAssignee !== ctx.user.id) {
+        const [caseRecord] = await ctx.db
+          .select({ name: cases.name, orgId: cases.orgId })
+          .from(cases)
+          .where(eq(cases.id, task.caseId))
+          .limit(1);
+        await inngest.send({
+          name: "notification/send",
+          data: {
+            userId: newAssignee,
+            orgId: caseRecord?.orgId ?? undefined,
+            type: "task_assigned",
+            title: `Task assigned: ${task.title}`,
+            body: `You've been assigned to "${task.title}" in ${caseRecord?.name ?? "a case"}`,
+            caseId: task.caseId,
+            actionUrl: `/cases/${task.caseId}`,
+            metadata: { taskTitle: task.title, caseName: caseRecord?.name ?? "" },
+          },
+        });
+      }
+
       return updated;
     }),
 

@@ -342,6 +342,31 @@ export const casesRouter = router({
         return updated;
       });
 
+      const members = await ctx.db
+        .select({ userId: caseMembers.userId })
+        .from(caseMembers)
+        .where(eq(caseMembers.caseId, input.caseId));
+
+      const recipientIds = new Set(members.map((m) => m.userId));
+      recipientIds.add(caseRecord.userId);
+
+      for (const userId of recipientIds) {
+        if (userId === ctx.user.id) continue;
+        await inngest.send({
+          name: "notification/send",
+          data: {
+            userId,
+            orgId: caseRecord.orgId ?? undefined,
+            type: "stage_changed",
+            title: `Stage changed to ${newStage.name}`,
+            body: `${caseRecord.name}: ${fromStageName ?? "None"} → ${newStage.name}`,
+            caseId: input.caseId,
+            actionUrl: `/cases/${input.caseId}`,
+            metadata: { caseName: caseRecord.name, fromStage: fromStageName ?? "None", toStage: newStage.name },
+          },
+        });
+      }
+
       return result;
     }),
 

@@ -4,8 +4,10 @@ import { router, protectedProcedure } from "../trpc";
 import { assertOrgRole, assertCaseAccess } from "../lib/permissions";
 import { caseMembers } from "@/server/db/schema/case-members";
 import { users } from "@/server/db/schema/users";
+import { cases } from "@/server/db/schema/cases";
 import { eq, and, notInArray } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import { inngest } from "@/server/inngest/client";
 
 export const caseMembersRouter = router({
   list: protectedProcedure
@@ -59,6 +61,36 @@ export const caseMembersRouter = router({
 
       if (!member) {
         throw new TRPCError({ code: "CONFLICT", message: "User is already assigned to this case" });
+      }
+
+      // Notify added user if they are not the actor
+      if (input.userId !== ctx.user.id) {
+        const [caseRecord] = await ctx.db
+          .select({ name: cases.name, orgId: cases.orgId })
+          .from(cases)
+          .where(eq(cases.id, input.caseId))
+          .limit(1);
+        const [actor] = await ctx.db
+          .select({ name: users.name })
+          .from(users)
+          .where(eq(users.id, ctx.user.id))
+          .limit(1);
+        await inngest.send({
+          name: "notification/send",
+          data: {
+            userId: input.userId,
+            orgId: caseRecord?.orgId ?? undefined,
+            type: "added_to_case",
+            title: `Added to case: ${caseRecord?.name ?? "a case"}`,
+            body: `${actor?.name ?? "Someone"} added you to ${caseRecord?.name ?? "a case"}`,
+            caseId: input.caseId,
+            actionUrl: `/cases/${input.caseId}`,
+            metadata: {
+              caseName: caseRecord?.name ?? "",
+              addedBy: actor?.name ?? "",
+            },
+          },
+        });
       }
 
       return member;

@@ -9,7 +9,9 @@ import { timeEntries } from "@/server/db/schema/time-entries";
 import { expenses } from "@/server/db/schema/expenses";
 import { cases } from "@/server/db/schema/cases";
 import { clients } from "@/server/db/schema/clients";
+import { users } from "@/server/db/schema/users";
 import { assertInvoiceAccess, assertInvoiceManage } from "../lib/permissions";
+import { inngest } from "@/server/inngest/client";
 import {
   computeAmountCents,
   formatInvoiceNumber,
@@ -289,6 +291,41 @@ export const invoicesRouter = router({
         .where(eq(invoices.id, input.id))
         .returning();
 
+      // Notify org owner/admins (not actor)
+      if (ctx.user.orgId) {
+        const { organizations } = await import("@/server/db/schema/organizations");
+        const orgMembers = await ctx.db
+          .select({ id: users.id, role: users.role })
+          .from(users)
+          .where(eq(users.orgId, ctx.user.orgId));
+        const [clientRecord] = await ctx.db
+          .select({ displayName: clients.displayName })
+          .from(clients)
+          .where(eq(clients.id, invoice.clientId))
+          .limit(1);
+        const amountStr = `$${(invoice.totalCents / 100).toFixed(2)}`;
+        for (const member of orgMembers) {
+          if (member.id === ctx.user.id) continue;
+          if (member.role !== "owner" && member.role !== "admin") continue;
+          await inngest.send({
+            name: "notification/send",
+            data: {
+              userId: member.id,
+              orgId: ctx.user.orgId,
+              type: "invoice_sent",
+              title: `Invoice ${invoice.invoiceNumber} sent`,
+              body: `Invoice ${invoice.invoiceNumber} for ${clientRecord?.displayName ?? "client"} — ${amountStr}`,
+              actionUrl: `/invoices/${invoice.id}`,
+              metadata: {
+                invoiceNumber: invoice.invoiceNumber,
+                clientName: clientRecord?.displayName ?? "",
+                amount: amountStr,
+              },
+            },
+          });
+        }
+      }
+
       return { invoice: updated };
     }),
 
@@ -306,6 +343,40 @@ export const invoicesRouter = router({
         .set({ status: "paid", paidDate: new Date(), updatedAt: new Date() })
         .where(eq(invoices.id, input.id))
         .returning();
+
+      // Notify org owner/admins (not actor)
+      if (ctx.user.orgId) {
+        const orgMembers = await ctx.db
+          .select({ id: users.id, role: users.role })
+          .from(users)
+          .where(eq(users.orgId, ctx.user.orgId));
+        const [clientRecord] = await ctx.db
+          .select({ displayName: clients.displayName })
+          .from(clients)
+          .where(eq(clients.id, invoice.clientId))
+          .limit(1);
+        const amountStr = `$${(invoice.totalCents / 100).toFixed(2)}`;
+        for (const member of orgMembers) {
+          if (member.id === ctx.user.id) continue;
+          if (member.role !== "owner" && member.role !== "admin") continue;
+          await inngest.send({
+            name: "notification/send",
+            data: {
+              userId: member.id,
+              orgId: ctx.user.orgId,
+              type: "invoice_paid",
+              title: `Invoice ${invoice.invoiceNumber} paid`,
+              body: `Invoice ${invoice.invoiceNumber} for ${clientRecord?.displayName ?? "client"} — ${amountStr}`,
+              actionUrl: `/invoices/${invoice.id}`,
+              metadata: {
+                invoiceNumber: invoice.invoiceNumber,
+                clientName: clientRecord?.displayName ?? "",
+                amount: amountStr,
+              },
+            },
+          });
+        }
+      }
 
       return { invoice: updated };
     }),
