@@ -10,5 +10,8 @@ import { calendarSweep } from "./functions/calendar-sweep";
 import { calendarConnectionInit } from "./functions/calendar-connection-init";
 import { calendarConnectionCleanup } from "./functions/calendar-connection-cleanup";
 import { teamMembershipCleanup } from "./functions/team-membership-cleanup";
+import { handleNotification } from "./functions/handle-notification";
+import { notificationReminders } from "./functions/notification-reminders";
+import { notificationOverdueCheck } from "./functions/notification-overdue-check";
 
-export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup];
+export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup, handleNotification, notificationReminders, notificationOverdueCheck];
