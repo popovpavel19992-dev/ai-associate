@@ -15,13 +15,14 @@ import {
   Calendar as CalendarIcon,
   Users,
   Receipt,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
-import { NotificationBell } from "./notification-bell";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { TimerIndicator } from "@/components/time-billing/timer-indicator";
 
 const navItems = [
@@ -32,6 +33,7 @@ const navItems = [
   { href: "/cases", label: "Cases", icon: Briefcase },
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/calendar", label: "Calendar", icon: CalendarIcon },
+  { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/settings/templates", label: "Templates", icon: FileText },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
