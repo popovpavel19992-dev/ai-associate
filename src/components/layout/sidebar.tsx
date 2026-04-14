@@ -14,6 +14,7 @@ import {
   Briefcase,
   Calendar as CalendarIcon,
   Users,
+  Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -87,6 +88,20 @@ function NavContent() {
           >
             <Users className="h-4 w-4" />
             Team
+          </Link>
+        )}
+        {(isTeamAdmin || !profile?.orgId) && (
+          <Link
+            href="/invoices"
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              pathname === "/invoices" || pathname.startsWith("/invoices/")
+                ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
+                : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-50",
+            )}
+          >
+            <Receipt className="h-4 w-4" />
+            Invoices
           </Link>
         )}
       </nav>
