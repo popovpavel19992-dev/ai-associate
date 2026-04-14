@@ -21,6 +21,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import { NotificationBell } from "./notification-bell";
+import { TimerIndicator } from "@/components/time-billing/timer-indicator";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -45,7 +46,10 @@ function NavContent() {
         <Link href="/dashboard" className="text-xl font-bold tracking-tight">
           ClearTerms
         </Link>
-        <NotificationBell />
+        <div className="flex items-center gap-2">
+          <TimerIndicator />
+          <NotificationBell />
+        </div>
       </div>
 
       <Separator />

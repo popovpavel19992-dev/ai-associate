@@ -14,12 +14,14 @@ import { TasksTab } from "@/components/cases/tasks/tasks-tab";
 import { CaseCalendar } from "@/components/calendar/case-calendar";
 import { CaseTeamPanel } from "@/components/cases/case-team-panel";
 import { CaseClientBlock } from "@/components/cases/case-client-block";
+import { CaseTimeTab } from "@/components/time-billing/case-time-tab";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { key: "overview", label: "Overview" },
   { key: "tasks", label: "Tasks" },
   { key: "calendar", label: "Calendar" },
+  { key: "time", label: "Time" },
   { key: "report", label: "Report" },
   { key: "timeline", label: "Timeline" },
   { key: "contracts", label: "Contracts" },
@@ -168,6 +170,12 @@ export default function CaseDetailPage({
 
         {activeTab === "calendar" && (
           <CaseCalendar caseId={caseData.id} />
+        )}
+
+        {activeTab === "time" && (
+          <div className="space-y-6 px-4 py-4">
+            <CaseTimeTab caseId={caseData.id} />
+          </div>
         )}
 
         {activeTab === "report" && (
