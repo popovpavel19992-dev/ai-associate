@@ -97,12 +97,12 @@ export const notificationOverdueCheck = inngest.createFunction(
 
         // Fetch client name
         const [clientRow] = await db
-          .select({ name: clients.name })
+          .select({ displayName: clients.displayName })
           .from(clients)
           .where(eq(clients.id, invoice.clientId))
           .limit(1);
 
-        const clientName = clientRow?.name ?? "Unknown client";
+        const clientName = clientRow?.displayName ?? "Unknown client";
         const amount = `$${(invoice.totalCents / 100).toFixed(2)}`;
         const dueDate = invoice.dueDate.toISOString().slice(0, 10);
         const dedupKey = `invoice_overdue:${invoice.id}:${dateStr}`;
