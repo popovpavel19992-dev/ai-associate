@@ -13,12 +13,15 @@ import { CaseOverview } from "@/components/cases/case-overview";
 import { TasksTab } from "@/components/cases/tasks/tasks-tab";
 import { CaseCalendar } from "@/components/calendar/case-calendar";
 import { CaseTeamPanel } from "@/components/cases/case-team-panel";
+import { CaseClientBlock } from "@/components/cases/case-client-block";
+import { CaseTimeTab } from "@/components/time-billing/case-time-tab";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { key: "overview", label: "Overview" },
   { key: "tasks", label: "Tasks" },
   { key: "calendar", label: "Calendar" },
+  { key: "time", label: "Time" },
   { key: "report", label: "Report" },
   { key: "timeline", label: "Timeline" },
   { key: "contracts", label: "Contracts" },
@@ -169,6 +172,12 @@ export default function CaseDetailPage({
           <CaseCalendar caseId={caseData.id} />
         )}
 
+        {activeTab === "time" && (
+          <div className="space-y-6 px-4 py-4">
+            <CaseTimeTab caseId={caseData.id} />
+          </div>
+        )}
+
         {activeTab === "report" && (
           <ReportView
             caseId={caseData.id}
@@ -201,9 +210,10 @@ export default function CaseDetailPage({
           </div>
         )}
         </div>
-        {caseData.orgId && (
-          <div className="hidden w-56 shrink-0 overflow-y-auto border-l border-zinc-800 p-4 lg:block">
-            <CaseTeamPanel caseId={id} userRole={profile?.role ?? null} />
+        {(caseData.client || caseData.orgId) && (
+          <div className="hidden w-56 shrink-0 space-y-4 overflow-y-auto border-l border-zinc-800 p-4 lg:block">
+            {caseData.client && <CaseClientBlock client={caseData.client} />}
+            {caseData.orgId && <CaseTeamPanel caseId={id} userRole={profile?.role ?? null} />}
           </div>
         )}
       </div>

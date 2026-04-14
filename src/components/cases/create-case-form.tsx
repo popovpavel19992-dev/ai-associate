@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { AVAILABLE_SECTIONS, SECTION_LABELS, CASE_TYPES } from "@/lib/constants"
 import { CaseTypeSelector } from "./case-type-selector";
 import { UploadDropzone } from "@/components/documents/upload-dropzone";
 import { DocumentList } from "@/components/documents/document-list";
+import { ClientPicker } from "@/components/clients/client-picker";
 
 const DEFAULT_SECTIONS = [
   "timeline",
@@ -31,6 +32,25 @@ export function CreateCaseForm() {
     useState<string[]>(DEFAULT_SECTIONS);
   const [caseId, setCaseId] = useState<string | null>(null);
   const [step, setStep] = useState<"details" | "upload">("details");
+
+  const searchParams = useSearchParams();
+  const preselectedId = searchParams.get("clientId");
+  const [client, setClient] = useState<{ id: string; displayName: string; clientType: "individual" | "organization" } | null>(null);
+
+  const preselectedQuery = trpc.clients.getById.useQuery(
+    { id: preselectedId! },
+    { enabled: !!preselectedId && !client },
+  );
+  // Intentional: sync one-shot state from query result. The `!client` guard
+  // prevents cascading renders; `client` is excluded from deps so subsequent
+  // user picks aren't overwritten if the preselected query later refetches.
+  useEffect(() => {
+    if (preselectedQuery.data && !client) {
+      const c = preselectedQuery.data.client;
+      setClient({ id: c.id, displayName: c.displayName, clientType: c.clientType });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preselectedQuery.data]);
 
   const createCase = trpc.cases.create.useMutation({
     onSuccess: (data) => {
@@ -67,8 +87,9 @@ export function CreateCaseForm() {
   }, []);
 
   const handleCreateCase = () => {
-    if (!name.trim()) return;
+    if (!name.trim() || !client) return;
     createCase.mutate({
+      clientId: client.id,
       name: name.trim(),
       caseType: caseType === "auto" ? undefined : (caseType as (typeof CASE_TYPES)[number]),
       selectedSections,
@@ -90,6 +111,11 @@ export function CreateCaseForm() {
           <CardTitle>New Case</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label>Client</Label>
+            <ClientPicker value={client} onChange={setClient} />
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="case-name">Case Name</Label>
             <Input
@@ -131,7 +157,7 @@ export function CreateCaseForm() {
 
           <Button
             onClick={handleCreateCase}
-            disabled={!name.trim() || selectedSections.length === 0 || createCase.isPending}
+            disabled={!client || !name.trim() || selectedSections.length === 0 || createCase.isPending}
             className="w-full"
           >
             {createCase.isPending && (

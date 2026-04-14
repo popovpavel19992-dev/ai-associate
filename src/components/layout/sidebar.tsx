@@ -14,6 +14,7 @@ import {
   Briefcase,
   Calendar as CalendarIcon,
   Users,
+  Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -21,6 +22,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import { NotificationBell } from "./notification-bell";
+import { TimerIndicator } from "@/components/time-billing/timer-indicator";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -28,6 +30,7 @@ const navItems = [
   { href: "/drafts", label: "Drafts", icon: PenLine },
   { href: "/quick-analysis", label: "Quick Analysis", icon: Zap },
   { href: "/cases", label: "Cases", icon: Briefcase },
+  { href: "/clients", label: "Clients", icon: Users },
   { href: "/calendar", label: "Calendar", icon: CalendarIcon },
   { href: "/settings/templates", label: "Templates", icon: FileText },
   { href: "/settings", label: "Settings", icon: Settings },
@@ -44,7 +47,10 @@ function NavContent() {
         <Link href="/dashboard" className="text-xl font-bold tracking-tight">
           ClearTerms
         </Link>
-        <NotificationBell />
+        <div className="flex items-center gap-2">
+          <TimerIndicator />
+          <NotificationBell />
+        </div>
       </div>
 
       <Separator />
@@ -82,6 +88,20 @@ function NavContent() {
           >
             <Users className="h-4 w-4" />
             Team
+          </Link>
+        )}
+        {(isTeamAdmin || !profile?.orgId) && (
+          <Link
+            href="/invoices"
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              pathname === "/invoices" || pathname.startsWith("/invoices/")
+                ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
+                : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-50",
+            )}
+          >
+            <Receipt className="h-4 w-4" />
+            Invoices
           </Link>
         )}
       </nav>

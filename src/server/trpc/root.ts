@@ -13,6 +13,12 @@ import { calendarRouter } from "./routers/calendar";
 import { calendarConnectionsRouter } from "./routers/calendar-connections";
 import { teamRouter } from "./routers/team";
 import { caseMembersRouter } from "./routers/case-members";
+import { clientsRouter } from "./routers/clients";
+import { clientContactsRouter } from "./routers/client-contacts";
+import { timeEntriesRouter } from "./routers/time-entries";
+import { expensesRouter } from "./routers/expenses";
+import { billingRatesRouter } from "./routers/billing-rates";
+import { invoicesRouter } from "./routers/invoices";
 
 export const appRouter = router({
   users: usersRouter,
@@ -29,6 +35,12 @@ export const appRouter = router({
   calendarConnections: calendarConnectionsRouter,
   team: teamRouter,
   caseMembers: caseMembersRouter,
+  clients: clientsRouter,
+  clientContacts: clientContactsRouter,
+  timeEntries: timeEntriesRouter,
+  expenses: expensesRouter,
+  billingRates: billingRatesRouter,
+  invoices: invoicesRouter,
 });
 
 export type AppRouter = typeof appRouter;

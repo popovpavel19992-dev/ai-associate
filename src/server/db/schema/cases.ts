@@ -2,6 +2,7 @@ import { pgTable, uuid, text, timestamp, jsonb, boolean, pgEnum } from "drizzle-
 import { users } from "./users";
 import { organizations } from "./organizations";
 import { caseStages } from "./case-stages";
+import { clients } from "./clients";
 
 export const caseStatusEnum = pgEnum("case_status", ["draft", "processing", "ready", "failed"]);
 
@@ -9,6 +10,7 @@ export const cases = pgTable("cases", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").references(() => users.id).notNull(),
   orgId: uuid("org_id").references(() => organizations.id),
+  clientId: uuid("client_id").references(() => clients.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   status: caseStatusEnum("status").default("draft").notNull(),
   detectedCaseType: text("detected_case_type"),

@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { eq, and, desc, sql, inArray, or } from "drizzle-orm";
+import { eq, and, desc, sql, inArray, or, isNull } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../trpc";
 import { cases } from "../../db/schema/cases";
@@ -8,12 +8,13 @@ import { documentAnalyses } from "../../db/schema/document-analyses";
 import { contracts } from "../../db/schema/contracts";
 import { caseStages, stageTaskTemplates, caseEvents } from "../../db/schema/case-stages";
 import { caseMembers } from "../../db/schema/case-members";
+import { clients } from "../../db/schema/clients";
 import { createTasksFromTemplatesInternal } from "./case-tasks";
 import { calculateCredits, checkCredits, decrementCredits, refundCredits } from "../../services/credits";
 import { generateDocx, generatePlainTextReport } from "../../services/export";
 import { inngest } from "../../inngest/client";
 import { CASE_TYPES, AUTO_DELETE_DAYS, CASE_TYPE_LABELS } from "@/lib/constants";
-import { assertCaseAccess, assertCaseDelete } from "../lib/permissions";
+import { assertCaseAccess, assertCaseDelete, assertClientRead } from "../lib/permissions";
 import type { CaseType } from "@/lib/case-stages";
 import type { AnalysisOutput } from "@/lib/schemas";
 
@@ -21,12 +22,16 @@ export const casesRouter = router({
   create: protectedProcedure
     .input(
       z.object({
+        clientId: z.string().uuid(),
         name: z.string().min(1).max(200),
         caseType: z.enum(CASE_TYPES).optional(),
         selectedSections: z.array(z.string()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Permission check + scope verification.
+      await assertClientRead(ctx, input.clientId);
+
       const plan = ctx.user.plan ?? "trial";
       const deleteDays = AUTO_DELETE_DAYS[plan as keyof typeof AUTO_DELETE_DAYS] ?? 30;
       const deleteAt = new Date(Date.now() + deleteDays * 24 * 60 * 60 * 1000);
@@ -36,6 +41,7 @@ export const casesRouter = router({
         .values({
           userId: ctx.user.id,
           orgId: ctx.user.orgId,
+          clientId: input.clientId,
           name: input.name,
           overrideCaseType: input.caseType ?? null,
           selectedSections: input.selectedSections ?? null,
@@ -93,13 +99,19 @@ export const casesRouter = router({
       const limit = input?.limit ?? 20;
       const offset = input?.offset ?? 0;
 
+      // Legacy fallback: cases created before the user joined an org (org_id IS NULL).
+      const legacyOwned = and(isNull(cases.orgId), eq(cases.userId, ctx.user.id));
+
       const whereClause = !ctx.user.orgId
         ? eq(cases.userId, ctx.user.id)
         : ctx.user.role === "owner" || ctx.user.role === "admin"
-          ? eq(cases.orgId, ctx.user.orgId)
+          ? or(eq(cases.orgId, ctx.user.orgId), legacyOwned)!
           : or(
-              eq(cases.userId, ctx.user.id),
-              inArray(cases.id, ctx.db.select({ caseId: caseMembers.caseId }).from(caseMembers).where(eq(caseMembers.userId, ctx.user.id))),
+              and(eq(cases.orgId, ctx.user.orgId), or(
+                eq(cases.userId, ctx.user.id),
+                inArray(cases.id, ctx.db.select({ caseId: caseMembers.caseId }).from(caseMembers).where(eq(caseMembers.userId, ctx.user.id))),
+              )),
+              legacyOwned,
             )!;
 
       const userCases = await ctx.db
@@ -136,6 +148,17 @@ export const casesRouter = router({
       if (!caseRecord) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
       }
+
+      // No assertClientRead — the caller already passed assertCaseAccess.
+      // clientId is an attribute of the case they can read; the FK write-path
+      // (cases.create / cases.update) enforces assertClientRead at link time.
+      const linkedClient = caseRecord.clientId
+        ? (await ctx.db
+            .select()
+            .from(clients)
+            .where(eq(clients.id, caseRecord.clientId))
+            .limit(1))[0] ?? null
+        : null;
 
       const docs = await ctx.db
         .select()
@@ -195,6 +218,7 @@ export const casesRouter = router({
 
       return {
         ...caseRecord,
+        client: linkedClient,
         documents: docs,
         analyses,
         linkedContracts,
@@ -461,6 +485,36 @@ export const casesRouter = router({
       const [updated] = await ctx.db
         .update(cases)
         .set({ selectedSections: input.selectedSections, updatedAt: new Date() })
+        .where(eq(cases.id, input.caseId))
+        .returning();
+
+      return updated;
+    }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        caseId: z.string().uuid(),
+        clientId: z.string().uuid().optional(),
+        name: z.string().min(1).max(200).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertCaseAccess(ctx, input.caseId);
+
+      // Verify the new client is accessible. Setting clientId to null is
+      // not supported (YAGNI for MVP).
+      if (input.clientId) {
+        await assertClientRead(ctx, input.clientId);
+      }
+
+      const patch: Record<string, unknown> = { updatedAt: new Date() };
+      if (input.clientId) patch.clientId = input.clientId;
+      if (input.name) patch.name = input.name;
+
+      const [updated] = await ctx.db
+        .update(cases)
+        .set(patch)
         .where(eq(cases.id, input.caseId))
         .returning();
 
