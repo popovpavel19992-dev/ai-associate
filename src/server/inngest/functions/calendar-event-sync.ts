@@ -230,6 +230,20 @@ export const calendarEventSync = inngest.createFunction(
                 retryCount: sql`retry_count + 1`,
               },
             });
+          await inngest.send({
+            name: "notification/send",
+            data: {
+              userId,
+              type: "calendar_sync_failed",
+              title: "Calendar sync failed",
+              body: `Failed to sync event to ${connection.provider} calendar`,
+              actionUrl: "/settings/integrations",
+              metadata: {
+                providerName: connection.provider,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            },
+          });
           throw error; // Re-throw so Inngest retries
         }
       });
