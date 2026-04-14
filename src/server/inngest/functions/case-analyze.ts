@@ -8,6 +8,7 @@ import { getObject } from "../../services/s3";
 import { extractText } from "../../services/extraction";
 import { analyzeDocument, synthesizeCaseBrief } from "../../services/claude";
 import { caseEvents } from "../../db/schema/case-stages";
+import { organizations } from "../../db/schema/organizations";
 import { PIPELINE_CONCURRENCY } from "@/lib/constants";
 
 export const caseAnalyze = inngest.createFunction(
@@ -172,6 +173,61 @@ export const caseAnalyze = inngest.createFunction(
         }
       });
     }
+
+    await step.run("notify-case-ready", async () => {
+      const docCount = analyses.length;
+      await inngest.send({
+        name: "notification/send",
+        data: {
+          userId: caseRecord.userId,
+          orgId: caseRecord.orgId ?? undefined,
+          type: "case_ready",
+          title: "Case analysis complete",
+          body: `${caseRecord.name} — ${docCount} document${docCount > 1 ? "s" : ""} analyzed`,
+          caseId,
+          actionUrl: `/cases/${caseId}`,
+          metadata: { caseName: caseRecord.name, documentCount: docCount },
+        },
+      });
+    });
+
+    await step.run("check-credits", async () => {
+      if (!caseRecord.orgId) return;
+      const [org] = await db
+        .select({ creditsUsedThisMonth: organizations.creditsUsedThisMonth, creditsLimit: organizations.creditsLimit, ownerUserId: organizations.ownerUserId })
+        .from(organizations)
+        .where(eq(organizations.id, caseRecord.orgId))
+        .limit(1);
+      if (!org) return;
+
+      if (org.creditsUsedThisMonth >= org.creditsLimit) {
+        await inngest.send({
+          name: "notification/send",
+          data: {
+            userId: org.ownerUserId,
+            orgId: caseRecord.orgId,
+            type: "credits_exhausted",
+            title: "Credits exhausted",
+            body: `You've used all ${org.creditsLimit} monthly credits`,
+            actionUrl: "/settings/billing",
+            metadata: { creditsLimit: org.creditsLimit },
+          },
+        });
+      } else if (org.creditsUsedThisMonth >= org.creditsLimit * 0.8) {
+        await inngest.send({
+          name: "notification/send",
+          data: {
+            userId: org.ownerUserId,
+            orgId: caseRecord.orgId,
+            type: "credits_low",
+            title: "Credits running low",
+            body: `${org.creditsUsedThisMonth} of ${org.creditsLimit} credits used`,
+            actionUrl: "/settings/billing",
+            metadata: { creditsUsed: org.creditsUsedThisMonth, creditsLimit: org.creditsLimit },
+          },
+        });
+      }
+    });
 
     return { caseId, documentsAnalyzed: analyses.length, hasBrief: analyses.length > 1 };
   },
