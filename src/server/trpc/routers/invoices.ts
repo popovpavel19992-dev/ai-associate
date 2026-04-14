@@ -293,7 +293,6 @@ export const invoicesRouter = router({
 
       // Notify org owner/admins (not actor)
       if (ctx.user.orgId) {
-        const { organizations } = await import("@/server/db/schema/organizations");
         const orgMembers = await ctx.db
           .select({ id: users.id, role: users.role })
           .from(users)
