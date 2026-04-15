@@ -28,6 +28,9 @@ import { portalCasesRouter } from "./routers/portal-cases";
 import { portalDocumentsRouter } from "./routers/portal-documents";
 import { portalMessagesRouter } from "./routers/portal-messages";
 import { portalInvoicesRouter } from "./routers/portal-invoices";
+import { portalCalendarRouter } from "./routers/portal-calendar";
+import { portalTasksRouter } from "./routers/portal-tasks";
+import { portalNotificationsRouter } from "./routers/portal-notifications";
 
 export const appRouter = router({
   users: usersRouter,
@@ -59,6 +62,9 @@ export const appRouter = router({
   portalDocuments: portalDocumentsRouter,
   portalMessages: portalMessagesRouter,
   portalInvoices: portalInvoicesRouter,
+  portalCalendar: portalCalendarRouter,
+  portalTasks: portalTasksRouter,
+  portalNotifications: portalNotificationsRouter,
 });
 
 export type AppRouter = typeof appRouter;
