@@ -35,6 +35,8 @@ const envSchema = z.object({
   VAPID_PUBLIC_KEY: z.string().min(1).optional(),
   VAPID_PRIVATE_KEY: z.string().min(1).optional(),
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+  // Client Portal (2.1.8)
+  PORTAL_JWT_SECRET: z.string().min(32),
 });
 
 export type Env = z.infer<typeof envSchema>;
