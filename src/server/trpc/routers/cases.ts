@@ -571,6 +571,33 @@ export const casesRouter = router({
       await ctx.db.delete(cases).where(eq(cases.id, input.caseId));
       return { success: true };
     }),
+
+  updatePortalVisibility: protectedProcedure
+    .input(z.object({
+      caseId: z.string().uuid(),
+      visibility: z.object({
+        documents: z.boolean(),
+        tasks: z.boolean(),
+        calendar: z.boolean(),
+        billing: z.boolean(),
+        messages: z.boolean(),
+      }),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const [updated] = await ctx.db
+        .update(cases)
+        .set({ portalVisibility: input.visibility })
+        .where(and(
+          eq(cases.id, input.caseId),
+          ctx.user.orgId
+            ? eq(cases.orgId, ctx.user.orgId)
+            : eq(cases.userId, ctx.user.id),
+        ))
+        .returning({ id: cases.id });
+
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND" });
+      return { success: true };
+    }),
 });
 
 // Helper for export procedures
