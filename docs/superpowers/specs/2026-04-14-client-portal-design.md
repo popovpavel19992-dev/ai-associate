@@ -79,7 +79,7 @@ Constraints:
 | updatedAt | timestamptz | |
 | deletedAt | timestamptz | nullable, soft delete |
 
-CHECK constraint: exactly one of `lawyerAuthorId` / `portalAuthorId` must be non-null, matching `authorType`.
+CHECK constraint: `(authorType = 'lawyer' AND lawyerAuthorId IS NOT NULL AND portalAuthorId IS NULL) OR (authorType = 'client' AND portalAuthorId IS NOT NULL AND lawyerAuthorId IS NULL)`
 
 Index: `(caseId, createdAt)` for thread ordering.
 
@@ -97,19 +97,25 @@ Index: `(caseId, createdAt)` for thread ordering.
 |--------|------|-------|
 | portalVisibility | jsonb | Default: `{ documents: true, tasks: true, calendar: true, billing: true, messages: true }` |
 
-#### `documents` — add column
+#### `documents` — add columns
 
 | Column | Type | Notes |
 |--------|------|-------|
 | uploadedByPortalUserId | uuid | FK → portal_users, nullable |
 
+Note: existing `documents.userId` is `NOT NULL`. For portal uploads, set `userId` to the case creator's (lawyer's) userId as the owning attorney. The `uploadedByPortalUserId` column tracks the actual uploader. This avoids making `userId` nullable which would break existing queries.
+
 ### Indexes
 
-- `portal_users(email, orgId)` — unique composite
+- `portal_users(email, orgId) WHERE orgId IS NOT NULL` — partial unique index
+- `portal_users(email, userId) WHERE userId IS NOT NULL` — partial unique index
 - `portal_users(clientId)` — lookup by client
 - `portal_sessions(token)` — lookup on every request
+- `portal_sessions(portalUserId)` — for session revocation on user disable
 - `portal_magic_links(portalUserId, usedAt)` — find active link
 - `case_messages(caseId, createdAt)` — thread ordering
+- `portal_notifications(portalUserId, isRead, createdAt)` — for list/unread count
+- `portal_notification_preferences(portalUserId, type)` — unique, preference lookup
 
 ## Auth Flow
 
@@ -204,7 +210,7 @@ Analogous to `protectedProcedure` but for portal users:
 
 | Procedure | Input | Description |
 |-----------|-------|-------------|
-| list | `{ caseId? }` | Client's invoices filtered by `clientId`. When `caseId` provided, filters via `invoice_line_items.caseId`. Per-case billing tab only shows if `portalVisibility.billing = true`. |
+| list | `{ caseId?, cursor? }` | Client's invoices filtered by `clientId`, cursor pagination. When `caseId` provided, filters via `invoice_line_items.caseId`. Per-case billing tab only shows if `portalVisibility.billing = true`. |
 | get | `{ invoiceId }` | Invoice detail + line items |
 | createCheckoutSession | `{ invoiceId }` | Creates Stripe Checkout Session, returns URL |
 
@@ -351,7 +357,7 @@ The portal SSE endpoint polls `portal_notification_signals` for the authenticate
 | `portal_document_uploaded` | Client uploads document |
 | `invoice_paid` | Client pays invoice (Stripe webhook) |
 
-These integrate into the existing 2.1.7 notification system — same `notifications` table, same SSE, same bell icon.
+These integrate into the existing 2.1.7 notification system — same `notifications` table, same SSE, same bell icon. Implementation must register `portal_message_received` and `portal_document_uploaded` in `src/lib/notification-types.ts` (`NOTIFICATION_TYPES`, `NOTIFICATION_CATEGORIES` under a new `portal` category, and `NotificationMetadata` type union). `invoice_paid` already exists in the type system.
 
 ## Stripe Integration
 
