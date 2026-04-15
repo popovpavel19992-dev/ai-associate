@@ -16,3 +16,9 @@ export async function POST(req: NextRequest) {
   });
   return res;
 }
+
+export async function DELETE() {
+  const res = NextResponse.json({ success: true });
+  res.cookies.delete("portal_token");
+  return res;
+}
