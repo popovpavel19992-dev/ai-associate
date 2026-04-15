@@ -17,6 +17,8 @@ export const NOTIFICATION_TYPES = [
   "added_to_case",
   "event_reminder",
   "calendar_sync_failed",
+  "portal_message_received",
+  "portal_document_uploaded",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -29,6 +31,7 @@ export const NOTIFICATION_CATEGORIES = {
   billing: ["invoice_sent", "invoice_paid", "invoice_overdue", "credits_low", "credits_exhausted"],
   team: ["team_member_invited", "team_member_joined", "added_to_case"],
   calendar: ["event_reminder", "calendar_sync_failed"],
+  portal: ["portal_message_received", "portal_document_uploaded"],
 } as const;
 
 export type NotificationCategory = keyof typeof NOTIFICATION_CATEGORIES;
@@ -57,6 +60,8 @@ export type NotificationMetadata = {
   added_to_case: { caseName: string; addedBy: string };
   event_reminder: { eventTitle: string; startTime: string; minutesBefore: number };
   calendar_sync_failed: { providerName: string; error: string };
+  portal_message_received: { caseName: string; clientName: string; messagePreview: string };
+  portal_document_uploaded: { caseName: string; clientName: string; documentName: string };
 };
 
 /** Inngest event payload for notification/send */

@@ -16,6 +16,7 @@ const CATEGORY_TABS: { key: CategoryFilter; label: string }[] = [
   { key: "billing", label: "Billing" },
   { key: "team", label: "Team" },
   { key: "calendar", label: "Calendar" },
+  { key: "portal", label: "Portal" },
 ];
 
 const PAGE_SIZE = 20;
