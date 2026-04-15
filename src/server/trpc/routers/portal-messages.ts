@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { router, portalProcedure } from "../trpc";
 import { caseMessages } from "@/server/db/schema/case-messages";
 import { cases } from "@/server/db/schema/cases";
+import { inngest } from "@/server/inngest/client";
 
 function stripHtml(input: string): string {
   return input.replace(/<[^>]*>/g, "").trim();
@@ -91,7 +92,27 @@ export const portalMessagesRouter = router({
         })
         .returning();
 
-      // TODO: Emit portal_message_received notification to lawyer (Task 17)
+      // Notify lawyer about client message
+      const [caseInfo] = await ctx.db
+        .select({ name: cases.name, userId: cases.userId, orgId: cases.orgId })
+        .from(cases)
+        .where(eq(cases.id, input.caseId))
+        .limit(1);
+      if (caseInfo) {
+        await inngest.send({
+          name: "notification/send",
+          data: {
+            type: "portal_message_received",
+            title: "New message from client",
+            body: `${ctx.portalUser.displayName} sent a message in ${caseInfo.name}`,
+            userId: caseInfo.userId,
+            orgId: caseInfo.orgId ?? undefined,
+            caseId: input.caseId,
+            actionUrl: `/cases/${input.caseId}`,
+            metadata: { caseName: caseInfo.name, clientName: ctx.portalUser.displayName, messagePreview: sanitizedBody.slice(0, 100) },
+          },
+        });
+      }
 
       return message;
     }),

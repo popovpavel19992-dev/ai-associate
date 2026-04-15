@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { router, portalProcedure } from "../trpc";
 import { documents } from "@/server/db/schema/documents";
 import { cases } from "@/server/db/schema/cases";
+import { inngest } from "@/server/inngest/client";
 import { generatePresignedUrl } from "@/server/services/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -151,7 +152,27 @@ export const portalDocumentsRouter = router({
         .set({ status: "ready" })
         .where(eq(documents.id, doc.id));
 
-      // TODO: Emit portal_document_uploaded notification to lawyer (Task 17)
+      // Notify lawyer about client document upload
+      const [caseRow] = await ctx.db
+        .select({ name: cases.name, userId: cases.userId, orgId: cases.orgId })
+        .from(cases)
+        .where(eq(cases.id, doc.caseId))
+        .limit(1);
+      if (caseRow) {
+        await inngest.send({
+          name: "notification/send",
+          data: {
+            type: "portal_document_uploaded",
+            title: "Client uploaded a document",
+            body: `${ctx.portalUser.displayName} uploaded a document to ${caseRow.name}`,
+            userId: caseRow.userId,
+            orgId: caseRow.orgId ?? undefined,
+            caseId: doc.caseId,
+            actionUrl: `/cases/${doc.caseId}`,
+            metadata: { caseName: caseRow.name, clientName: ctx.portalUser.displayName, documentName: "" },
+          },
+        });
+      }
 
       return { success: true };
     }),
