@@ -23,6 +23,7 @@ import { notificationsRouter } from "./routers/notifications";
 import { notificationPreferencesRouter } from "./routers/notification-preferences";
 import { notificationMutesRouter } from "./routers/notification-mutes";
 import { pushSubscriptionsRouter } from "./routers/push-subscriptions";
+import { portalAuthRouter } from "./routers/portal-auth";
 
 export const appRouter = router({
   users: usersRouter,
@@ -49,6 +50,7 @@ export const appRouter = router({
   notificationPreferences: notificationPreferencesRouter,
   notificationMutes: notificationMutesRouter,
   pushSubscriptions: pushSubscriptionsRouter,
+  portalAuth: portalAuthRouter,
 });
 
 export type AppRouter = typeof appRouter;
