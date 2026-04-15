@@ -27,6 +27,7 @@ import { portalAuthRouter } from "./routers/portal-auth";
 import { portalCasesRouter } from "./routers/portal-cases";
 import { portalDocumentsRouter } from "./routers/portal-documents";
 import { portalMessagesRouter } from "./routers/portal-messages";
+import { portalInvoicesRouter } from "./routers/portal-invoices";
 
 export const appRouter = router({
   users: usersRouter,
@@ -57,6 +58,7 @@ export const appRouter = router({
   portalCases: portalCasesRouter,
   portalDocuments: portalDocumentsRouter,
   portalMessages: portalMessagesRouter,
+  portalInvoices: portalInvoicesRouter,
 });
 
 export type AppRouter = typeof appRouter;
