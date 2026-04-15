@@ -16,6 +16,12 @@ import * as notificationsSchema from "./schema/notifications";
 import * as notificationPreferences from "./schema/notification-preferences";
 import * as notificationMutes from "./schema/notification-mutes";
 import * as pushSubscriptions from "./schema/push-subscriptions";
+import * as portalUsersSchema from "./schema/portal-users";
+import * as portalSessionsSchema from "./schema/portal-sessions";
+import * as portalMagicLinksSchema from "./schema/portal-magic-links";
+import * as caseMessagesSchema from "./schema/case-messages";
+import * as portalNotificationsSchema from "./schema/portal-notifications";
+import * as portalNotificationPreferencesSchema from "./schema/portal-notification-preferences";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -37,5 +43,11 @@ export const db = drizzle(client, {
     ...notificationPreferences,
     ...notificationMutes,
     ...pushSubscriptions,
+    ...portalUsersSchema,
+    ...portalSessionsSchema,
+    ...portalMagicLinksSchema,
+    ...caseMessagesSchema,
+    ...portalNotificationsSchema,
+    ...portalNotificationPreferencesSchema,
   },
 });

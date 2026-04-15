@@ -29,6 +29,7 @@ export const invoices = pgTable(
     subtotalCents: integer("subtotal_cents").notNull().default(0),
     taxCents: integer("tax_cents").notNull().default(0),
     totalCents: integer("total_cents").notNull().default(0),
+    stripeCheckoutSessionId: text("stripe_checkout_session_id"),
     notes: text("notes"),
     paymentTerms: text("payment_terms"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
