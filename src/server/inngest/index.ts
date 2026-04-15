@@ -13,5 +13,6 @@ import { teamMembershipCleanup } from "./functions/team-membership-cleanup";
 import { handleNotification } from "./functions/handle-notification";
 import { notificationReminders } from "./functions/notification-reminders";
 import { notificationOverdueCheck } from "./functions/notification-overdue-check";
+import { handlePortalNotification } from "./functions/handle-portal-notification";
 
-export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup, handleNotification, notificationReminders, notificationOverdueCheck];
+export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup, handleNotification, notificationReminders, notificationOverdueCheck, handlePortalNotification];

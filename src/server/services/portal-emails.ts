@@ -14,6 +14,21 @@ export async function sendPortalInviteEmail(to: string, displayName: string, org
   });
 }
 
+export async function sendPortalNotificationEmail(to: string, title: string, body: string, actionUrl?: string) {
+  const appUrl = PORTAL_URL;
+  const fullUrl = actionUrl ? `${appUrl}${actionUrl}` : undefined;
+
+  await sendEmail({
+    to,
+    subject: `ClearTerms: ${title}`,
+    html: `
+      <h2>${title}</h2>
+      <p>${body}</p>
+      ${fullUrl ? `<a href="${fullUrl}" style="display:inline-block;padding:12px 24px;background:#7c83ff;color:#fff;text-decoration:none;border-radius:6px;">View Details</a>` : ""}
+    `,
+  });
+}
+
 export async function sendPortalCodeEmail(to: string, code: string) {
   await sendEmail({
     to,
