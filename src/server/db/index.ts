@@ -22,6 +22,12 @@ import * as portalMagicLinksSchema from "./schema/portal-magic-links";
 import * as caseMessagesSchema from "./schema/case-messages";
 import * as portalNotificationsSchema from "./schema/portal-notifications";
 import * as portalNotificationPreferencesSchema from "./schema/portal-notification-preferences";
+import * as researchSessionsSchema from "./schema/research-sessions";
+import * as researchQueriesSchema from "./schema/research-queries";
+import * as researchChatMessagesSchema from "./schema/research-chat-messages";
+import * as cachedOpinionsSchema from "./schema/cached-opinions";
+import * as opinionBookmarksSchema from "./schema/opinion-bookmarks";
+import * as researchUsageSchema from "./schema/research-usage";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -49,5 +55,11 @@ export const db = drizzle(client, {
     ...caseMessagesSchema,
     ...portalNotificationsSchema,
     ...portalNotificationPreferencesSchema,
+    ...researchSessionsSchema,
+    ...researchQueriesSchema,
+    ...researchChatMessagesSchema,
+    ...cachedOpinionsSchema,
+    ...opinionBookmarksSchema,
+    ...researchUsageSchema,
   },
 });
