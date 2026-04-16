@@ -21,9 +21,9 @@ export const researchChatMessages = pgTable(
     }>().default({}).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => ({
-    sessionIdx: index("research_chat_session_idx").on(t.sessionId, t.createdAt.asc()),
-  }),
+  (table) => [
+    index("research_chat_session_idx").on(table.sessionId, table.createdAt.asc()),
+  ],
 );
 
 export type ResearchChatMessage = typeof researchChatMessages.$inferSelect;

@@ -19,10 +19,10 @@ export const researchSessions = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
-  (t) => ({
-    userUpdatedIdx: index("research_sessions_user_updated_idx").on(t.userId, t.deletedAt, t.updatedAt.desc()),
-    caseIdx: index("research_sessions_case_idx").on(t.caseId),
-  }),
+  (table) => [
+    index("research_sessions_user_updated_idx").on(table.userId, table.deletedAt, table.updatedAt.desc()),
+    index("research_sessions_case_idx").on(table.caseId),
+  ],
 );
 
 export type ResearchSession = typeof researchSessions.$inferSelect;

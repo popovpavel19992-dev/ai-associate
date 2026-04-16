@@ -17,9 +17,9 @@ export const researchQueries = pgTable(
     resultCount: integer("result_count").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => ({
-    sessionIdx: index("research_queries_session_idx").on(t.sessionId, t.createdAt.desc()),
-  }),
+  (table) => [
+    index("research_queries_session_idx").on(table.sessionId, table.createdAt.desc()),
+  ],
 );
 
 export type ResearchQuery = typeof researchQueries.$inferSelect;
