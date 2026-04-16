@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { ProfileImageUpload } from "@/components/settings/profile-image-upload";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -31,6 +33,11 @@ export default function SettingsPage() {
   const [jurisdiction, setJurisdiction] = useState("");
   const [practiceAreas, setPracticeAreas] = useState<string[]>([]);
   const [caseTypes, setCaseTypes] = useState<string[]>([]);
+  const [bio, setBio] = useState("");
+  const [barNumber, setBarNumber] = useState("");
+  const [barState, setBarState] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [signatureImageUrl, setSignatureImageUrl] = useState("");
 
   useEffect(() => {
     if (profile) {
@@ -39,6 +46,11 @@ export default function SettingsPage() {
       setJurisdiction(profile.jurisdiction ?? "");
       setPracticeAreas((profile.practiceAreas as string[]) ?? []);
       setCaseTypes((profile.caseTypes as string[]) ?? []);
+      setBio(profile.bio ?? "");
+      setBarNumber(profile.barNumber ?? "");
+      setBarState(profile.barState ?? "");
+      setAvatarUrl(profile.avatarUrl ?? "");
+      setSignatureImageUrl(profile.signatureImageUrl ?? "");
     }
   }, [profile]);
 
@@ -65,6 +77,11 @@ export default function SettingsPage() {
         caseTypes.length > 0
           ? (caseTypes as (typeof CASE_TYPES)[number][])
           : undefined,
+      bio: bio.trim() || undefined,
+      barNumber: barNumber.trim() || undefined,
+      barState: barState ? (barState as (typeof US_STATES)[number]) : undefined,
+      avatarUrl: avatarUrl || undefined,
+      signatureImageUrl: signatureImageUrl || undefined,
     });
   };
 
@@ -184,6 +201,77 @@ export default function SettingsPage() {
           {update.error && (
             <p className="text-sm text-red-500">{update.error.message}</p>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Professional Profile</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <ProfileImageUpload
+            label="Profile Photo"
+            currentUrl={avatarUrl || null}
+            category="avatar"
+            previewClassName="h-20 w-20 rounded-full object-cover"
+            onUploaded={setAvatarUrl}
+          />
+
+          <div className="space-y-2">
+            <Label htmlFor="bio">Bio</Label>
+            <Textarea
+              id="bio"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              maxLength={2000}
+              rows={4}
+              placeholder="Brief professional bio visible to clients..."
+            />
+            <p className="text-xs text-muted-foreground">{bio.length}/2000</p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="barNumber">Bar Number</Label>
+              <Input
+                id="barNumber"
+                value={barNumber}
+                onChange={(e) => setBarNumber(e.target.value)}
+                placeholder="e.g. 12345"
+                maxLength={50}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Bar Admission State</Label>
+              <Select value={barState} onValueChange={(v) => setBarState(v ?? "")}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <ProfileImageUpload
+            label="Signature Image"
+            currentUrl={signatureImageUrl || null}
+            category="signature"
+            previewClassName="h-12 w-auto max-w-[200px] rounded border object-contain"
+            onUploaded={setSignatureImageUrl}
+          />
+
+          <Button onClick={handleSave} disabled={update.isPending}>
+            {update.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            Save Changes
+          </Button>
         </CardContent>
       </Card>
     </div>
