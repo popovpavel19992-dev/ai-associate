@@ -16,9 +16,12 @@ import { CourtListenerClient } from "@/server/services/courtlistener/client";
 import { OpinionCacheService } from "@/server/services/research/opinion-cache";
 import { ResearchSessionService } from "@/server/services/research/session-service";
 import { BookmarkService } from "@/server/services/research/bookmark-service";
+import { LegalRagService, type StreamChunk } from "@/server/services/research/legal-rag";
+import { UsageGuard, UsageLimitExceededError } from "@/server/services/research/usage-guard";
 import { researchSessions } from "@/server/db/schema/research-sessions";
 import { researchQueries } from "@/server/db/schema/research-queries";
 import { cachedOpinions } from "@/server/db/schema/cached-opinions";
+import type { db as realDb } from "@/server/db";
 
 // ---------------------------------------------------------------------------
 // Shared schemas
@@ -38,6 +41,128 @@ const FiltersSchema = z.object({
 // ---------------------------------------------------------------------------
 function makeCourtListener() {
   return new CourtListenerClient({ apiToken: getEnv().COURTLISTENER_API_TOKEN });
+}
+
+function mapUserPlanToResearchPlan(
+  plan: string | null | undefined,
+): "starter" | "professional" | "business" {
+  switch (plan) {
+    case "trial":
+      return "starter"; // 50 Q&A per month
+    case "solo":
+      return "professional"; // 500 per month
+    default:
+      return "starter"; // fallback
+  }
+}
+
+// Internal deps passed to Q&A helpers so tests can stub services.
+export interface AskDeps {
+  db: typeof realDb;
+  usageGuard?: UsageGuard;
+  rag?: LegalRagService;
+}
+
+interface AskCtx {
+  db: typeof realDb;
+  user: { id: string; plan?: string | null };
+}
+
+function makeUsageGuard(ctx: AskCtx, deps?: AskDeps): UsageGuard {
+  return deps?.usageGuard ?? new UsageGuard({ db: ctx.db });
+}
+
+function makeRag(ctx: AskCtx, deps?: AskDeps): LegalRagService {
+  if (deps?.rag) return deps.rag;
+  const cl = new CourtListenerClient({ apiToken: getEnv().COURTLISTENER_API_TOKEN });
+  const cache = new OpinionCacheService({ db: ctx.db, courtListener: cl });
+  return new LegalRagService({ db: ctx.db, opinionCache: cache });
+}
+
+export async function* runAskBroad(
+  ctx: AskCtx,
+  input: { sessionId: string; question: string; topN?: number },
+  deps?: AskDeps,
+): AsyncGenerator<StreamChunk> {
+  const plan = mapUserPlanToResearchPlan(ctx.user.plan);
+  const guard = makeUsageGuard(ctx, deps);
+
+  try {
+    await guard.checkAndIncrementQa({ userId: ctx.user.id, plan });
+  } catch (err) {
+    if (err instanceof UsageLimitExceededError) {
+      throw new TRPCError({
+        code: "TOO_MANY_REQUESTS",
+        message: err.message,
+        cause: err,
+      });
+    }
+    throw err;
+  }
+
+  const rag = makeRag(ctx, deps);
+
+  try {
+    const stream = rag.askBroad({
+      sessionId: input.sessionId,
+      userId: ctx.user.id,
+      question: input.question,
+      topN: input.topN,
+    });
+    for await (const chunk of stream) {
+      yield chunk;
+      if (chunk.type === "error") {
+        await guard.refundQa({ userId: ctx.user.id });
+        return;
+      }
+    }
+  } catch (err) {
+    await guard.refundQa({ userId: ctx.user.id });
+    throw err;
+  }
+}
+
+export async function* runAskDeep(
+  ctx: AskCtx,
+  input: { sessionId: string; opinionInternalId: string; question: string },
+  deps?: AskDeps,
+): AsyncGenerator<StreamChunk> {
+  const plan = mapUserPlanToResearchPlan(ctx.user.plan);
+  const guard = makeUsageGuard(ctx, deps);
+
+  try {
+    await guard.checkAndIncrementQa({ userId: ctx.user.id, plan });
+  } catch (err) {
+    if (err instanceof UsageLimitExceededError) {
+      throw new TRPCError({
+        code: "TOO_MANY_REQUESTS",
+        message: err.message,
+        cause: err,
+      });
+    }
+    throw err;
+  }
+
+  const rag = makeRag(ctx, deps);
+
+  try {
+    const stream = rag.askDeep({
+      sessionId: input.sessionId,
+      userId: ctx.user.id,
+      opinionInternalId: input.opinionInternalId,
+      question: input.question,
+    });
+    for await (const chunk of stream) {
+      yield chunk;
+      if (chunk.type === "error") {
+        await guard.refundQa({ userId: ctx.user.id });
+        return;
+      }
+    }
+  } catch (err) {
+    await guard.refundQa({ userId: ctx.user.id });
+    throw err;
+  }
 }
 
 async function assertSessionOwnership(
@@ -279,6 +404,36 @@ export const researchRouter = router({
       // TODO(2.2.1 Chunk 7): dispatch Inngest "research.enrichOpinion" event (non-blocking)
       return row;
     }),
+
+  askBroad: protectedProcedure
+    .input(
+      z.object({
+        sessionId: z.string().uuid(),
+        question: z.string().trim().min(1).max(2000),
+        topN: z.number().int().min(1).max(20).optional(),
+      }),
+    )
+    .subscription(async function* ({ ctx, input }) {
+      yield* runAskBroad(ctx, input);
+    }),
+
+  askDeep: protectedProcedure
+    .input(
+      z.object({
+        sessionId: z.string().uuid(),
+        opinionInternalId: z.string().uuid(),
+        question: z.string().trim().min(1).max(2000),
+      }),
+    )
+    .subscription(async function* ({ ctx, input }) {
+      yield* runAskDeep(ctx, input);
+    }),
+
+  getUsage: protectedProcedure.query(async ({ ctx }) => {
+    const plan = mapUserPlanToResearchPlan(ctx.user.plan);
+    const guard = new UsageGuard({ db: ctx.db });
+    return guard.getCurrentUsage({ userId: ctx.user.id, plan });
+  }),
 
   sessions: sessionsRouter,
   bookmarks: bookmarksRouter,
