@@ -21,7 +21,7 @@
 - Create: `src/server/db/schema/research-queries.ts`
 - Create: `src/server/db/schema/research-chat-messages.ts`
 
-- [ ] **Step 1: Create `src/server/db/schema/research-sessions.ts`**
+- [x] **Step 1: Create `src/server/db/schema/research-sessions.ts`**
 
 ```ts
 import { pgTable, uuid, text, jsonb, timestamp, index } from "drizzle-orm/pg-core";
@@ -55,7 +55,7 @@ export type ResearchSession = typeof researchSessions.$inferSelect;
 export type NewResearchSession = typeof researchSessions.$inferInsert;
 ```
 
-- [ ] **Step 2: Create `src/server/db/schema/research-queries.ts`**
+- [x] **Step 2: Create `src/server/db/schema/research-queries.ts`**
 
 ```ts
 import { pgTable, uuid, text, jsonb, integer, timestamp, index } from "drizzle-orm/pg-core";
@@ -86,7 +86,7 @@ export type ResearchQuery = typeof researchQueries.$inferSelect;
 export type NewResearchQuery = typeof researchQueries.$inferInsert;
 ```
 
-- [ ] **Step 3: Create `src/server/db/schema/research-chat-messages.ts`**
+- [x] **Step 3: Create `src/server/db/schema/research-chat-messages.ts`**
 
 ```ts
 import { pgTable, uuid, text, jsonb, integer, timestamp, pgEnum, index } from "drizzle-orm/pg-core";
@@ -123,12 +123,12 @@ export type NewResearchChatMessage = typeof researchChatMessages.$inferInsert;
 
 Note: `opinionContextIds` is a JSON array of `cached_opinions.id`. FK integrity enforced at service layer (Postgres array columns cannot enforce FK).
 
-- [ ] **Step 4: Run tsc to verify**
+- [x] **Step 4: Run tsc to verify**
 
 Run: `npx tsc --noEmit`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/server/db/schema/research-sessions.ts src/server/db/schema/research-queries.ts src/server/db/schema/research-chat-messages.ts
