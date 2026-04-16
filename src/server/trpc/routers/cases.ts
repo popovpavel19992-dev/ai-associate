@@ -26,6 +26,8 @@ export const casesRouter = router({
         name: z.string().min(1).max(200),
         caseType: z.enum(CASE_TYPES).optional(),
         selectedSections: z.array(z.string()).optional(),
+        opposingParty: z.string().max(200).optional(),
+        opposingCounsel: z.string().max(200).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -45,6 +47,8 @@ export const casesRouter = router({
           name: input.name,
           overrideCaseType: input.caseType ?? null,
           selectedSections: input.selectedSections ?? null,
+          opposingParty: input.opposingParty ?? null,
+          opposingCounsel: input.opposingCounsel ?? null,
           deleteAt,
         })
         .returning();
@@ -522,6 +526,8 @@ export const casesRouter = router({
         caseId: z.string().uuid(),
         clientId: z.string().uuid().optional(),
         name: z.string().min(1).max(200).optional(),
+        opposingParty: z.string().max(200).optional(),
+        opposingCounsel: z.string().max(200).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -536,6 +542,8 @@ export const casesRouter = router({
       const patch: Record<string, unknown> = { updatedAt: new Date() };
       if (input.clientId) patch.clientId = input.clientId;
       if (input.name) patch.name = input.name;
+      if (input.opposingParty !== undefined) patch.opposingParty = input.opposingParty;
+      if (input.opposingCounsel !== undefined) patch.opposingCounsel = input.opposingCounsel;
 
       const [updated] = await ctx.db
         .update(cases)
