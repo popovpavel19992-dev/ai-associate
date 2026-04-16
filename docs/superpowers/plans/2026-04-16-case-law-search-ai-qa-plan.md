@@ -298,7 +298,7 @@ Read the newly generated migration file. Verify:
 - Unique indexes on `cached_opinions.courtlistener_id` and `opinion_bookmarks (user_id, opinion_id)` and `research_usage (user_id, month)`
 - FK constraints correct (especially `cases.id` nullable cascades to SET NULL)
 
-- [ ] **Step 3: Apply migration**
+- [x] **Step 3: Apply migration**
 
 Run: `npx drizzle-kit push`
 Expected: migration applied to Supabase Postgres.
