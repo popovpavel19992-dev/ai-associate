@@ -19,5 +19,10 @@ export const users = pgTable("users", {
   subscriptionStatus: text("subscription_status").default("trialing"),
   stripeCustomerId: text("stripe_customer_id"),
   creditsUsedThisMonth: integer("credits_used_this_month").notNull().default(0),
+  bio: text("bio"),
+  barNumber: text("bar_number"),
+  barState: text("bar_state"),
+  avatarUrl: text("avatar_url"),
+  signatureImageUrl: text("signature_image_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
