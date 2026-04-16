@@ -4,6 +4,7 @@ import { vi } from "vitest";
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL ?? "postgresql://localhost:5432/clearterms_test";
 process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
 process.env.ANTHROPIC_API_KEY = "test-key";
+process.env.COURTLISTENER_API_TOKEN = "test-token";
 process.env.RESEND_API_KEY = "";
 process.env.AWS_S3_BUCKET = "test-bucket";
 process.env.AWS_REGION = "us-east-1";
