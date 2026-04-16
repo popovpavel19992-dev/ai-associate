@@ -25,7 +25,7 @@ Each subphase has its own spec and plan.
 
 Case Law Search + AI Q&A gives lawyers on ClearTerms a self-contained legal research workspace:
 
-- Keyword search across federal and top-5-state (CA, NY, TX, FL, IL) US case law sourced live from **CourtListener**
+- Keyword search across US federal case law plus 5 key state jurisdictions (CA, NY, TX, FL, IL) sourced live from **CourtListener**
 - On-demand full-text opinion viewer with Bluebook citation, highlighted search terms, and citation network
 - Two AI Q&A modalities powered by Claude API:
   - **Broad RAG** over top-N search results ("what's the majority holding?")
@@ -376,7 +376,7 @@ Reuses the banned-words list and replacement map from the original ClearTerms UP
 - Red banner + upsell CTA at 100 % (Starter/Pro)
 - Business tier only shows counter above 1 000
 
-**Reset:** Inngest cron `research.resetMonthlyUsage` on the 1st of every month at 00:00 UTC — inserts a fresh zero-row for the new month; old rows retained for analytics.
+**Reset:** no explicit reset needed — rows are scoped by `month` and created lazily on the first Q&A of each month via the unique `(user_id, month)` constraint (ON CONFLICT upsert). Old rows retained indefinitely for analytics.
 
 **Concurrency:** usage increment happens inside the same transaction that persists the assistant message, preventing double-count on retries.
 
@@ -456,7 +456,7 @@ Before launch: 20 representative queries against real user scenarios. Verify eve
 | 10 | Every AI response includes UPL footer |
 | 11 | Banned-words filter rewrites "you should" → "consider" in at least one test scenario |
 | 12 | CourtListener down → UI shows friendly error and retry |
-| 13 | All 5 jurisdictions (federal, CA, NY, TX, FL, IL) return results for a common query |
+| 13 | All 6 jurisdictions (federal + CA, NY, TX, FL, IL) return results for a common query |
 
 ## 16. Open Questions / Decisions Log
 
