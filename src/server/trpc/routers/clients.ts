@@ -1,6 +1,6 @@
 // src/server/trpc/routers/clients.ts
 import { z } from "zod/v4";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { router, protectedProcedure } from "../trpc";
 import { clients } from "@/server/db/schema/clients";
 import { clientContacts } from "@/server/db/schema/client-contacts";
@@ -225,6 +225,42 @@ export const clientsRouter = router({
         .limit(input.limit);
 
       return { clients: rows };
+    }),
+
+  checkConflict: protectedProcedure
+    .input(z.object({ name: z.string().min(1).max(200) }))
+    .query(async ({ ctx, input }) => {
+      const pattern = `%${input.name}%`;
+
+      // Scope: all org cases (intentionally broader than case-level access).
+      // Includes legacy pre-org cases (orgId IS NULL, userId match).
+      const legacyOwned = and(isNull(cases.orgId), eq(cases.userId, ctx.user.id));
+      const scopeWhere = ctx.user.orgId
+        ? or(eq(cases.orgId, ctx.user.orgId), legacyOwned)!
+        : eq(cases.userId, ctx.user.id);
+
+      const matches = await ctx.db
+        .select({
+          caseId: cases.id,
+          caseName: cases.name,
+          opposingParty: cases.opposingParty,
+          opposingCounsel: cases.opposingCounsel,
+          clientDisplayName: clients.displayName,
+        })
+        .from(cases)
+        .leftJoin(clients, eq(cases.clientId, clients.id))
+        .where(
+          and(
+            scopeWhere,
+            or(
+              sql`${cases.opposingParty} ILIKE ${pattern}`,
+              sql`${cases.opposingCounsel} ILIKE ${pattern}`,
+            ),
+          ),
+        )
+        .limit(10);
+
+      return { matches };
     }),
 
   getCases: protectedProcedure
