@@ -32,14 +32,27 @@ describe("extractCitations", () => {
   });
 
   it("extracts Cal. citations (plain and ordinal)", () => {
-    const result = extractCitations("Compare 42 Cal. 99 with 42 Cal.3rd 99.");
+    const result = extractCitations("Compare 42 Cal. 99 with 42 Cal.3d 99.");
     expect(result).toContain("42 Cal. 99");
-    expect(result).toContain("42 Cal.3rd 99");
+    expect(result).toContain("42 Cal.3d 99");
   });
 
   it("extracts N.Y. citation", () => {
     const result = extractCitations("Per 100 N.Y. 200, the rule is settled.");
     expect(result).toContain("100 N.Y. 200");
+  });
+
+  it("extracts F.2d and F.4th citations", () => {
+    const f2d = extractCitations("Cited in 123 F.2d 456 as precedent.");
+    expect(f2d).toContain("123 F.2d 456");
+    const f4th = extractCitations("Cited in 123 F.4th 456 as precedent.");
+    expect(f4th).toContain("123 F.4th 456");
+  });
+
+  it("rejects invalid ordinal reporter series (Cal.9th, N.Y.42nd, Ill.9th)", () => {
+    expect(extractCitations("42 Cal.9th 99")).toEqual([]);
+    expect(extractCitations("100 N.Y.42nd 200")).toEqual([]);
+    expect(extractCitations("80 Ill.9th 10")).toEqual([]);
   });
 
   it("extracts Tex. citation", () => {
