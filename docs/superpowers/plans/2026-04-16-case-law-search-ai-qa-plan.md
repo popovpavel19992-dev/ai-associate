@@ -1024,7 +1024,9 @@ Commit: `feat: add research router with search, sessions, and bookmarks`
 
 ---
 
-## Chunk 4: AI Q&A pipeline (Claude RAG + UPL + UsageGuard)
+## Chunk 4: AI Q&A pipeline (Claude RAG + UPL + UsageGuard) — **COMPLETE 2026-04-16**
+
+Tasks 10-14 all shipped. Commits: `d7e4464` + `6870d86` (citation validator), `853d739` (UPL filter), `f2eee2c` (UsageGuard), `1f1e75b` + `c61b561` (LegalRagService), `25ea425` (askBroad/askDeep router). 55 tests green across the chunk.
 
 ### Task 10: Citation validator
 
