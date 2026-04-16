@@ -21,6 +21,13 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = "test";
 process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_test_fake";
 process.env.CLERK_SECRET_KEY = "sk_test_fake";
 process.env.CLERK_WEBHOOK_SECRET = "whsec_test";
+process.env.RESEND_API_KEY = "re_test";
+process.env.CALENDAR_ENCRYPTION_KEY = "0".repeat(64);
+process.env.GOOGLE_CLIENT_ID = "test-google-client-id";
+process.env.GOOGLE_CLIENT_SECRET = "test-google-client-secret";
+process.env.MICROSOFT_CLIENT_ID = "test-ms-client-id";
+process.env.MICROSOFT_CLIENT_SECRET = "test-ms-client-secret";
+process.env.PORTAL_JWT_SECRET = "a".repeat(32);
 
 // Mock external services by default
 vi.mock("@/server/services/s3", () => ({
