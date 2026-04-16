@@ -10,7 +10,7 @@ import type {
 const BASE_URL = "https://www.courtlistener.com";
 
 // Court slug → our jurisdiction/level mapping. Extend as CourtListener adds more.
-const COURT_MAP: Record<string, { jurisdiction: Jurisdiction; level: CourtLevel; reporterPrefix?: string }> = {
+const COURT_MAP: Record<string, { jurisdiction: Jurisdiction; level: CourtLevel }> = {
   scotus: { jurisdiction: "federal", level: "scotus" },
   ca1: { jurisdiction: "federal", level: "circuit" },
   ca2: { jurisdiction: "federal", level: "circuit" },
@@ -37,15 +37,14 @@ const COURT_MAP: Record<string, { jurisdiction: Jurisdiction; level: CourtLevel;
   illappct: { jurisdiction: "il", level: "state_appellate" },
 };
 
-// Courts that a jurisdiction filter should map to (for the `court=` query param).
-const JURISDICTION_COURTS: Record<Jurisdiction, string[]> = {
-  federal: ["scotus", "ca1", "ca2", "ca3", "ca4", "ca5", "ca6", "ca7", "ca8", "ca9", "ca10", "ca11", "cadc", "cafc"],
-  ca: ["cal", "calctapp"],
-  ny: ["ny", "nyappdiv"],
-  tx: ["tex", "texapp"],
-  fl: ["fla", "fladistctapp"],
-  il: ["ill", "illappct"],
-};
+// Derived from COURT_MAP to prevent drift between the two tables.
+const JURISDICTION_COURTS: Record<Jurisdiction, string[]> = Object.entries(COURT_MAP).reduce(
+  (acc, [slug, { jurisdiction }]) => {
+    (acc[jurisdiction] ??= []).push(slug);
+    return acc;
+  },
+  { federal: [], ca: [], ny: [], tx: [], fl: [], il: [] } as Record<Jurisdiction, string[]>,
+);
 
 export class CourtListenerRateLimitError extends Error {
   constructor() {
@@ -82,7 +81,14 @@ export class CourtListenerClient {
     const url = this.buildSearchUrl(params);
     const raw = await this.requestJson<any>(url);
     return {
-      hits: (raw.results ?? []).map((r: any) => this.normalizeHit(r)).filter(Boolean) as OpinionSearchHit[],
+      hits: (raw.results ?? []).flatMap((r: any) => {
+        const hit = this.normalizeHit(r);
+        if (!hit) {
+          console.warn(`[CourtListener] unmapped court slug "${r.court ?? ""}"; dropping hit ${r.id ?? "?"}`);
+          return [];
+        }
+        return [hit];
+      }) as OpinionSearchHit[],
       totalCount: raw.count ?? 0,
       page: params.page ?? 1,
       pageSize: params.pageSize ?? 20,

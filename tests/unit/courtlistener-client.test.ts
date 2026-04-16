@@ -98,4 +98,10 @@ describe("CourtListenerClient", () => {
     expect(op.fullText).toBe("Full opinion text here...");
     expect(op.judges).toEqual(["Smith", "Jones", "Doe"]);
   });
+
+  it("throws CourtListenerError after 3 failed 5xx attempts", async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 503, json: async () => ({}) });
+    await expect(client.search({ query: "x" })).rejects.toThrow(/503/);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
 });

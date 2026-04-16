@@ -3,9 +3,11 @@ export type CourtLevel = "scotus" | "circuit" | "district" | "state_supreme" | "
 
 export interface SearchFilters {
   jurisdictions?: Jurisdiction[];
+  /** Reserved for Task 9 router — not yet wired into the CourtListener request. */
   courtLevels?: CourtLevel[];
   fromYear?: number;
   toYear?: number;
+  /** Reserved for Task 9 router — not yet wired into the CourtListener request. */
   courtName?: string;
 }
 
