@@ -26,6 +26,11 @@ export const usersRouter = router({
         state: z.enum(US_STATES).optional(),
         jurisdiction: z.string().min(1).max(200).optional(),
         caseTypes: z.array(z.enum(CASE_TYPES)).min(1).optional(),
+        bio: z.string().max(2000).optional(),
+        barNumber: z.string().max(50).optional(),
+        barState: z.enum(US_STATES).optional(),
+        avatarUrl: z.url().optional(),
+        signatureImageUrl: z.url().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -35,6 +40,11 @@ export const usersRouter = router({
       if (input.state !== undefined) updates.state = input.state;
       if (input.jurisdiction !== undefined) updates.jurisdiction = input.jurisdiction;
       if (input.caseTypes !== undefined) updates.caseTypes = input.caseTypes;
+      if (input.bio !== undefined) updates.bio = input.bio;
+      if (input.barNumber !== undefined) updates.barNumber = input.barNumber;
+      if (input.barState !== undefined) updates.barState = input.barState;
+      if (input.avatarUrl !== undefined) updates.avatarUrl = input.avatarUrl;
+      if (input.signatureImageUrl !== undefined) updates.signatureImageUrl = input.signatureImageUrl;
 
       const [updated] = await ctx.db
         .update(users)
