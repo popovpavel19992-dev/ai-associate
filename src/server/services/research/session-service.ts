@@ -3,7 +3,6 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import { db as defaultDb } from "@/server/db";
 import { researchSessions, type ResearchSession } from "@/server/db/schema/research-sessions";
 import { researchQueries, type ResearchQuery } from "@/server/db/schema/research-queries";
-import { cases } from "@/server/db/schema/cases";
 
 export interface ResearchSessionServiceDeps {
   db?: typeof defaultDb;
@@ -21,9 +20,10 @@ const TITLE_MAX = 80;
 
 function buildTitle(firstQuery: string): string {
   const truncated = firstQuery.trim().slice(0, TITLE_MAX).trim();
+  const prefix = truncated.length > 0 ? truncated : "Research";
   const date = new Date();
   const shortDate = `${date.toLocaleString("en-US", { month: "short", timeZone: "UTC" })} ${date.getUTCDate()}`;
-  return `${truncated} \u2014 ${shortDate}`;
+  return `${prefix} \u2014 ${shortDate}`;
 }
 
 export class ResearchSessionService {
@@ -113,20 +113,17 @@ export class ResearchSessionService {
       .where(eq(researchSessions.id, opts.sessionId));
   }
 
+  /**
+   * Updates case linkage. Does NOT verify case access — the router layer
+   * is responsible (via assertCaseAccess) before calling this method.
+   * Trust model matches appendQuery().
+   */
   async linkToCase(opts: {
     sessionId: string;
     userId: string;
     caseId: string | null;
   }): Promise<ResearchSession> {
     await this.assertOwnership(opts.sessionId, opts.userId);
-    if (opts.caseId !== null) {
-      const [owned] = await this.db
-        .select({ id: cases.id })
-        .from(cases)
-        .where(and(eq(cases.id, opts.caseId), eq(cases.userId, opts.userId)))
-        .limit(1);
-      if (!owned) throw new TRPCError({ code: "FORBIDDEN", message: "Case not owned" });
-    }
     const [row] = await this.db
       .update(researchSessions)
       .set({ caseId: opts.caseId, updatedAt: new Date() })

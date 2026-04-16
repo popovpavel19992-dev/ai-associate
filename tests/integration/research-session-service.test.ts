@@ -159,6 +159,26 @@ describe("ResearchSessionService.createSession", () => {
 
     expect((insertCalls[0]!.values as Record<string, unknown>).jurisdictionFilter).toBeNull();
   });
+
+  it("falls back to 'Research' prefix when firstQuery is whitespace only", async () => {
+    const { db, insertCalls } = makeMockDb();
+    const svc = new ResearchSessionService({ db });
+
+    await svc.createSession({ userId: ID.user, firstQuery: "   " });
+
+    const title = (insertCalls[0]!.values as Record<string, unknown>).title as string;
+    expect(title).toMatch(/^Research — [A-Z][a-z]{2} \d{1,2}$/);
+  });
+
+  it("falls back to 'Research' prefix when firstQuery is empty string", async () => {
+    const { db, insertCalls } = makeMockDb();
+    const svc = new ResearchSessionService({ db });
+
+    await svc.createSession({ userId: ID.user, firstQuery: "" });
+
+    const title = (insertCalls[0]!.values as Record<string, unknown>).title as string;
+    expect(title).toMatch(/^Research — [A-Z][a-z]{2} \d{1,2}$/);
+  });
 });
 
 describe("ResearchSessionService.appendQuery", () => {
@@ -278,18 +298,6 @@ describe("ResearchSessionService.softDelete", () => {
 });
 
 describe("ResearchSessionService.linkToCase", () => {
-  it("throws FORBIDDEN when caseId is not owned by user", async () => {
-    const { db, enqueueSelect } = makeMockDb();
-    const svc = new ResearchSessionService({ db });
-
-    enqueueSelect([{ userId: ID.user }]); // session ownership ok
-    enqueueSelect([]); // case lookup empty → not owned
-
-    await expect(
-      svc.linkToCase({ sessionId: ID.session, userId: ID.user, caseId: ID.case }),
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-  });
-
   it("clears linkage when caseId is null without checking cases table", async () => {
     const { db, enqueueSelect, updateCalls, getSelectCount } = makeMockDb();
     const svc = new ResearchSessionService({ db });
@@ -306,17 +314,19 @@ describe("ResearchSessionService.linkToCase", () => {
     expect(setVals.updatedAt).toBeInstanceOf(Date);
   });
 
-  it("updates caseId when ownership checks pass", async () => {
-    const { db, enqueueSelect, updateCalls } = makeMockDb();
+  it("updates caseId with a single select (session ownership only) when session is owned", async () => {
+    const { db, enqueueSelect, updateCalls, getSelectCount } = makeMockDb();
     const svc = new ResearchSessionService({ db });
 
     enqueueSelect([{ userId: ID.user }]);
-    enqueueSelect([{ id: ID.case }]);
 
+    const before = getSelectCount();
     await svc.linkToCase({ sessionId: ID.session, userId: ID.user, caseId: ID.case });
+    expect(getSelectCount() - before).toBe(1);
 
     expect(updateCalls).toHaveLength(1);
     const setVals = updateCalls[0]!.set as Record<string, unknown>;
     expect(setVals.caseId).toBe(ID.case);
+    expect(setVals.updatedAt).toBeInstanceOf(Date);
   });
 });
