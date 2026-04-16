@@ -166,6 +166,8 @@ export default function CaseDetailPage({
             documentsCount={caseData.documents.length}
             contractsCount={linkedContracts?.length ?? 0}
             stageTaskTemplates={stageTaskTemplatesList}
+            opposingParty={caseData.opposingParty}
+            opposingCounsel={caseData.opposingCounsel}
           />
         )}
 
