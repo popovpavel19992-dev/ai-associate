@@ -324,13 +324,15 @@ git commit -m "chore: generate migration for research tables"
 - Modify: `src/env.ts` (or wherever env schema lives — check existing pattern)
 - Modify: `.env.example`
 
-- [ ] **Step 1: Inspect env pattern**
+- [x] **Step 1: Inspect env pattern**
 
 Run: `grep -r "STRIPE_SECRET_KEY\|ANTHROPIC_API_KEY" src/env.ts src/config/ 2>/dev/null | head -5`
 
 Identify the env schema file (likely `src/env.ts` or `src/env.mjs` using `@t3-oss/env-nextjs`).
 
-- [ ] **Step 2: Add COURTLISTENER_API_TOKEN to server-side env schema**
+**Deviation:** Env lives at `src/lib/env.ts` using plain `z.object()` from `zod/v4` (not t3-oss).
+
+- [x] **Step 2: Add COURTLISTENER_API_TOKEN to server-side env schema**
 
 Add to `server: { ... }` block:
 
@@ -338,25 +340,29 @@ Add to `server: { ... }` block:
 COURTLISTENER_API_TOKEN: z.string().min(1),
 ```
 
-- [ ] **Step 3: Add to `.env.example`**
+- [x] **Step 3: Add to `.env.example`**
 
 ```
 COURTLISTENER_API_TOKEN=your_courtlistener_api_token_here
 ```
 
+**Deviation:** template file is `.env.local.example` (not `.env.example`). Also stubbed in `tests/setup.ts`.
+
 (User must register at https://www.courtlistener.com/help/api/rest/#authentication for a free token.)
 
-- [ ] **Step 4: Run tsc**
+- [x] **Step 4: Run tsc**
 
 Run: `npx tsc --noEmit`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/env.ts .env.example
 git commit -m "feat: add COURTLISTENER_API_TOKEN env var"
 ```
+
+Commit: `f3eb131 feat: add COURTLISTENER_API_TOKEN env var`
 
 ---
 
