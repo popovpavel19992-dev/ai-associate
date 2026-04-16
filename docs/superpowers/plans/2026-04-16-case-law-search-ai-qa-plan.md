@@ -373,7 +373,7 @@ Commit: `f3eb131 feat: add COURTLISTENER_API_TOKEN env var`
 - Create: `src/server/services/courtlistener/client.ts`
 - Create: `tests/unit/courtlistener-client.test.ts`
 
-- [ ] **Step 1: Create `src/server/services/courtlistener/types.ts`**
+- [x] **Step 1: Create `src/server/services/courtlistener/types.ts`**
 
 ```ts
 export type Jurisdiction = "federal" | "ca" | "ny" | "tx" | "fl" | "il";
@@ -427,7 +427,7 @@ export interface OpinionDetail {
 }
 ```
 
-- [ ] **Step 2: Write failing test `tests/unit/courtlistener-client.test.ts`**
+- [x] **Step 2: Write failing test `tests/unit/courtlistener-client.test.ts`**
 
 ```ts
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -530,12 +530,12 @@ describe("CourtListenerClient", () => {
 });
 ```
 
-- [ ] **Step 3: Run test, expect fail**
+- [x] **Step 3: Run test, expect fail**
 
 Run: `npx vitest run tests/unit/courtlistener-client.test.ts`
 Expected: FAIL (module not found).
 
-- [ ] **Step 4: Implement `src/server/services/courtlistener/client.ts`**
+- [x] **Step 4: Implement `src/server/services/courtlistener/client.ts`**
 
 ```ts
 import type {
@@ -696,17 +696,22 @@ export class CourtListenerClient {
 }
 ```
 
-- [ ] **Step 5: Run test, expect pass**
+- [x] **Step 5: Run test, expect pass**
 
 Run: `npx vitest run tests/unit/courtlistener-client.test.ts`
-Expected: PASS (5/5).
+Expected: PASS (6/6 after refactor).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/server/services/courtlistener/ tests/unit/courtlistener-client.test.ts
 git commit -m "feat: add CourtListener client with normalization and retry"
 ```
+
+Commits:
+- `b0a2b23 feat: add CourtListener client with normalization and retry`
+- `8673a70 fix: expand jurisdiction filter to all mapped courts`
+- `87917fc refactor: derive jurisdiction courts, warn on unmapped, document reserved filters`
 
 ---
 
