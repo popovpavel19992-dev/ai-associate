@@ -285,12 +285,12 @@ git commit -m "feat: add cached opinions, bookmarks, and usage schemas"
 **Files:**
 - Create: `drizzle/XXXX_research_tables.sql` (auto-generated)
 
-- [ ] **Step 1: Generate migration**
+- [x] **Step 1: Generate migration**
 
 Run: `npx drizzle-kit generate`
 Expected: creates new migration file in `drizzle/` directory.
 
-- [ ] **Step 2: Inspect migration SQL**
+- [x] **Step 2: Inspect migration SQL**
 
 Read the newly generated migration file. Verify:
 - All 6 tables created
@@ -303,7 +303,7 @@ Read the newly generated migration file. Verify:
 Run: `npx drizzle-kit push`
 Expected: migration applied to Supabase Postgres.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add drizzle/
