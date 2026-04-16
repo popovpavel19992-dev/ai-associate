@@ -264,19 +264,30 @@ export class LegalRagService {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 
-    for await (const event of stream as AsyncIterable<unknown>) {
-      const e = event as { type?: string; delta?: { type?: string; text?: string } };
-      if (e.type === "content_block_delta" && e.delta?.type === "text_delta" && typeof e.delta.text === "string") {
-        yield { type: "token", content: e.delta.text };
+    try {
+      for await (const event of stream as AsyncIterable<unknown>) {
+        const e = event as { type?: string; delta?: { type?: string; text?: string } };
+        if (e.type === "content_block_delta" && e.delta?.type === "text_delta" && typeof e.delta.text === "string") {
+          yield { type: "token", content: e.delta.text };
+        }
+      }
+
+      const final = await (stream as unknown as {
+        finalMessage(): Promise<{
+          content: Array<{ type: string; text?: string }>;
+          usage: { input_tokens: number; output_tokens: number };
+        }>;
+      }).finalMessage();
+      return { text: finalText(final), usage: final.usage };
+    } finally {
+      // abort is a no-op if already complete; safe to call unconditionally.
+      // Guards against leaked HTTP connections when the generator rejects or
+      // the caller stops consuming before the stream naturally ends.
+      try {
+        (stream as { abort?: () => void }).abort?.();
+      } catch {
+        /* intentionally ignored — abort on an already-closed stream is harmless */
       }
     }
-
-    const final = await (stream as unknown as {
-      finalMessage(): Promise<{
-        content: Array<{ type: string; text?: string }>;
-        usage: { input_tokens: number; output_tokens: number };
-      }>;
-    }).finalMessage();
-    return { text: finalText(final), usage: final.usage };
   }
 }

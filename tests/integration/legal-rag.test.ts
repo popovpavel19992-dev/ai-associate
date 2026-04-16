@@ -178,6 +178,29 @@ function makeErrorStream(err: Error) {
   });
 }
 
+function makeStreamWithAbort(
+  chunks: string[],
+  finalText: string,
+  opts: { shouldReject?: boolean; abortRef: { called: boolean } },
+) {
+  async function* gen(): AsyncGenerator<FakeStreamEvent> {
+    for (const c of chunks) {
+      yield { type: "content_block_delta", delta: { type: "text_delta", text: c } };
+    }
+    if (opts.shouldReject) throw new Error("boom");
+  }
+  const iter = gen();
+  return Object.assign(iter, {
+    finalMessage: async () => ({
+      content: [{ type: "text", text: finalText }],
+      usage: { input_tokens: 10, output_tokens: 5 },
+    }),
+    abort: () => {
+      opts.abortRef.called = true;
+    },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Mock OpinionCacheService — minimal surface for the tests we need
 // ---------------------------------------------------------------------------
@@ -417,6 +440,52 @@ describe("LegalRagService.askBroad", () => {
     expect(last.error).toMatch(/network/);
     expect(insertCalls).toHaveLength(1);
     expect((insertCalls[0]!.values as Record<string, unknown>).role).toBe("user");
+  });
+
+  it("calls stream.abort() on the error path to release the HTTP connection", async () => {
+    const { db, enqueueSelect } = makeMockDb();
+    const op = mockOpinion();
+    const cache = makeMockCache([op]);
+
+    enqueueSelect([]);
+    enqueueSelect([op]);
+
+    const abortRef = { called: false };
+    streamMock.mockReturnValueOnce(
+      makeStreamWithAbort(["a", "b"], "ab", { shouldReject: true, abortRef }),
+    );
+
+    const svc = new LegalRagService({ db, opinionCache: cache });
+    const chunks = await collect(
+      svc.askBroad({ sessionId: ID.session, userId: ID.user, question: "Q?" }),
+    );
+
+    const last = chunks[chunks.length - 1];
+    expect(last.type).toBe("error");
+    expect(abortRef.called).toBe(true);
+  });
+
+  it("calls stream.abort() on the happy path after natural completion", async () => {
+    const { db, enqueueSelect } = makeMockDb();
+    const op = mockOpinion();
+    const cache = makeMockCache([op]);
+
+    enqueueSelect([]);
+    enqueueSelect([op]);
+
+    const abortRef = { called: false };
+    streamMock.mockReturnValueOnce(
+      makeStreamWithAbort(["ok"], "The court in 123 F.3d 456 held the clause enforceable.", {
+        abortRef,
+      }),
+    );
+
+    const svc = new LegalRagService({ db, opinionCache: cache });
+    await collect(
+      svc.askBroad({ sessionId: ID.session, userId: ID.user, question: "Q?" }),
+    );
+
+    expect(abortRef.called).toBe(true);
   });
 });
 
