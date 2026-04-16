@@ -144,7 +144,7 @@ git commit -m "feat: add research sessions/queries/chat schemas"
 - Create: `src/server/db/schema/opinion-bookmarks.ts`
 - Create: `src/server/db/schema/research-usage.ts`
 
-- [ ] **Step 1: Create `src/server/db/schema/cached-opinions.ts`**
+- [x] **Step 1: Create `src/server/db/schema/cached-opinions.ts`**
 
 ```ts
 import { pgTable, uuid, text, bigint, jsonb, timestamp, date, pgEnum, index, uniqueIndex } from "drizzle-orm/pg-core";
@@ -191,7 +191,7 @@ export type CachedOpinion = typeof cachedOpinions.$inferSelect;
 export type NewCachedOpinion = typeof cachedOpinions.$inferInsert;
 ```
 
-- [ ] **Step 2: Create `src/server/db/schema/opinion-bookmarks.ts`**
+- [x] **Step 2: Create `src/server/db/schema/opinion-bookmarks.ts`**
 
 ```ts
 import { pgTable, uuid, text, timestamp, uniqueIndex, index } from "drizzle-orm/pg-core";
@@ -220,7 +220,7 @@ export type OpinionBookmark = typeof opinionBookmarks.$inferSelect;
 export type NewOpinionBookmark = typeof opinionBookmarks.$inferInsert;
 ```
 
-- [ ] **Step 3: Create `src/server/db/schema/research-usage.ts`**
+- [x] **Step 3: Create `src/server/db/schema/research-usage.ts`**
 
 ```ts
 import { pgTable, uuid, char, integer, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
@@ -245,7 +245,7 @@ export type ResearchUsage = typeof researchUsage.$inferSelect;
 export type NewResearchUsage = typeof researchUsage.$inferInsert;
 ```
 
-- [ ] **Step 4: Export new schemas from barrel**
+- [x] **Step 4: Export new schemas from barrel**
 
 Modify `src/server/db/schema/index.ts` (or wherever the project re-exports schemas). Check the existing pattern first with:
 
@@ -266,12 +266,12 @@ export * from "./research-usage";
 
 (If the project imports schemas directly without a barrel, skip this step.)
 
-- [ ] **Step 5: Run tsc to verify**
+- [x] **Step 5: Run tsc to verify**
 
 Run: `npx tsc --noEmit`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/server/db/schema/cached-opinions.ts src/server/db/schema/opinion-bookmarks.ts src/server/db/schema/research-usage.ts src/server/db/schema/index.ts
