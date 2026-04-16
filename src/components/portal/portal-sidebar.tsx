@@ -29,6 +29,7 @@ export function PortalSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: unreadCount = 0 } = trpc.portalNotifications.getUnreadCount.useQuery();
+  const { data: lawyer } = trpc.portalLawyer.getProfile.useQuery();
 
   const handleLogout = async () => {
     await fetch("/api/portal/set-token", { method: "DELETE" });
@@ -38,10 +39,17 @@ export function PortalSidebar() {
   return (
     <aside className="flex h-full w-64 flex-col border-r bg-background">
       <div className="px-4 py-6">
-        <Link href="/portal" className="text-xl font-bold tracking-tight">
-          ClearTerms
-        </Link>
-        <p className="text-xs text-muted-foreground mt-1">Client Portal</p>
+        <div className="flex items-center gap-3">
+          {lawyer?.avatarUrl ? (
+            <img src={lawyer.avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
+          ) : null}
+          <div>
+            <Link href="/portal" className="text-xl font-bold tracking-tight">
+              ClearTerms
+            </Link>
+            <p className="text-xs text-muted-foreground mt-0.5">Client Portal</p>
+          </div>
+        </div>
       </div>
 
       <Separator />
