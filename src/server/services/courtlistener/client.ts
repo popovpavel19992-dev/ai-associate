@@ -111,12 +111,8 @@ export class CourtListenerClient {
     sp.set("page_size", String(params.pageSize ?? 20));
 
     if (params.filters?.jurisdictions?.length) {
-      // Use the primary court slug per jurisdiction (first entry in JURISDICTION_COURTS).
-      // Callers who need finer-grained court targeting should use filters.courtLevels
-      // in a later iteration. Keeping this narrow keeps URLs short and predictable.
       const courts = params.filters.jurisdictions
-        .map((j) => JURISDICTION_COURTS[j]?.[0])
-        .filter((c): c is string => Boolean(c))
+        .flatMap((j) => JURISDICTION_COURTS[j] ?? [])
         .join(",");
       if (courts) sp.set("court", courts);
     }

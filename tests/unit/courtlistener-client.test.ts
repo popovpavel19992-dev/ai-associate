@@ -30,7 +30,7 @@ describe("CourtListenerClient", () => {
     expect(url).toContain("/api/rest/v4/search/");
     expect(url).toContain("type=o");
     expect(url).toContain("q=arbitration+clause");
-    expect(url).toContain("court=cal%2Cny");
+    expect(url).toContain("court=cal%2Ccalctapp%2Cny%2Cnyappdiv");
     expect(init.headers.Authorization).toBe("Token test-token");
   });
 
