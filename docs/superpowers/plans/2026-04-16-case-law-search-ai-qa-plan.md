@@ -721,7 +721,7 @@ Commits:
 - Create: `src/server/services/research/opinion-cache.ts`
 - Create: `tests/integration/opinion-cache.test.ts`
 
-- [ ] **Step 1: Write failing integration test**
+- [x] **Step 1: Write failing integration test** _(rewritten with mock-DB pattern per project convention; `db.select()` instead of `db.query.*`)_
 
 ```ts
 import { describe, it, expect, beforeEach, vi } from "vitest";
@@ -793,12 +793,12 @@ describe("OpinionCacheService", () => {
 });
 ```
 
-- [ ] **Step 2: Run test, expect fail**
+- [x] **Step 2: Run test, expect fail**
 
 Run: `npx vitest run tests/integration/opinion-cache.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement `src/server/services/research/opinion-cache.ts`**
+- [x] **Step 3: Implement `src/server/services/research/opinion-cache.ts`** _(uses `db.select().from()` instead of `db.query.*`; imports `cachedOpinions` from `@/server/db/schema/cached-opinions` directly — no barrel exists.)_
 
 ```ts
 import { db as defaultDb } from "@/server/db";
@@ -902,12 +902,12 @@ export class OpinionCacheService {
 }
 ```
 
-- [ ] **Step 4: Run test, expect pass**
+- [x] **Step 4: Run test, expect pass** _(6/6 passing — expanded from the spec's 2 cases to cover cache-hit, miss, fullText-null, and `getByInternalIds` empty/non-empty paths.)_
 
 Run: `npx vitest run tests/integration/opinion-cache.test.ts`
-Expected: PASS (2/2).
+Expected: PASS (6/6).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** _(commit `a4d7da2`)_
 
 ```bash
 git add src/server/services/research/opinion-cache.ts tests/integration/opinion-cache.test.ts
