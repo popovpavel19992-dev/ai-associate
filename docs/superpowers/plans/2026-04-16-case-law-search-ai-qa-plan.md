@@ -930,7 +930,7 @@ Scope: `ResearchSessionService`, `BookmarkService`, `researchRouter` with search
 - Create: `src/server/services/research/session-service.ts`
 - Create: `tests/integration/research-session-service.test.ts`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Test coverage:
 - `createSession(userId, firstQuery, filters?, caseId?)` → row inserted, title auto-generated from query (truncated to 80 chars, suffixed with ISO date: `"arbitration clause enforceability — Apr 16"`)
@@ -938,9 +938,9 @@ Test coverage:
 - `listSessions(userId, caseId?)` → filters by soft-delete=null, orders by `updated_at desc`
 - `rename(sessionId, userId, title)` → 403 if different user
 - `softDelete(sessionId, userId)` → sets `deleted_at`
-- `linkToCase(sessionId, userId, caseId | null)` → validates case ownership via `cases` join
+- `linkToCase(sessionId, userId, caseId | null)` → ~~validates case ownership via `cases` join~~ _(Case access check moved to router layer via `assertCaseAccess` — service trusts router, matching `appendQuery`. Empty firstQuery falls back to `"Research"` prefix.)_
 
-- [ ] **Step 2: Run tests, expect fail** · **Step 3: Implement service** following the spec §6 Services table · **Step 4: Run tests, expect pass** · **Step 5: Commit**
+- [x] **Step 2: Run tests, expect fail** · **Step 3: Implement service** following the spec §6 Services table · **Step 4: Run tests, expect pass (16/16)** · **Step 5: Commit** _(commits `cd49cb2` + `9635601` post-review fix)_
 
 ```bash
 git commit -m "feat: add ResearchSessionService"
@@ -954,15 +954,14 @@ git commit -m "feat: add ResearchSessionService"
 - Create: `src/server/services/research/bookmark-service.ts`
 - Create: `tests/integration/bookmark-service.test.ts`
 
-Test + implement:
-- `create(userId, opinionId, notes?, caseId?)` — unique `(user_id, opinion_id)` constraint → on conflict update `notes`/`case_id` instead of insert
-- `update(bookmarkId, userId, { notes?, caseId? })` — 403 if not owner; null `caseId` explicitly clears link
-- `delete(bookmarkId, userId)` — hard delete
-- `listByUser(userId, { caseId? })` — joins `cached_opinions`; if `caseId` provided, filter
+Test + implement: **COMPLETE** (commit `53494f1`, 18/18 tests).
+- [x] `create(userId, opinionId, notes?, caseId?)` — unique `(user_id, opinion_id)` constraint → on conflict update `notes`/`case_id` instead of insert
+- [x] `update(bookmarkId, userId, { notes?, caseId? })` — 403 if not owner; null `caseId` explicitly clears link
+- [x] `delete(bookmarkId, userId)` — hard delete
+- [x] `listByUser(userId, { caseId? })` — ~~joins `cached_opinions`~~ _(returns raw bookmark rows; join deferred to Chunk 5 UI layer)_; if `caseId` provided, filter
+- [x] Activity log + notification hook: `onCaseLink` callback exposed on constructor; actual wiring deferred to Chunk 7.
 
-Emit activity log + notification when `caseId` set (deferred wiring to Chunk 7, but service exposes a hook).
-
-Commit: `feat: add BookmarkService with case linkage`
+Commit: `feat: add BookmarkService with upsert and case-link hook`
 
 ---
 
@@ -999,9 +998,16 @@ research.bookmarks.update({ bookmarkId, notes?, caseId? })
 research.bookmarks.delete({ bookmarkId })
 ```
 
-Each procedure: Zod input validation → service call → return typed result.
+Each procedure: Zod input validation → service call → return typed result. **COMPLETE** (commits `e21bc4f` + post-review `f935d99`, 22/22 tests).
 
 Integration test coverage: happy path for each procedure, auth (different user 403), input validation.
+
+- [x] Router uses nested `sessions` / `bookmarks` sub-routers. `assertCaseAccess` called in router before service mutations involving a `caseId`.
+- [x] `search` reordered post-review: CourtListener call happens BEFORE session creation so failures don't orphan sessions; query input uses `z.string().trim().min(2).max(1000)`.
+- [x] `getOpinion` carries a `// TODO(2.2.1 Chunk 7): dispatch Inngest "research.enrichOpinion" event (non-blocking)` marker.
+- [x] `sessions.get` returns `{ session, queries }`; chatMessages deferred to Chunk 4.
+- [x] `CourtListenerClient` instantiated per-request with `getEnv().COURTLISTENER_API_TOKEN`.
+- [x] `tests/setup.ts` extended with `RESEND_API_KEY`, `CALENDAR_ENCRYPTION_KEY`, `GOOGLE_*`, `MICROSOFT_*`, `PORTAL_JWT_SECRET` stubs (required by `getEnv()` during router module import).
 
 Register in `root.ts`:
 ```ts
