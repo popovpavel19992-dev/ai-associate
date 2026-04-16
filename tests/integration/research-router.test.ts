@@ -289,6 +289,40 @@ describe("research.search", () => {
     // No createSession insert — just upsertSearchHit + appendQuery => 2.
     expect(insertCalls.length).toBe(2);
   });
+
+  it("does NOT create a session when CourtListener fails and sessionId was omitted", async () => {
+    const { db, insertCalls } = makeMockDb();
+    const ctx: Ctx = { db, user: { id: ID.user, orgId: ID.org, role: "owner" } };
+
+    // CourtListener rejects. With fail-fast ordering, no session should be created.
+    const searchFn = vi.fn().mockRejectedValue(new Error("clnet"));
+    const getOpinionFn = vi.fn();
+    MockCL.mockImplementation(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      function (this: any) {
+        this.search = searchFn;
+        this.getOpinion = getOpinionFn;
+      } as any,
+    );
+
+    const preCallInsertCount = insertCalls.length;
+
+    await expect(caller(ctx).search({ query: "arbitration" })).rejects.toThrow("clnet");
+
+    // No DB writes should have occurred: no createSession, no upsertSearchHit, no appendQuery.
+    expect(insertCalls.length).toBe(preCallInsertCount);
+  });
+
+  it("rejects whitespace-only query via Zod trim + min(2)", async () => {
+    const { db } = makeMockDb();
+    const ctx: Ctx = { db, user: { id: ID.user, orgId: ID.org, role: "owner" } };
+    setupCLSearch([]);
+
+    // "  " trims to "" which has length 0 < 2, so Zod rejects with BAD_REQUEST.
+    await expect(caller(ctx).search({ query: "  " })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------

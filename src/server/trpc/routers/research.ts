@@ -189,7 +189,7 @@ export const researchRouter = router({
   search: protectedProcedure
     .input(
       z.object({
-        query: z.string().min(2).max(1000),
+        query: z.string().trim().min(2).max(1000),
         filters: FiltersSchema.optional(),
         page: z.number().int().min(1).max(50).default(1),
         sessionId: z.string().uuid().optional(),
@@ -200,11 +200,25 @@ export const researchRouter = router({
       const cache = new OpinionCacheService({ db: ctx.db, courtListener: cl });
       const sessions = new ResearchSessionService({ db: ctx.db });
 
-      // Resolve sessionId: verify ownership of existing or create a new one.
+      // Verify ownership of an existing session up-front (if provided).
+      // Session creation is deferred until after the CourtListener call
+      // so that network/rate-limit failures don't leave orphan sessions.
       let sessionId = input.sessionId;
       if (sessionId) {
         await assertSessionOwnership(ctx.db, sessionId, ctx.user.id);
-      } else {
+      }
+
+      // Delegate to CourtListener. Errors bubble to the client BEFORE
+      // any session write happens (fail-fast, no orphan side-effects).
+      const response = await cl.search({
+        query: input.query,
+        filters: input.filters,
+        page: input.page,
+      });
+
+      // Only now — after a successful CourtListener response — create a
+      // new session if the caller didn't provide one.
+      if (!sessionId) {
         const created = await sessions.createSession({
           userId: ctx.user.id,
           firstQuery: input.query,
@@ -212,13 +226,6 @@ export const researchRouter = router({
         });
         sessionId = created.id;
       }
-
-      // Delegate to CourtListener. Errors bubble to the client.
-      const response = await cl.search({
-        query: input.query,
-        filters: input.filters,
-        page: input.page,
-      });
 
       // Cache each hit so internal UUIDs can be referenced later.
       const enrichedHits: Array<typeof response.hits[number] & { internalId: string }> = [];
