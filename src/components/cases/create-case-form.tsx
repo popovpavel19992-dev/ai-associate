@@ -32,6 +32,8 @@ export function CreateCaseForm() {
     useState<string[]>(DEFAULT_SECTIONS);
   const [caseId, setCaseId] = useState<string | null>(null);
   const [step, setStep] = useState<"details" | "upload">("details");
+  const [opposingParty, setOpposingParty] = useState("");
+  const [opposingCounsel, setOpposingCounsel] = useState("");
 
   const searchParams = useSearchParams();
   const preselectedId = searchParams.get("clientId");
@@ -93,6 +95,8 @@ export function CreateCaseForm() {
       name: name.trim(),
       caseType: caseType === "auto" ? undefined : (caseType as (typeof CASE_TYPES)[number]),
       selectedSections,
+      opposingParty: opposingParty.trim() || undefined,
+      opposingCounsel: opposingCounsel.trim() || undefined,
     });
   };
 
@@ -133,6 +137,29 @@ export function CreateCaseForm() {
             <p className="text-xs text-muted-foreground">
               Auto-detect analyzes uploaded documents to determine the case type.
             </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="opposing-party">Opposing Party</Label>
+              <Input
+                id="opposing-party"
+                placeholder="Name of opposing party"
+                value={opposingParty}
+                onChange={(e) => setOpposingParty(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="opposing-counsel">Opposing Counsel</Label>
+              <Input
+                id="opposing-counsel"
+                placeholder="Name of opposing counsel"
+                value={opposingCounsel}
+                onChange={(e) => setOpposingCounsel(e.target.value)}
+                maxLength={200}
+              />
+            </div>
           </div>
 
           <div className="space-y-3">
