@@ -1418,7 +1418,11 @@ Commit: `feat: add Research tab to case detail page`
 
 ---
 
-## Chunk 7: Integration — billing UI, notifications, activity log, Inngest, E2E — **PARTIAL (Tasks 24–26, 28 shipped; 27 + 29 deferred)**
+## Chunk 7: Integration — billing UI, notifications, activity log, Inngest, E2E — **COMPLETE (28/29); Task 29 manual UAT runs on PR**
+
+Tasks 24, 25, 26, 27, 28 shipped. PR #6 opened: https://github.com/popovpavel19992-dev/ai-associate/pull/6 — Task 29 manual UAT (spec §15 13-criteria checklist + UPL audit) runs on the PR before merge.
+
+Commits added this session: `5f69f51` (E2E smoke tests, 7 tests), branch pushed, PR #6 opened.
 
 Tasks 24, 25, 26, 28 shipped. Commits: `6fa34ec` (usage indicator + upsell modal), `2877ee4` (notification wiring + research category), `4d262f5` (Inngest enrichOpinion job), `dd8464a` (UPL audit docs).
 
