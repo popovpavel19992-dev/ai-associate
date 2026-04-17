@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc";
+import { ChatPanel } from "./chat-panel";
 import { OpinionHeader } from "./opinion-header";
 
 interface OpinionViewerProps {
@@ -140,6 +142,9 @@ function NotFound() {
 }
 
 export function OpinionViewer({ opinionInternalId }: OpinionViewerProps) {
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get("sessionId");
+
   const { data, isLoading, isError } = trpc.research.getOpinion.useQuery(
     { opinionInternalId },
     { enabled: !!opinionInternalId },
@@ -164,36 +169,51 @@ export function OpinionViewer({ opinionInternalId }: OpinionViewerProps) {
   const fullText = data.fullText ?? "";
 
   return (
-    <div className="flex h-full flex-col">
-      <OpinionHeader
-        opinion={{
-          id: data.id,
-          caseName: data.caseName,
-          citationBluebook: data.citationBluebook,
-          court: data.court,
-          decisionDate:
-            typeof data.decisionDate === "string"
-              ? data.decisionDate
-              : new Date(data.decisionDate as unknown as string).toISOString(),
-          jurisdiction: data.jurisdiction,
-          courtLevel: data.courtLevel,
-          metadata: data.metadata as OpinionHeaderMetadata,
-        }}
-      />
-      <Separator />
-      <div className="flex-1 overflow-y-auto p-6">
-        {fullText.trim().length > 0 ? (
-          <OpinionBody fullText={fullText} />
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Full text not yet loaded. Try reloading in a moment.
-          </p>
-        )}
-        <div className="mt-8 rounded-md border border-dashed border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400">
-          This opinion is provided for research purposes. ClearTerms Research
-          offers case-law analysis, not legal advice.
+    <div className="flex h-full">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <OpinionHeader
+          opinion={{
+            id: data.id,
+            caseName: data.caseName,
+            citationBluebook: data.citationBluebook,
+            court: data.court,
+            decisionDate:
+              typeof data.decisionDate === "string"
+                ? data.decisionDate
+                : new Date(data.decisionDate as unknown as string).toISOString(),
+            jurisdiction: data.jurisdiction,
+            courtLevel: data.courtLevel,
+            metadata: data.metadata as OpinionHeaderMetadata,
+          }}
+        />
+        <Separator />
+        <div className="flex-1 overflow-y-auto p-6">
+          {fullText.trim().length > 0 ? (
+            <OpinionBody fullText={fullText} />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Full text not yet loaded. Try reloading in a moment.
+            </p>
+          )}
+          <div className="mt-8 rounded-md border border-dashed border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400">
+            This opinion is provided for research purposes. ClearTerms Research
+            offers case-law analysis, not legal advice.
+          </div>
         </div>
       </div>
+      <aside className="hidden w-96 shrink-0 border-l border-zinc-200 dark:border-zinc-800 lg:flex lg:flex-col">
+        {sessionId ? (
+          <ChatPanel
+            sessionId={sessionId}
+            mode="deep"
+            opinionInternalId={opinionInternalId}
+          />
+        ) : (
+          <div className="p-4 text-sm text-muted-foreground">
+            Open this opinion from a search session to use Deep mode chat.
+          </div>
+        )}
+      </aside>
     </div>
   );
 }
