@@ -6,6 +6,13 @@ import { researchQueries, type ResearchQuery } from "@/server/db/schema/research
 
 export interface ResearchSessionServiceDeps {
   db?: typeof defaultDb;
+  // Fires after a session is linked to a non-null caseId via linkToCase().
+  onCaseLink?: (ctx: {
+    sessionId: string;
+    caseId: string;
+    userId: string;
+    sessionTitle?: string;
+  }) => void | Promise<void>;
 }
 
 export interface Filters {
@@ -28,9 +35,11 @@ function buildTitle(firstQuery: string): string {
 
 export class ResearchSessionService {
   private readonly db: typeof defaultDb;
+  private readonly onCaseLink?: ResearchSessionServiceDeps["onCaseLink"];
 
   constructor(deps?: ResearchSessionServiceDeps) {
     this.db = deps?.db ?? defaultDb;
+    this.onCaseLink = deps?.onCaseLink;
   }
 
   async createSession(opts: {
@@ -129,6 +138,15 @@ export class ResearchSessionService {
       .set({ caseId: opts.caseId, updatedAt: new Date() })
       .where(eq(researchSessions.id, opts.sessionId))
       .returning();
-    return row as ResearchSession;
+    const session = row as ResearchSession;
+    if (opts.caseId !== null && this.onCaseLink) {
+      await this.onCaseLink({
+        sessionId: opts.sessionId,
+        caseId: opts.caseId,
+        userId: opts.userId,
+        sessionTitle: session.title ?? undefined,
+      });
+    }
+    return session;
   }
 }
