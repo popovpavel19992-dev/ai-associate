@@ -91,11 +91,11 @@ pgTable("cached_statutes", {
 
 ### Migration to `research_chat_messages`
 
-Add nullable `jsonb` column `statute_context_ids string[]` with default `[]`. `opinion_context_ids` unchanged (backwards compat).
+Add non-null `jsonb` column `statute_context_ids` typed as `string[]` in Drizzle (`.$type<string[]>()`) with default `[]` — mirrors the exact shape of existing `opinion_context_ids`. Backwards compat preserved.
 
 ### Env vars
 
-- `CONGRESS_GOV_API_KEY` — required; instant free signup at api.congress.gov. 5000 req/hour.
+- `CONGRESS_GOV_API_KEY` — required; instant free signup at api.congress.gov. 5000 req/hour. Auth via `?api_key=` query param (project convention; `X-Api-Key` header also supported but query param is simpler for the `fetch` wrapper).
 - eCFR needs no key.
 
 ## 6. API clients
@@ -110,7 +110,7 @@ class CongressGovClient {
 }
 ```
 
-Retry: 3x exponential backoff on 5xx/429 (reuse CourtListener client pattern). Normalize to `UscSectionResult` shape matching `cached_statutes` row-insert.
+Retry: 3x exponential backoff on 5xx/429 (reuse CourtListener client pattern). On retry exhaustion, throw `CongressGovError` (named class); callers decide fallback. `StatuteCacheService.getOrFetch` catches the error and returns the metadata row with `enrichmentStatus: "failed"` so the RAG context can skip the section gracefully. Normalize successful responses to `UscSectionResult` matching `cached_statutes` row-insert.
 
 ### `EcfrClient` — `src/server/services/ecfr/client.ts`
 
@@ -122,7 +122,12 @@ class EcfrClient {
 }
 ```
 
-Uses eCFR's `/search/v1/results?query=...` for full-text search (good quality) and `/v1/full/{date}/title-{n}.json` for section lookups.
+eCFR API base: `https://www.ecfr.gov/api`. Endpoint paths below are **provisional and must be WebFetch-verified against the current eCFR API docs in the implementation plan's Task 4** before coding — the eCFR API has moved under `/search/v1/` and `/versioner/v1/` namespaces with XML/JSON variants:
+
+- Full-text search: `/search/v1/results?query=...` (JSON)
+- Section lookup (by title+section, current date): `/versioner/v1/structure/{date}/title-{n}.json` for the TOC + node lookup, OR `/versioner/v1/full/{date}/title-{n}.xml` for the full title XML (parse to extract section). Prefer structure+node fetch when available; fall back to full-title XML parse only if the API no longer exposes node-level JSON.
+
+On retry exhaustion: throw `EcfrError` (parallel to `CongressGovError`). Cache service catches it and marks `enrichmentStatus: "failed"`. Same graceful-degradation contract.
 
 ### `StatuteCacheService` — `src/server/services/research/statute-cache.ts`
 
@@ -147,11 +152,16 @@ export function parseCitations(text: string): ParsedCitation[];
 ```
 
 Regex pool:
-- USC: `\b(\d+)\s+U\.S\.C\.\s+§§?\s*(\d+[a-z]?(?:[-–]\d+[a-z]?)?)\b`
-- CFR: `\b(\d+)\s+C\.?F\.?R\.?\s+§§?\s*(\d+\.\d+[a-z]?)\b`
-- Case reporters: reuse existing `REPORTER_PATTERNS`
+- USC (single section only — ranges explicitly **not** supported in MVP): `\b(\d+)\s+U\.S\.C\.\s+§§?\s*(\d+[a-z]?)\b` — captures forms like `42 U.S.C. § 1983`, `42 U.S.C. § 1983a`. Ranges like `42 U.S.C. §§ 1981-1988` are detected as citations (via `§§`) but their section string is truncated to the first number; the parser emits ONE `ParsedCitation` for the first section only. Range-handling is deferred (2.2.2b).
+- CFR (includes common subpart forms): `\b(\d+)\s+C\.?F\.?R\.?\s+§§?\s*(\d+\.\d+[a-z]?(?:\([a-z0-9]+\))*)\b` — captures `28 C.F.R. § 35.104`, `28 CFR § 35.130a`, `28 C.F.R. § 35.104(a)(2)`. Subpart designators are preserved in the `section` string for downstream lookup.
+- Case reporters: reuse existing `REPORTER_PATTERNS` from `citation-validator.ts`.
 
-Tolerate minor whitespace/punctuation variance. Do NOT auto-recognize citation-free formats (`§ 1983` alone) — known limitation, documented.
+Tolerate minor whitespace/punctuation variance. Do NOT auto-recognize citation-free forms:
+- `§ 1983` alone (no title prefix)
+- Bare numeric sections without `U.S.C.`/`CFR`
+- USC section ranges (documented above)
+
+All three are known limitations; `citation-parser.test.ts` asserts they return empty/first-only.
 
 ### Citation validator extension
 
@@ -165,8 +175,13 @@ Tolerate minor whitespace/punctuation variance. Do NOT auto-recognize citation-f
 2. `Promise.all([retrieveOpinions(q, topN), retrieveStatutes(q, cited)])`.
 3. `retrieveStatutes` strategy:
    - For each explicit `cited` USC/CFR → `statuteCache.upsertFromLookup` (fires client lookup, upserts)
-   - If none cited AND question looks statute-oriented (contains "statute" | "regulation" | "§" | "section"): `EcfrClient.searchCfr(q, 3)` + `CongressGovClient.searchUsc(q, 3)`; take top 5 by relevance
-   - Else return `[]` (pure case-law questions skip)
+   - If none cited AND question is statute-oriented — triggers only when ANY of:
+     - `§` character present, OR
+     - literal `"statute"` / `"regulation"` (case-insensitive) present, OR
+     - `\d+\s+(U\.S\.C\.|C\.F\.R\.|USC|CFR)` pattern matches
+     - (`"section"` alone is explicitly NOT a trigger — too many false positives in non-statutory legal questions)
+     - Then: `EcfrClient.searchCfr(q, 3)` + `CongressGovClient.searchUsc(q, 3)`; take top 5 by relevance
+   - Else return `[]` (pure case-law questions skip — cheap guard)
 4. `hydrateStatutes(hits)` — parallel body fetch, concurrency 5.
 5. Assemble context:
    ```
@@ -203,7 +218,7 @@ Input union accepts either `opinionInternalId` OR `statuteInternalId`. Context i
 - **New route** `/research/statutes/[citationSlug]/page.tsx`
 - **New components** `statute-viewer.tsx`, `statute-header.tsx` (mirror opinion-viewer/header)
 - **Extend** `citation-chip.tsx`: detect USC/CFR → link to statute viewer
-- **Utility** `citationToUrl(citation)` → slug path or null
+- **Utility** `src/components/research/citation-to-url.ts`: `citationToUrl(citation: string): string | null` — returns slug path (e.g. `/research/statutes/42-usc-1983`) or null for unrecognized formats. Used by `citation-chip.tsx` and any other component needing statute navigation.
 - **Layout** hide right-rail on `/research/statutes/*` (parallel to opinions)
 - **No changes** to ResultsList, ResultCard, hub page, sessions sidebar, bookmarks page
 
@@ -221,8 +236,8 @@ Register a stub `research-enrich-statute` function (matches `research-enrich-opi
 |---|---|---|
 | Citation parser | `tests/unit/citation-parser.test.ts` | 10–12 (each USC/CFR variant + mixed + no-citation + false positives) |
 | Validator extension | extend `tests/unit/citation-validator.test.ts` | +4 USC/CFR cases |
-| Congress.gov client | `tests/unit/uscode-client.test.ts` | lookup ok, not-found, search, retry on 5xx, rate-limit |
-| eCFR client | `tests/unit/ecfr-client.test.ts` | same shape |
+| Congress.gov client | `tests/unit/uscode-client.test.ts` | lookup ok, not-found, search, retry on 5xx, rate-limit 429, retry-exhaustion throws `CongressGovError` |
+| eCFR client | `tests/unit/ecfr-client.test.ts` | same shape; retry-exhaustion throws `EcfrError` |
 | StatuteCacheService | `tests/integration/statute-cache.test.ts` | mirrors opinion-cache (upsert, getOrFetch, getByInternalIds) |
 | LegalRag extensions | extend `tests/integration/legal-rag.test.ts` | +3–4 (explicit citation → lookup, mixed context, statute-only askDeep, unverified USC flagged) |
 | Router extensions | extend `research-router.test.ts` | `statutes.get` hit/miss, `statutes.lookup`, `askDeep` statute variant |
@@ -286,7 +301,8 @@ Same 5-point review rubric: banned words, verified citations, UPL footer, no pre
 
 ## 15. Success criteria
 
-- [ ] `/research/statutes/42-usc-1983` renders section text within 3s (cold fetch)
+- [ ] `/research/statutes/42-usc-1983` renders section text within 3s (cold fetch, measured from request arrival to first paint of body)
+- [ ] `askBroad` end-to-end latency for mixed-retrieval questions (first token) ≤ 6s P95 (vs ~4s P95 for pure case-law in 2.2.1); measured against a 10-question benchmark
 - [ ] `askBroad` with question containing "42 U.S.C. § 1983" includes that section in context and cites it in response
 - [ ] `askBroad` with statute-oriented question but no explicit citation retrieves at least one USC or CFR section (when relevant)
 - [ ] Citation validator correctly partitions USC/CFR/case citations as verified/unverified
@@ -294,6 +310,7 @@ Same 5-point review rubric: banned words, verified citations, UPL footer, no pre
 - [ ] New tests pass (10+ new test files, ~60+ new test cases expected)
 - [ ] Typecheck clean, build succeeds, smoke E2E passes
 - [ ] UPL audit passes ≥4/5 statute queries
+- [ ] Client retry exhaustion path produces `enrichmentStatus: "failed"` metadata on the cached_statutes row and the RAG flow continues without crashing
 
 ## 16. Open questions (resolved during brainstorm)
 
