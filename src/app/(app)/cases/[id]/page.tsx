@@ -15,6 +15,7 @@ import { CaseCalendar } from "@/components/calendar/case-calendar";
 import { CaseTeamPanel } from "@/components/cases/case-team-panel";
 import { CaseClientBlock } from "@/components/cases/case-client-block";
 import { CaseTimeTab } from "@/components/time-billing/case-time-tab";
+import { CaseResearchTab } from "@/components/cases/case-research-tab";
 import { CaseMuteButton } from "@/components/notifications/case-mute-button";
 import { PortalVisibilityPanel } from "@/components/portal/portal-visibility-panel";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ const TABS = [
   { key: "report", label: "Report" },
   { key: "timeline", label: "Timeline" },
   { key: "contracts", label: "Contracts" },
+  { key: "research", label: "Research" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -215,6 +217,10 @@ export default function CaseDetailPage({
               caseId={caseData.id}
             />
           </div>
+        )}
+
+        {activeTab === "research" && (
+          <CaseResearchTab caseId={caseData.id} />
         )}
         </div>
         {(caseData.client || caseData.orgId) && (
