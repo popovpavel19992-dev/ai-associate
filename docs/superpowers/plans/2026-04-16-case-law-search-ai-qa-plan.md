@@ -1273,7 +1273,11 @@ Commit: `feat: add askBroad/askDeep AI Q&A procedures`
 
 ---
 
-## Chunk 5: Frontend — research hub, search, opinion viewer
+## Chunk 5: Frontend — research hub, search, opinion viewer — **COMPLETE 2026-04-16**
+
+Tasks 15–18 all shipped. Commits: `5fadbd7` + `15b0568` (layout + nav + full-bleed fix), `c2f047f` (SearchBar + FilterDrawer + FilterChips), `a699db4` (ResultsList + ResultCard), `43c0d28` (Opinion viewer + header), `8aa2bf4` (end-to-end page wiring). Typecheck clean; no unit tests (matches project convention for UI).
+
+Deviations: `ResizablePanelGroup` unavailable → used flex-based 3-pane; `Checkbox` unavailable → toggle pills; `AppShell` converted to conditional max-w via `ContentWrapper` client component for `/research` full-bleed; syllabus/dissent detection is best-effort regex with documented TODO for CourtListener edge cases.
 
 ### Task 15: `/research` layout + navigation entry
 
