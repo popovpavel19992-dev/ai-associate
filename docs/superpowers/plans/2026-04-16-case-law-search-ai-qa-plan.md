@@ -1338,7 +1338,11 @@ Commit: `feat: add opinion viewer with Bluebook citation and UPL footer`
 
 ---
 
-## Chunk 6: Frontend — AI chat (broad + deep), sessions, bookmarks, case tab
+## Chunk 6: Frontend — AI chat (broad + deep), sessions, bookmarks, case tab — **COMPLETE 2026-04-16**
+
+Tasks 19–23 all shipped. Commits: `860d6a2` (chat panel + subscription wiring), `8fc2594` (case Research tab), `817e288` (sessions sidebar), `8135b48` (bookmarks page + attach-to-case modal), `f186e94` (session detail page). Typecheck clean. Tasks 20 + 23 ran in parallel with 22 + 21; no file conflicts.
+
+Deviations: `asChild` unsupported in this Next/Base-UI stack — use `render` prop or `buttonVariants` pattern; chat panel message body renders plain text (no in-body citation parsing) — unverified citations shown as a chip row below each assistant message; layout-level right-rail hidden on `/research/opinions/*` paths so viewer's inner chat column takes over; bookmarks page fetches ALL bookmarks + filters client-side (can distinguish All / Unlinked / per-case); session detail's chat-messages section is a placeholder — router doesn't yet join `research_chat_messages`.
 
 ### Task 19: AI chat panel (broad + deep)
 
