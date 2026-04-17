@@ -171,12 +171,23 @@ git commit -m "feat: add cached_statutes schema and statute_context_ids column"
 - Create: `src/server/services/uscode/types.ts`
 - Create: `tests/unit/uscode-client.test.ts`
 
+- [ ] **Step 0: Verify Congress.gov USC endpoints via WebFetch (separate commit)**
+
+Before writing any client code, WebFetch the current Congress.gov USC API docs at `https://api.congress.gov/#/uscode` (or equivalent under `https://github.com/LibraryOfCongress/api.congress.gov/`). Capture findings as a 5-line ADR block at the top of (to-be-created) `src/server/services/uscode/client.ts` — add the file with ONLY the ADR comment block and commit:
+
+```
+docs: record Congress.gov USC endpoint verification
+```
+
+The ADR must specify the confirmed endpoint paths + key response field names; subsequent steps reference them. If the live API has moved since the spec was written, update the endpoint shape here.
+
 - [ ] **Step 1: Write types**
 
 Create `src/server/services/uscode/types.ts`:
 
 ```ts
 export interface UscSectionResult {
+  source: "usc";           // discriminator for downstream type narrowing (set by client)
   title: number;
   section: string;
   heading: string;
@@ -196,6 +207,8 @@ export class CongressGovError extends Error {
   }
 }
 ```
+
+The `source: "usc"` discriminator must be set in every normalized result returned by the client (both `lookupUscSection` and `searchUsc`). This lets downstream code avoid heuristics when mixing USC and CFR hits.
 
 - [ ] **Step 2: Write failing tests**
 
@@ -352,14 +365,19 @@ git commit -m "feat: add Congress.gov client with retry and normalization"
 - Create: `src/server/services/ecfr/types.ts`
 - Create: `tests/unit/ecfr-client.test.ts`
 
-- [ ] **Step 1: WebFetch eCFR API docs FIRST**
+- [ ] **Step 0: Verify eCFR endpoints via WebFetch (separate commit)**
 
-**This step is mandatory before writing code.** WebFetch `https://www.ecfr.gov/developers/documentation/api/v1` to confirm:
+Before writing any client code, WebFetch `https://www.ecfr.gov/developers/documentation/api/v1` to confirm:
 - Full-text search endpoint path (expected `/api/search/v1/results`)
-- Section lookup endpoint path (expected `/api/versioner/v1/full/{date}/title-{n}.xml` or JSON variant)
+- Section lookup endpoint path (expected `/api/versioner/v1/structure/{date}/title-{n}.json` or XML variant)
 - Response JSON/XML shape for each
 
-Capture findings in a 5-line ADR comment at the top of `client.ts`:
+Create `src/server/services/ecfr/client.ts` with ONLY the 5-line ADR comment block and commit:
+
+```
+docs: record eCFR endpoint verification
+```
+
 ```ts
 /*
  * eCFR endpoint verification (yyyy-mm-dd):
@@ -370,7 +388,7 @@ Capture findings in a 5-line ADR comment at the top of `client.ts`:
  */
 ```
 
-If the WebFetch returns a different shape, update the client implementation + tests accordingly.
+If the WebFetch returns a different shape, update the endpoint plan (both Step 5 implementation code AND the test stubs in Step 3) BEFORE writing them. Subsequent steps reference these confirmed paths.
 
 - [ ] **Step 2: Write types**
 
@@ -378,6 +396,7 @@ Create `src/server/services/ecfr/types.ts`:
 
 ```ts
 export interface CfrSectionResult {
+  source: "cfr";           // discriminator for downstream type narrowing (set by client)
   title: number;
   section: string;
   heading: string;
@@ -397,6 +416,8 @@ export class EcfrError extends Error {
   }
 }
 ```
+
+The `source: "cfr"` discriminator must be set in every normalized result returned by the client. Lets `LegalRagService.retrieveStatutes` avoid the fragile `section.includes(".")` heuristic.
 
 - [ ] **Step 3: Write failing tests**
 
@@ -614,15 +635,17 @@ git commit -m "feat: extend citation validator with USC and CFR patterns"
 
 - [ ] **Step 1: Write failing tests**
 
-Create `tests/integration/statute-cache.test.ts`. Use the mock-DB pattern from `tests/integration/opinion-cache.test.ts`. Minimum 7 cases:
+Create `tests/integration/statute-cache.test.ts`. Use the mock-DB pattern from `tests/integration/opinion-cache.test.ts`. Minimum 8 cases:
 
-1. `upsertSearchHit("usc", hit)` inserts metadata row with no bodyText.
-2. `upsertSearchHit("cfr", hit)` same path.
-3. `getOrFetch(internalId)` — row exists with bodyText → bumps lastAccessedAt, returns existing.
-4. `getOrFetch` — row exists but bodyText null, source="usc" → calls `CongressGovClient.lookupUscSection(title, section)`, upserts body.
-5. `getOrFetch` — source="cfr" branch → calls `EcfrClient.lookupCfrSection(title, section)`.
-6. `getOrFetch` — client throws `CongressGovError` → upserts metadata with `enrichmentStatus: "failed"` and returns the row (does NOT throw).
-7. `getByInternalIds([])` — empty short-circuit, no DB call; `getByInternalIds([a, b])` — returns queued rows.
+1. `upsertSearchHit(hit)` where `hit.source === "usc"` inserts metadata row with no bodyText (assert `bodyText` absent from insert payload).
+2. `upsertSearchHit(hit)` where `hit.source === "cfr"` same path.
+3. **Conflict path preserves real heading** — seed a cached row with a real heading; call `upsertSearchHit` with a minimal-metadata hit (empty heading); assert the DB update's `set` clause does NOT overwrite heading with empty string (only `lastAccessedAt` updated; fields like heading updated only when the new hit carries a non-empty value).
+4. `upsertMetadataOnly({ source, title, section, citationBluebook })` inserts a skeleton row with heading null, bodyText null; used by router `statutes.get`/`statutes.lookup` procedures.
+5. `getOrFetch(internalId)` — row exists with bodyText → bumps lastAccessedAt, returns existing.
+6. `getOrFetch` — row exists but bodyText null, `row.source === "usc"` → calls `CongressGovClient.lookupUscSection(title, section)`, upserts body.
+7. `getOrFetch` — `row.source === "cfr"` branch → calls `EcfrClient.lookupCfrSection`.
+8. `getOrFetch` — client throws `CongressGovError` → upserts metadata with `enrichmentStatus: "failed"` and returns the row (does NOT throw).
+9. `getByInternalIds([])` — empty short-circuit, no DB call; `getByInternalIds([a, b])` — returns queued rows.
 
 - [ ] **Step 2: Run tests, expect fail**
 
@@ -661,25 +684,67 @@ export class StatuteCacheService {
     this.cfr = deps.ecfr;
   }
 
-  async upsertSearchHit(source: StatuteSource, hit: UscSectionResult | CfrSectionResult): Promise<CachedStatute> {
+  /**
+   * Upsert from a full search/lookup hit. On conflict, refresh heading/effectiveDate
+   * ONLY if the new hit has a non-empty value — never overwrite real data with blanks.
+   * Uses the hit's `source` discriminator; no source parameter needed.
+   */
+  async upsertSearchHit(hit: UscSectionResult | CfrSectionResult): Promise<CachedStatute> {
     const now = new Date();
+    const newHeading = hit.heading && hit.heading.length > 0 ? hit.heading : null;
+
     const [row] = await this.db
       .insert(cachedStatutes)
       .values({
-        source,
+        source: hit.source,
         citationBluebook: hit.citationBluebook,
         title: String(hit.title),
         section: hit.section,
-        heading: hit.heading ?? null,
+        heading: newHeading,
         effectiveDate: hit.effectiveDate ?? null,
         metadata: hit.metadata ?? {},
       })
       .onConflictDoUpdate({
         target: [cachedStatutes.source, cachedStatutes.citationBluebook],
         set: {
-          heading: hit.heading ?? null,
+          // sql COALESCE preserves an existing non-null heading when the new hit has no heading.
+          heading: newHeading
+            ? sql`${newHeading}::text`
+            : sql`${cachedStatutes.heading}`,  // keep existing
           lastAccessedAt: now,
         },
+      })
+      .returning();
+    return row;
+  }
+
+  /**
+   * Upsert a bare metadata row when only citation identifiers are known
+   * (no heading, no body). Used by router `statutes.get` / `statutes.lookup`
+   * when the caller hands us a citation string and expects a row back.
+   * Fetches body via getOrFetch on subsequent access.
+   */
+  async upsertMetadataOnly(params: {
+    source: StatuteSource;
+    title: number;
+    section: string;
+    citationBluebook: string;
+  }): Promise<CachedStatute> {
+    const now = new Date();
+    const [row] = await this.db
+      .insert(cachedStatutes)
+      .values({
+        source: params.source,
+        citationBluebook: params.citationBluebook,
+        title: String(params.title),
+        section: params.section,
+        heading: null,
+        effectiveDate: null,
+        metadata: {},
+      })
+      .onConflictDoUpdate({
+        target: [cachedStatutes.source, cachedStatutes.citationBluebook],
+        set: { lastAccessedAt: now },  // only touch timestamp; preserve everything else
       })
       .returning();
     return row;
@@ -835,14 +900,14 @@ private async retrieveStatutes(question: string, cited: ParsedCitation[]): Promi
 
   const rows: CachedStatute[] = [];
   for (const h of [...uscHits, ...cfrHits].slice(0, 5)) {
-    const src: "usc" | "cfr" = "section" in h && h.section.includes(".") ? "cfr" : "usc";  // heuristic
-    rows.push(await this.statuteCache.upsertSearchHit(src, h));
+    // h.source is "usc" | "cfr" — set by the respective client (see Tasks 3/4 types).
+    rows.push(await this.statuteCache.upsertSearchHit(h.source, h));
   }
   return rows;
 }
 ```
 
-(Note: the source-detection heuristic is fragile — prefer returning source from the client hit shape. Refactor: add `source` field to `UscSectionResult` / `CfrSectionResult` shapes so the call site knows; or track it via which client was called.)
+Uses the `source` discriminator set by the clients (Tasks 3/4) — no fragile string heuristic. `upsertSearchHit`'s signature should accept the union type `UscSectionResult | CfrSectionResult` and read `hit.source` internally (see Task 7 Step 3 for the updated signature).
 
 **f. `hydrateStatutes(rows)`** — parallel fetch, concurrency 5, same pattern as `hydrate()` for opinions.
 
@@ -996,10 +1061,10 @@ export const researchRouter = router({
           ? `${title} U.S.C. § ${section}`
           : `${title} C.F.R. § ${section}`;
 
-        // Upsert metadata row first (creates id if missing), then getOrFetch for body.
-        const row = await cache.upsertSearchHit(source, {
-          title, section, heading: "", bodyText: "", citationBluebook: citation, metadata: {}
-        } as never);
+        // Upsert bare metadata row (creates id if missing, preserves existing heading/body on conflict),
+        // then getOrFetch for body. Uses upsertMetadataOnly so callers with no body data
+        // never stomp existing enriched rows.
+        const row = await cache.upsertMetadataOnly({ source, title, section, citationBluebook: citation });
         const full = await cache.getOrFetch(row.id);
 
         // Fire-and-forget Inngest enrichment (Task 11 stub).
@@ -1020,11 +1085,13 @@ export const researchRouter = router({
         if (!parsed) throw new TRPCError({ code: "BAD_REQUEST", message: "Unparseable citation" });
 
         const cache = new StatuteCacheService({ /* ... */ });
-        const source = parsed.source as "usc" | "cfr";
-        const citation = parsed.citation;
-        const row = await cache.upsertSearchHit(source, {
-          title: parsed.title, section: parsed.section, heading: "", bodyText: "", citationBluebook: citation, metadata: {}
-        } as never);
+        // parsed.source narrows to "usc" | "cfr" via the filter; TS should infer without cast.
+        const row = await cache.upsertMetadataOnly({
+          source: parsed.source,
+          title: parsed.title,
+          section: parsed.section,
+          citationBluebook: parsed.citation,
+        });
         return { internalId: row.id };
       }),
   }),
@@ -1145,9 +1212,14 @@ export function StatuteViewer({ statuteInternalId, citationSlug }: StatuteViewer
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("sessionId");
 
-  const query = statuteInternalId
-    ? trpc.research.statutes.get.useQuery({ internalId: statuteInternalId })
-    : trpc.research.statutes.get.useQuery({ citationSlug: citationSlug ?? "" }, { enabled: !!citationSlug });
+  // Single hook call — React forbids conditional hook invocation.
+  // Build a discriminated input and gate via `enabled`.
+  const input = statuteInternalId
+    ? ({ internalId: statuteInternalId } as const)
+    : ({ citationSlug: citationSlug ?? "" } as const);
+  const query = trpc.research.statutes.get.useQuery(input, {
+    enabled: Boolean(statuteInternalId) || Boolean(citationSlug),
+  });
 
   if (query.isLoading) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>;
