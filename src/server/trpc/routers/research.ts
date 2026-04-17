@@ -12,6 +12,7 @@ import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../trpc";
 import { assertCaseAccess } from "../lib/permissions";
 import { getEnv } from "@/lib/env";
+import { inngest } from "@/server/inngest/client";
 import { CourtListenerClient } from "@/server/services/courtlistener/client";
 import { OpinionCacheService } from "@/server/services/research/opinion-cache";
 import { ResearchSessionService } from "@/server/services/research/session-service";
@@ -401,7 +402,15 @@ export const researchRouter = router({
       }
 
       const row = await cache.getOrFetch(courtlistenerId);
-      // TODO(2.2.1 Chunk 7): dispatch Inngest "research.enrichOpinion" event (non-blocking)
+      // Fire-and-forget enrichment; failure here must not break the response.
+      try {
+        void inngest.send({
+          name: "research/opinion.enrich.requested",
+          data: { opinionInternalId: row.id },
+        });
+      } catch {
+        // Swallow — enrichment is best-effort.
+      }
       return row;
     }),
 
