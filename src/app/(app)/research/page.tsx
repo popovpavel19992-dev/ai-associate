@@ -14,7 +14,20 @@ import { SearchBar } from "@/components/research/search-bar";
 import { FilterDrawer } from "@/components/research/filter-drawer";
 import { FilterChips } from "@/components/research/filter-chips";
 import { ResultsList } from "@/components/research/results-list";
+import { UsageIndicator } from "@/components/research/usage-indicator";
+import { UpsellModal } from "@/components/research/upsell-modal";
 import type { ResearchFilters } from "@/components/research/filter-types";
+
+const QUOTA_MESSAGE_REGEX = /usage limit exceeded:\s*(\d+)\s*\/\s*(\d+)/i;
+
+function parseQuotaUsage(
+  message: string | undefined,
+): { used?: number; limit?: number } {
+  if (!message) return {};
+  const m = QUOTA_MESSAGE_REGEX.exec(message);
+  if (!m) return {};
+  return { used: Number(m[1]), limit: Number(m[2]) };
+}
 
 type SearchResponse = inferRouterOutputs<AppRouter>["research"]["search"];
 
@@ -36,11 +49,25 @@ export default function ResearchPage() {
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [response, setResponse] = React.useState<SearchResponse | null>(null);
   const [bookmarkedIds, setBookmarkedIds] = React.useState<Set<string>>(new Set());
+  const [upsellOpen, setUpsellOpen] = React.useState(false);
+  const [lastUsage, setLastUsage] = React.useState<{
+    used?: number;
+    limit?: number;
+  }>({});
 
   const searchMut = trpc.research.search.useMutation({
     onSuccess: (result) => {
       setResponse(result);
       setSessionId(result.sessionId);
+    },
+    // TODO (Chunk 7): also wire quota detection in chat-panel.tsx. The hub
+    // `research.search` procedure is not usage-guarded today, but we detect
+    // TOO_MANY_REQUESTS here for future-proofing.
+    onError: (err) => {
+      if (err.data?.code === "TOO_MANY_REQUESTS") {
+        setLastUsage(parseQuotaUsage(err.message));
+        setUpsellOpen(true);
+      }
     },
   });
 
@@ -95,12 +122,17 @@ export default function ResearchPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-        Legal Research
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Search U.S. federal and state case law, then ask AI for grounded analysis.
-      </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Legal Research
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Search U.S. federal and state case law, then ask AI for grounded analysis.
+          </p>
+        </div>
+        <UsageIndicator className="mt-1 shrink-0" />
+      </div>
 
       <div className="mt-4 rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-muted-foreground dark:border-zinc-800 dark:bg-zinc-900/50">
         ClearTerms Research provides case-law analysis, not legal advice.
@@ -169,6 +201,13 @@ export default function ResearchPage() {
         filters={filters}
         onApply={(applied) => setFilters(applied)}
         onClear={() => setFilters({})}
+      />
+
+      <UpsellModal
+        open={upsellOpen}
+        onOpenChange={setUpsellOpen}
+        used={lastUsage.used}
+        limit={lastUsage.limit}
       />
     </div>
   );
