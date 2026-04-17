@@ -647,6 +647,8 @@ Create `tests/integration/statute-cache.test.ts`. Use the mock-DB pattern from `
 8. `getOrFetch` — client throws `CongressGovError` → upserts metadata with `enrichmentStatus: "failed"` and returns the row (does NOT throw).
 9. `getByInternalIds([])` — empty short-circuit, no DB call; `getByInternalIds([a, b])` — returns queued rows.
 
+**Note on mock DB + `sql` tags:** the conflict path uses a drizzle `sql` tagged template (for COALESCE-style preservation of existing heading). The existing chainable mock in `tests/integration/opinion-cache.test.ts` records `.set()` payloads but does NOT evaluate `sql` tag contents. Test 3 should assert on the SHAPE of the set-object (e.g. that `set.heading` is a drizzle `SQL` object or absent when the hit has no heading) rather than on post-execution DB state. Real upsert semantics verified by E2E in a later phase.
+
 - [ ] **Step 2: Run tests, expect fail**
 
 Run: `npx vitest run tests/integration/statute-cache.test.ts`
@@ -884,7 +886,8 @@ private async retrieveStatutes(question: string, cited: ParsedCitation[]): Promi
         ? await uscClient.lookupUscSection(c.title, c.section)
         : await ecfrClient.lookupCfrSection(c.title, c.section);
       if (detail) {
-        const row = await this.statuteCache.upsertSearchHit(c.source, detail);
+        // detail carries its own `source` discriminator (Tasks 3/4); upsertSearchHit is single-arg.
+        const row = await this.statuteCache.upsertSearchHit(detail);
         hits.push(row);
       }
     }
@@ -900,8 +903,8 @@ private async retrieveStatutes(question: string, cited: ParsedCitation[]): Promi
 
   const rows: CachedStatute[] = [];
   for (const h of [...uscHits, ...cfrHits].slice(0, 5)) {
-    // h.source is "usc" | "cfr" — set by the respective client (see Tasks 3/4 types).
-    rows.push(await this.statuteCache.upsertSearchHit(h.source, h));
+    // h carries its own `source` discriminator — single-arg upsert.
+    rows.push(await this.statuteCache.upsertSearchHit(h));
   }
   return rows;
 }
@@ -1081,11 +1084,14 @@ export const researchRouter = router({
     lookup: protectedProcedure
       .input(z.object({ citation: z.string().trim().min(3).max(200) }))
       .mutation(async ({ ctx, input }) => {
-        const parsed = parseCitations(input.citation).find(p => p.source === "usc" || p.source === "cfr");
+        // Type predicate narrows the returned element to the statute branches,
+        // giving `title`/`section` fields without casts.
+        const isStatuteCitation = (p: ParsedCitation): p is Extract<ParsedCitation, { source: "usc" | "cfr" }> =>
+          p.source === "usc" || p.source === "cfr";
+        const parsed = parseCitations(input.citation).find(isStatuteCitation);
         if (!parsed) throw new TRPCError({ code: "BAD_REQUEST", message: "Unparseable citation" });
 
         const cache = new StatuteCacheService({ /* ... */ });
-        // parsed.source narrows to "usc" | "cfr" via the filter; TS should infer without cast.
         const row = await cache.upsertMetadataOnly({
           source: parsed.source,
           title: parsed.title,
