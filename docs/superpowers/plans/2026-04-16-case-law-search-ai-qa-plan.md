@@ -1418,7 +1418,13 @@ Commit: `feat: add Research tab to case detail page`
 
 ---
 
-## Chunk 7: Integration — billing UI, notifications, activity log, Inngest, E2E
+## Chunk 7: Integration — billing UI, notifications, activity log, Inngest, E2E — **PARTIAL (Tasks 24–26, 28 shipped; 27 + 29 deferred)**
+
+Tasks 24, 25, 26, 28 shipped. Commits: `6fa34ec` (usage indicator + upsell modal), `2877ee4` (notification wiring + research category), `4d262f5` (Inngest enrichOpinion job), `dd8464a` (UPL audit docs).
+
+Chunk 7 new tests: 12/12 (Inngest enrichOpinion 6 + research-notifications 6). Full suite: 407/411 passing (4 pre-existing failures in invoices/time-entries unrelated).
+
+Task 27 (Playwright E2E) and Task 29 (manual UAT + build + PR) deferred to a follow-up session — require Clerk auth bypass setup + manual verification against the UAT checklist.
 
 ### Task 24: Usage progress bar + upsell modal
 
