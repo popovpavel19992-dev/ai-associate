@@ -1567,3 +1567,20 @@ Update `/Users/fedorkaspirovich/.claude/projects/-Users-fedorkaspirovich-ClearTe
 - eCFR search ranking opaque; mitigation = top-5 is good enough for RAG.
 - LegalRagService file growth; mitigation = keep retrieval helpers as private methods.
 - Citation parser false positives; mitigation = tight regex + test coverage.
+
+---
+
+## Ship log (completed 2026-04-18)
+
+All 17 tasks shipped on branch `feature/2.2.2-statutes-regulations`.
+
+- **Chunk 1 (env + schema + clients):** `c1b91ac` → `00f0207` (9 commits incl. pivot)
+- **Chunk 2 (citation layer):** `f6e702c`, `bfbbb3e`
+- **Chunk 3 (cache + RAG):** `5620fcc`, `eaba33b`, `88c1a22`, `d69d10a`
+- **Chunk 4 (router + Inngest):** `7512a2a`, `ba95d82`
+- **Chunk 5 (UI):** `ac389fb`, `53f4b01`, `b926d88`
+- **Chunk 6 (E2E + UPL + verify):** `ccc5ac7`, `cf90311`, this commit
+
+**Pivot executed 2026-04-18:** Congress.gov → GovInfo for USC (Congress.gov has no USC endpoint). env var renamed, plan Tasks 3/7/8/10 rewritten; see commits `22201b8`, `b7fc69b`.
+
+**Test count:** all 2.2.2 tests pass. Pre-existing 4 failures in `invoices-router` + `time-entries-router` are unrelated to this phase (verified against Task 1 base).
