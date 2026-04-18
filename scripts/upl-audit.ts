@@ -128,6 +128,7 @@ async function main() {
   const limitArg = args.find((a) => a.startsWith("--limit="));
   const limit = limitArg ? Number(limitArg.split("=")[1]) : QUERIES.length;
   const modeArg = args.find((a) => a.startsWith("--mode="))?.split("=")[1] ?? "both";
+  const searchOnly = modeArg === "search";
 
   // First user in dev DB owns the audit sessions. ResearchSessionService
   // requires a real userId because of the FK on research_sessions.user_id.
@@ -151,10 +152,26 @@ async function main() {
 
     let firstOpinionInternalId: string | undefined;
     let sessionId: string | undefined;
+    let searchStats: { hits: number; total: number; jurisdictions: Record<string, number> } = {
+      hits: 0,
+      total: 0,
+      jurisdictions: {},
+    };
 
     try {
       const searchResp = await cl.search({ query, page: 1 });
-      console.log(`  search → ${searchResp.hits.length} hits / ${searchResp.totalCount} total`);
+      searchStats = {
+        hits: searchResp.hits.length,
+        total: searchResp.totalCount,
+        jurisdictions: {},
+      };
+      for (const h of searchResp.hits) {
+        searchStats.jurisdictions[h.jurisdiction] = (searchStats.jurisdictions[h.jurisdiction] ?? 0) + 1;
+      }
+      const breakdown = Object.entries(searchStats.jurisdictions)
+        .map(([j, n]) => `${j}=${n}`)
+        .join(" ");
+      console.log(`  search → ${searchResp.hits.length} hits / ${searchResp.totalCount} total [${breakdown}]`);
 
       const session = await sessions.createSession({ userId, firstQuery: query });
       sessionId = session.id;
@@ -168,6 +185,20 @@ async function main() {
       console.log(`  search FAILED: ${msg}`);
       rows.push(emptyRow(idx, query, "broad", `search failed: ${msg}`));
       if (modeArg === "both" || modeArg === "deep") rows.push(emptyRow(idx, query, "deep", "search failed"));
+      continue;
+    }
+
+    if (searchOnly) {
+      // Capture search-only validation row — useful when Claude API is
+      // unavailable but we still want to verify search/cache/normalize work.
+      rows.push({
+        ...emptyRow(idx, query, "broad", ""),
+        ok: true,
+        responseChars: 0,
+        responseExcerpt: `hits=${searchStats.hits} total=${searchStats.total} ${
+          Object.entries(searchStats.jurisdictions).map(([j, n]) => `${j}:${n}`).join(" ")
+        }`,
+      });
       continue;
     }
 
