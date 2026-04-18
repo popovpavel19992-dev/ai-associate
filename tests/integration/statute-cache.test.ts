@@ -370,6 +370,35 @@ describe("StatuteCacheService.getOrFetch", () => {
     expect(is(setVals.metadata, SQL)).toBe(true);
     expect(row).toBeDefined();
   });
+
+  it("maps EcfrError to markFailed and returns the row (does not throw)", async () => {
+    const { db, enqueueSelect, updateCalls } = makeMockDb();
+    const lookupCfrSection = vi.fn().mockRejectedValue(new EcfrError("boom", 503));
+    const svc = new StatuteCacheService({
+      db,
+      govinfo: makeGovinfoMock({ lookupUscSection: vi.fn(), fetchBody: vi.fn() }),
+      ecfr: makeEcfrMock({ lookupCfrSection }),
+    });
+
+    enqueueSelect([
+      makeCachedStatute({
+        source: "cfr",
+        title: "28",
+        section: "35.104",
+        citationBluebook: "28 C.F.R. § 35.104",
+        bodyText: null,
+      }),
+    ]);
+
+    const row = await svc.getOrFetch(ID.statute);
+
+    expect(lookupCfrSection).toHaveBeenCalledTimes(1);
+    // markFailed triggers an update with a sql metadata patch
+    expect(updateCalls).toHaveLength(1);
+    const setVals = updateCalls[0]!.set as Record<string, unknown>;
+    expect(is(setVals.metadata, SQL)).toBe(true);
+    expect(row).toBeDefined();
+  });
 });
 
 describe("StatuteCacheService.getByInternalIds", () => {
