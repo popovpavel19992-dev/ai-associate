@@ -1,0 +1,90 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "ClearTerms" [ref=e6] [cursor=pointer]:
+            - /url: /dashboard
+          - button [ref=e8]:
+            - img
+        - separator [ref=e9]
+        - navigation [ref=e10]:
+          - link "Dashboard" [ref=e11] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e12]
+            - text: Dashboard
+          - link "Contracts" [ref=e17] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e18]
+            - text: Contracts
+          - link "Drafts" [ref=e22] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e23]
+            - text: Drafts
+          - link "Quick Analysis" [ref=e25] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e26]
+            - text: Quick Analysis
+          - link "Cases" [ref=e28] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e29]
+            - text: Cases
+          - link "Clients" [ref=e32] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e33]
+            - text: Clients
+          - link "Calendar" [ref=e38] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e39]
+            - text: Calendar
+          - link "Templates" [ref=e41] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e42]
+            - text: Templates
+          - link "Settings" [ref=e45] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e46]
+            - text: Settings
+          - link "Team" [ref=e84] [cursor=pointer]:
+            - /url: /settings/team
+            - img [ref=e85]
+            - text: Team
+          - link "Invoices" [ref=e49] [cursor=pointer]:
+            - /url: /invoices
+            - img [ref=e50]
+            - text: Invoices
+        - separator [ref=e53]
+        - button "Open user menu" [ref=e91] [cursor=pointer]:
+          - img "'s logo" [ref=e94]
+    - main [ref=e56]:
+      - generic [ref=e58]:
+        - generic [ref=e59]:
+          - generic [ref=e61]: "1"
+          - generic [ref=e64]: "2"
+          - generic [ref=e67]: "3"
+          - generic [ref=e68]: Select Items
+        - generic [ref=e98]:
+          - generic [ref=e99]:
+            - heading "Select Items" [level=2] [ref=e100]
+            - paragraph [ref=e101]: "Client: Acme Corporation"
+          - generic [ref=e103]:
+            - paragraph [ref=e105]: Acme Corp v. Beta LLC — Contract Dispute
+            - generic [ref=e106]:
+              - generic [ref=e107] [cursor=pointer]:
+                - checkbox "Timer 1 on Acme case 0.02 hr · $300.00/hr $5.00" [ref=e108]
+                - generic [ref=e109]:
+                  - paragraph [ref=e110]: Timer 1 on Acme case
+                  - paragraph [ref=e111]: 0.02 hr · $300.00/hr
+                - generic [ref=e112]: $5.00
+              - generic [ref=e113] [cursor=pointer]:
+                - checkbox "Test entry for delete check 1.00 hr · $300.00/hr $300.00" [ref=e114]
+                - generic [ref=e115]:
+                  - paragraph [ref=e116]: Test entry for delete check
+                  - paragraph [ref=e117]: 1.00 hr · $300.00/hr
+                - generic [ref=e118]: $300.00
+          - generic [ref=e119]:
+            - button "Back" [ref=e120]
+            - 'button "Next: Review" [disabled]'
+  - button "Open Next.js Dev Tools" [ref=e79] [cursor=pointer]:
+    - img [ref=e80]
+  - alert [ref=e83]

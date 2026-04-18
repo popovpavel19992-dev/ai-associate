@@ -1,0 +1,131 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link [ref=e131] [cursor=pointer]:
+            - /url: /dashboard
+            - text: ClearTerms
+          - button [ref=e7]:
+            - img
+        - separator [ref=e8]
+        - navigation [ref=e9]:
+          - link [ref=e132] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e11]
+            - text: Dashboard
+          - link [ref=e133] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e17]
+            - text: Contracts
+          - link [ref=e134] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e22]
+            - text: Drafts
+          - link [ref=e135] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e25]
+            - text: Quick Analysis
+          - link [ref=e136] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e28]
+            - text: Cases
+          - link [ref=e137] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e32]
+            - text: Clients
+          - link [ref=e138] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e38]
+            - text: Calendar
+          - link [ref=e139] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e41]
+            - text: Templates
+          - link [ref=e140] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e45]
+            - text: Settings
+          - link [ref=e141] [cursor=pointer]:
+            - /url: /settings/team
+            - img [ref=e104]
+            - text: Team
+        - separator [ref=e48]
+        - button [ref=e142] [cursor=pointer]:
+          - img [ref=e143]
+    - main [ref=e51]:
+      - generic [ref=e54]:
+        - generic [ref=e56]: New Case
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - generic [ref=e59]: Client
+            - button [ref=e144]:
+              - text: Select client...
+              - img
+          - generic [ref=e61]:
+            - generic [ref=e62]: Case Name
+            - textbox [ref=e145]:
+              - /placeholder: e.g. Smith v. Johnson — Motor Vehicle Accident
+          - generic [ref=e64]:
+            - generic [ref=e65]: Case Type
+            - combobox [ref=e66]:
+              - generic [ref=e67]: auto
+              - img: ▼
+            - textbox [ref=e68]: auto
+            - paragraph [ref=e69]: Auto-detect analyzes uploaded documents to determine the case type.
+          - generic [ref=e70]:
+            - generic [ref=e71]: Analysis Sections
+            - generic [ref=e72]:
+              - generic [ref=e73]:
+                - checkbox [checked] [ref=e146]
+                - text: Timeline
+              - generic [ref=e75]:
+                - checkbox [checked] [ref=e147]
+                - text: Key Facts
+              - generic [ref=e77]:
+                - checkbox [checked] [ref=e148]
+                - text: Parties & Roles
+              - generic [ref=e79]:
+                - checkbox [checked] [ref=e149]
+                - text: Legal Arguments
+              - generic [ref=e81]:
+                - checkbox [ref=e150]
+                - text: Weak Points & Vulnerabilities
+              - generic [ref=e83]:
+                - checkbox [checked] [ref=e151]
+                - text: Risk Assessment
+              - generic [ref=e85]:
+                - checkbox [ref=e152]
+                - text: Evidence Inventory
+              - generic [ref=e87]:
+                - checkbox [ref=e153]
+                - text: Applicable Laws/Statutes
+              - generic [ref=e89]:
+                - checkbox [ref=e154]
+                - text: Suggested Deposition Questions
+              - generic [ref=e91]:
+                - checkbox [ref=e155]
+                - text: Obligations & Deadlines
+          - button [disabled]: Continue to Upload
+  - button "Open Next.js Dev Tools" [ref=e98] [cursor=pointer]:
+    - img [ref=e99]
+  - alert [ref=e102]
+  - dialog "Quick create client" [ref=e159]:
+    - heading "Quick create client" [level=2] [ref=e161]
+    - generic [ref=e162]:
+      - generic [ref=e163]:
+        - button "Individual" [active] [ref=e164]
+        - button "Organization" [ref=e165]
+      - generic [ref=e166]:
+        - generic [ref=e167]:
+          - generic [ref=e168]: First name
+          - textbox [ref=e169]
+        - generic [ref=e170]:
+          - generic [ref=e171]: Last name
+          - textbox [ref=e172]
+    - generic [ref=e173]:
+      - button "Cancel" [ref=e174]
+      - button "Create" [disabled]
+    - button "Close" [ref=e175]:
+      - img
+      - generic [ref=e176]: Close

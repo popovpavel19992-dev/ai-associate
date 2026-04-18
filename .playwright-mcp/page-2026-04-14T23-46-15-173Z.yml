@@ -1,0 +1,144 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "ClearTerms" [ref=e6] [cursor=pointer]:
+            - /url: /dashboard
+          - button [ref=e8]:
+            - img
+        - separator [ref=e9]
+        - navigation [ref=e10]:
+          - link "Dashboard" [ref=e11] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e12]
+            - text: Dashboard
+          - link "Contracts" [ref=e17] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e18]
+            - text: Contracts
+          - link "Drafts" [ref=e22] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e23]
+            - text: Drafts
+          - link "Quick Analysis" [ref=e25] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e26]
+            - text: Quick Analysis
+          - link "Cases" [ref=e28] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e29]
+            - text: Cases
+          - link "Clients" [ref=e32] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e33]
+            - text: Clients
+          - link "Calendar" [ref=e38] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e39]
+            - text: Calendar
+          - link "Notifications" [ref=e41] [cursor=pointer]:
+            - /url: /notifications
+            - img [ref=e42]
+            - text: Notifications
+          - link "Templates" [ref=e45] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e46]
+            - text: Templates
+          - link "Settings" [ref=e49] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e50]
+            - text: Settings
+          - link "Team" [ref=e75] [cursor=pointer]:
+            - /url: /settings/team
+            - img [ref=e76]
+            - text: Team
+          - link "Invoices" [ref=e53] [cursor=pointer]:
+            - /url: /invoices
+            - img [ref=e54]
+            - text: Invoices
+        - separator [ref=e57]
+        - button "Open user menu" [ref=e82] [cursor=pointer]:
+          - img "'s logo" [ref=e85]
+    - main [ref=e60]:
+      - generic [ref=e62]:
+        - generic [ref=e87]:
+          - generic [ref=e88]:
+            - generic [ref=e89]: Intake
+            - generic [ref=e91]: →
+          - generic [ref=e92]:
+            - generic [ref=e93]: Research
+            - generic [ref=e94]: →
+          - generic [ref=e95]:
+            - generic [ref=e96]: Active Work
+            - generic [ref=e97]: →
+          - generic [ref=e98]:
+            - generic [ref=e99]: Resolution
+            - generic [ref=e100]: →
+          - generic [ref=e102]: Closed
+        - generic [ref=e103]:
+          - generic [ref=e104]:
+            - button "Overview" [ref=e105]
+            - button "Tasks" [ref=e106]
+            - button "Calendar" [ref=e107]
+            - button "Time" [ref=e108]
+            - button "Report" [ref=e109]
+            - button "Timeline" [ref=e110]
+            - button "Contracts" [ref=e111]
+          - generic [ref=e112]:
+            - button "Muted" [ref=e175]:
+              - img
+              - text: Muted
+            - button "Change Stage" [ref=e115]:
+              - text: Change Stage
+              - img
+        - generic [ref=e117]:
+          - generic [ref=e119]:
+            - generic [ref=e120]:
+              - paragraph [ref=e121]: Current Stage
+              - paragraph [ref=e122]: Intake
+              - paragraph [ref=e123]: Initial consultation, gather information
+              - paragraph [ref=e124]:
+                - img [ref=e125]
+                - text: Since 1 day ago
+            - generic [ref=e128]:
+              - paragraph [ref=e129]: Stage Tasks
+              - generic [ref=e130]:
+                - generic [ref=e133]: Conduct initial consultation
+                - generic [ref=e136]: Gather relevant documents
+            - generic [ref=e137]:
+              - paragraph [ref=e138]: Description
+              - paragraph [ref=e139]: No description provided.
+            - generic [ref=e140]:
+              - generic [ref=e141]:
+                - img [ref=e142]
+                - generic [ref=e145]: "0"
+                - generic [ref=e146]: Documents
+              - generic [ref=e147]:
+                - img [ref=e148]
+                - generic [ref=e152]: "0"
+                - generic [ref=e153]: Contracts
+          - generic [ref=e154]:
+            - generic [ref=e155]:
+              - heading "Client" [level=3] [ref=e156]
+              - link "Acme Corporation" [ref=e157] [cursor=pointer]:
+                - /url: /clients/7f2daf74-e485-4875-874a-54af227cedf5
+              - generic [ref=e158]:
+                - img [ref=e159]
+                - text: Organization
+            - generic [ref=e163]:
+              - generic [ref=e164]:
+                - heading "Case Team" [level=3] [ref=e165]
+                - button [ref=e166]:
+                  - img
+              - generic [ref=e168]:
+                - generic [ref=e169]:
+                  - generic [ref=e170]: AV
+                  - generic [ref=e171]:
+                    - generic [ref=e172]: Alex Vichkov
+                    - generic [ref=e173]: Lead
+                - button [ref=e174]:
+                  - img
+  - button "Open Next.js Dev Tools" [ref=e70] [cursor=pointer]:
+    - img [ref=e71]
+  - alert [ref=e74]

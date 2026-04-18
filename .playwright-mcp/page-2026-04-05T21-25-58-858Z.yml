@@ -1,0 +1,216 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link [ref=e285] [cursor=pointer]:
+            - /url: /dashboard
+            - text: ClearTerms
+          - button [ref=e7]:
+            - img
+        - separator [ref=e8]
+        - navigation [ref=e9]:
+          - link [ref=e286] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e11]
+            - text: Dashboard
+          - link [ref=e287] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e17]
+            - text: Contracts
+          - link [ref=e288] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e22]
+            - text: Drafts
+          - link [ref=e289] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e25]
+            - text: Quick Analysis
+          - link [ref=e290] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e28]
+            - text: Cases
+          - link [ref=e291] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e32]
+            - text: Calendar
+          - link [ref=e292] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e35]
+            - text: Templates
+          - link [ref=e293] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e39]
+            - text: Settings
+        - separator [ref=e42]
+        - button [ref=e294] [cursor=pointer]:
+          - img [ref=e295]
+    - main [ref=e45]:
+      - generic [ref=e66]:
+        - generic [ref=e296]:
+          - generic [ref=e297]:
+            - button [ref=e298]:
+              - img
+            - button [ref=e299]: Today
+            - button [ref=e300]:
+              - img
+            - generic [ref=e301]: April 2026
+          - generic [ref=e302]:
+            - generic [ref=e303]:
+              - button [ref=e304]: Month
+              - button [ref=e305]: Week
+              - button [ref=e306]: Agenda
+            - button [ref=e307]:
+              - img
+              - text: Add Event
+        - table [ref=e308]:
+          - row [ref=e309]:
+            - columnheader [ref=e310]: Mon
+            - columnheader [ref=e311]: Tue
+            - columnheader [ref=e312]: Wed
+            - columnheader [ref=e313]: Thu
+            - columnheader [ref=e314]: Fri
+            - columnheader [ref=e315]: Sat
+            - columnheader [ref=e316]: Sun
+          - rowgroup [ref=e95]:
+            - row [ref=e317]:
+              - generic [ref=e105]:
+                - cell [ref=e318]:
+                  - button [ref=e319] [cursor=pointer]: "30"
+                - cell [ref=e320]:
+                  - button [ref=e321] [cursor=pointer]: "31"
+                - cell [ref=e322]:
+                  - button [ref=e323] [cursor=pointer]: "01"
+                - cell [ref=e324]:
+                  - button [ref=e325] [cursor=pointer]: "02"
+                - cell [ref=e326]:
+                  - button [ref=e327] [cursor=pointer]: "03"
+                - cell [ref=e328]:
+                  - button [ref=e329] [cursor=pointer]: "04"
+                - cell [ref=e330]:
+                  - button [ref=e331] [cursor=pointer]: "05"
+              - generic [ref=e333] [cursor=pointer]:
+                - img [ref=e126]
+                - generic [ref=e132]: "OVERDUE: missed hearing"
+          - rowgroup [ref=e133]:
+            - row [ref=e334]:
+              - generic [ref=e143]:
+                - cell [ref=e335]:
+                  - button [ref=e336] [cursor=pointer]: "06"
+                - cell [ref=e337]:
+                  - button [ref=e338] [cursor=pointer]: "07"
+                - cell [ref=e339]:
+                  - button [ref=e340] [cursor=pointer]: "08"
+                - cell [ref=e341]:
+                  - button [ref=e342] [cursor=pointer]: "09"
+                - cell [ref=e343]:
+                  - button [ref=e344] [cursor=pointer]: "10"
+                - cell [ref=e345]:
+                  - button [ref=e346] [cursor=pointer]: "11"
+                - cell [ref=e347]:
+                  - button [ref=e348] [cursor=pointer]: "12"
+              - generic [ref=e158]:
+                - generic [ref=e350] [cursor=pointer]:
+                  - img [ref=e163]
+                  - generic [ref=e168]: Client intake meeting
+                - generic [ref=e352] [cursor=pointer]:
+                  - img [ref=e174]
+                  - generic [ref=e180]: "Hearing: Smith v. Jones"
+              - generic [ref=e354] [cursor=pointer]:
+                - img [ref=e186]
+                - generic [ref=e191]: Response brief due
+          - rowgroup [ref=e192]:
+            - row [ref=e355]:
+              - generic [ref=e202]:
+                - cell [ref=e356]:
+                  - button [ref=e357] [cursor=pointer]: "13"
+                - cell [ref=e358]:
+                  - button [ref=e359] [cursor=pointer]: "14"
+                - cell [ref=e360]:
+                  - button [ref=e361] [cursor=pointer]: "15"
+                - cell [ref=e362]:
+                  - button [ref=e363] [cursor=pointer]: "16"
+                - cell [ref=e364]:
+                  - button [ref=e365] [cursor=pointer]: "17"
+                - cell [ref=e366]:
+                  - button [ref=e367] [cursor=pointer]: "18"
+                - cell [ref=e368]:
+                  - button [ref=e369] [cursor=pointer]: "19"
+              - generic [ref=e371] [cursor=pointer]:
+                - img [ref=e223]
+                - generic [ref=e226]: Follow up with expert
+          - rowgroup [ref=e227]:
+            - row [ref=e372]:
+              - generic [ref=e237]:
+                - cell [ref=e373]:
+                  - button [ref=e374] [cursor=pointer]: "20"
+                - cell [ref=e375]:
+                  - button [ref=e376] [cursor=pointer]: "21"
+                - cell [ref=e377]:
+                  - button [ref=e378] [cursor=pointer]: "22"
+                - cell [ref=e379]:
+                  - button [ref=e380] [cursor=pointer]: "23"
+                - cell [ref=e381]:
+                  - button [ref=e382] [cursor=pointer]: "24"
+                - cell [ref=e383]:
+                  - button [ref=e384] [cursor=pointer]: "25"
+                - cell [ref=e385]:
+                  - button [ref=e386] [cursor=pointer]: "26"
+              - generic [ref=e388] [cursor=pointer]:
+                - img [ref=e257]
+                - generic [ref=e259]: Office closed
+          - rowgroup [ref=e260]:
+            - row [ref=e389]:
+              - generic [ref=e270]:
+                - cell [ref=e390]:
+                  - button [ref=e391] [cursor=pointer]: "27"
+                - cell [ref=e392]:
+                  - button [ref=e393] [cursor=pointer]: "28"
+                - cell [ref=e394]:
+                  - button [ref=e395] [cursor=pointer]: "29"
+                - cell [ref=e396]:
+                  - button [ref=e397] [cursor=pointer]: "30"
+                - cell [ref=e398]:
+                  - button [ref=e399] [cursor=pointer]: "01"
+                - cell [ref=e400]:
+                  - button [ref=e401] [cursor=pointer]: "02"
+                - cell [ref=e402]:
+                  - button [ref=e403] [cursor=pointer]: "03"
+  - button "Open Next.js Dev Tools" [ref=e54] [cursor=pointer]:
+    - img [ref=e55]
+  - alert [ref=e58]
+  - dialog "Edit event" [ref=e407]:
+    - heading "Edit event" [level=2] [ref=e409]
+    - generic [ref=e410]:
+      - generic [ref=e411]:
+        - generic [ref=e412]: Title
+        - textbox "Title" [ref=e413]: "Hearing: Smith v. Jones"
+      - generic [ref=e414]:
+        - generic [ref=e415]: Kind
+        - combobox "Kind" [ref=e416]:
+          - option "Court Date" [selected]
+          - option "Filing Deadline"
+          - option "Meeting"
+          - option "Reminder"
+          - option "Other"
+      - generic [ref=e417]:
+        - generic [ref=e418]:
+          - generic [ref=e419]: Starts
+          - textbox "Starts" [ref=e420]: 2026-04-10T06:00
+        - generic [ref=e421]:
+          - generic [ref=e422]: Ends (optional)
+          - textbox "Ends (optional)" [active] [ref=e423]: 2026-04-09T06:00
+          - paragraph [ref=e438]: End must be after start
+      - generic [ref=e424]:
+        - generic [ref=e425]: Location (optional)
+        - textbox "Location (optional)" [ref=e426]
+      - generic [ref=e427]:
+        - generic [ref=e428]: Description (optional)
+        - textbox "Description (optional)" [ref=e429]
+      - generic [ref=e430]:
+        - button "Cancel" [ref=e431]
+        - button "Save" [ref=e432]
+    - button "Delete" [ref=e434]
+    - button "Close" [ref=e435]:
+      - img
+      - generic [ref=e436]: Close

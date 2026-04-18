@@ -1,0 +1,130 @@
+- generic [ref=e1]:
+  - alert [ref=e12]
+  - generic [ref=e13]:
+    - complementary [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - link [ref=e110] [cursor=pointer]:
+            - /url: /dashboard
+            - text: ClearTerms
+          - button [ref=e18]:
+            - img
+        - separator [ref=e19]
+        - navigation [ref=e20]:
+          - link [ref=e111] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e22]
+            - text: Dashboard
+          - link [ref=e112] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e28]
+            - text: Contracts
+          - link [ref=e113] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e33]
+            - text: Drafts
+          - link [ref=e114] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e36]
+            - text: Quick Analysis
+          - link [ref=e115] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e39]
+            - text: Cases
+          - link [ref=e116] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e43]
+            - text: Clients
+          - link [ref=e117] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e49]
+            - text: Calendar
+          - link [ref=e118] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e52]
+            - text: Templates
+          - link [ref=e119] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e56]
+            - text: Settings
+          - link [ref=e120] [cursor=pointer]:
+            - /url: /settings/team
+            - img [ref=e60]
+            - text: Team
+        - separator [ref=e65]
+        - button "Close user menu" [expanded] [active] [ref=e121] [cursor=pointer]:
+          - img "'s logo" [ref=e71]
+    - main [ref=e74]:
+      - generic [ref=e76]:
+        - generic [ref=e77]:
+          - heading [level=1] [ref=e123]: Dashboard
+          - generic [ref=e79]:
+            - link [ref=e124] [cursor=pointer]:
+              - /url: /cases/new
+              - img
+              - text: New Case
+            - link [ref=e125] [cursor=pointer]:
+              - /url: /contracts/new
+              - img
+              - text: Review Contract
+            - link [ref=e126] [cursor=pointer]:
+              - /url: /contracts/compare
+              - img
+              - text: Compare
+            - link [ref=e127] [cursor=pointer]:
+              - /url: /drafts/new
+              - img
+              - text: Generate Contract
+            - link [ref=e128] [cursor=pointer]:
+              - /url: /quick-analysis
+              - img
+              - text: Quick Analysis
+        - generic [ref=e85]:
+          - heading [level=2] [ref=e129]: Recent Cases
+          - link [ref=e130] [cursor=pointer]:
+            - /url: /cases/61e9c86a-4359-49cd-8d59-fdf894e11030
+            - generic [ref=e89]:
+              - img [ref=e91]
+              - generic [ref=e94]:
+                - paragraph [ref=e95]: Acme Corp v. Beta LLC — Contract Dispute
+                - paragraph [ref=e96]: Auto-detect · 0 docs · Today
+              - generic [ref=e97]:
+                - img
+                - text: Draft
+        - generic [ref=e98]:
+          - heading [level=2] [ref=e131]: Recent Contracts
+          - generic [ref=e100]:
+            - paragraph [ref=e101]: No contracts yet
+            - paragraph [ref=e102]: Upload a contract to get started with AI-powered review.
+            - link [ref=e132] [cursor=pointer]:
+              - /url: /contracts/new
+              - img
+              - text: New Review
+        - generic [ref=e104]:
+          - heading [level=2] [ref=e133]: Recent Drafts
+          - generic [ref=e106]:
+            - paragraph [ref=e107]: No drafts yet
+            - paragraph [ref=e108]: Generate a contract draft to get started.
+            - link [ref=e134] [cursor=pointer]:
+              - /url: /drafts/new
+              - img
+              - text: New Draft
+  - dialog "User button popover" [ref=e136]:
+    - generic [ref=e137]:
+      - generic [ref=e138]:
+        - img "'s logo" [ref=e141]
+        - generic [ref=e145]: alex76vichkov@gmail.com
+      - menu [ref=e146]:
+        - menuitem "Manage account" [ref=e147] [cursor=pointer]:
+          - img [ref=e149]
+          - text: Manage account
+        - menuitem "Sign out" [ref=e151] [cursor=pointer]:
+          - img [ref=e153]
+          - text: Sign out
+    - generic [ref=e157]:
+      - generic [ref=e159]:
+        - paragraph [ref=e160]: Secured by
+        - link "Clerk logo" [ref=e161] [cursor=pointer]:
+          - /url: https://go.clerk.com/components
+          - img [ref=e162]
+      - paragraph [ref=e167]: Development mode

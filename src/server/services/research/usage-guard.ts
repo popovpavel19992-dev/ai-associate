@@ -21,8 +21,9 @@ export class UsageLimitExceededError extends Error {
   constructor(
     public readonly used: number,
     public readonly limit: number,
+    bucket?: string,
   ) {
-    super(`Q&A usage limit exceeded: ${used}/${limit}`);
+    super(`${bucket ?? "Q&A"} usage limit exceeded: ${used}/${limit}`);
   }
 }
 
@@ -126,7 +127,7 @@ export class UsageGuard {
 
     if (cap !== null && used > cap) {
       await this.refundMemo({ userId: opts.userId });
-      throw new UsageLimitExceededError(used - 1, cap);
+      throw new UsageLimitExceededError(used - 1, cap, "Memo");
     }
   }
 

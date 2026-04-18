@@ -1,0 +1,119 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link [ref=e187] [cursor=pointer]:
+            - /url: /dashboard
+            - text: ClearTerms
+          - button [ref=e7]:
+            - img
+        - separator [ref=e8]
+        - navigation [ref=e9]:
+          - link [ref=e188] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e11]
+            - text: Dashboard
+          - link [ref=e189] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e17]
+            - text: Contracts
+          - link [ref=e190] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e22]
+            - text: Drafts
+          - link [ref=e191] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e25]
+            - text: Quick Analysis
+          - link [ref=e192] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e28]
+            - text: Cases
+          - link [ref=e193] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e32]
+            - text: Clients
+          - link [ref=e194] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e38]
+            - text: Calendar
+          - link [ref=e195] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e41]
+            - text: Templates
+          - link [ref=e196] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e45]
+            - text: Settings
+        - separator [ref=e48]
+        - button "Close user menu" [expanded] [active] [ref=e197] [cursor=pointer]:
+          - img "Pavel Popov's logo" [ref=e86]
+    - main [ref=e51]:
+      - generic [ref=e144]:
+        - generic [ref=e146]:
+          - heading [level=1] [ref=e199]: Ivan Petrov
+          - generic [ref=e148]:
+            - generic [ref=e149]:
+              - img [ref=e150]
+              - text: Individual
+            - generic [ref=e153]: Active
+        - generic [ref=e154]:
+          - generic [ref=e155]:
+            - generic [ref=e156]:
+              - generic [ref=e157]:
+                - heading [level=3] [ref=e200]: Info
+                - button [ref=e159]:
+                  - img
+              - generic [ref=e160]:
+                - generic [ref=e161]:
+                  - generic [ref=e162]: First name
+                  - paragraph [ref=e163]: Ivan
+                - generic [ref=e164]:
+                  - generic [ref=e165]: Last name
+                  - paragraph [ref=e166]: Petrov
+            - generic [ref=e167]:
+              - generic [ref=e168]:
+                - heading [level=3] [ref=e201]: Address
+                - button [ref=e170]:
+                  - img
+              - paragraph [ref=e171]: US
+            - generic [ref=e172]:
+              - generic [ref=e173]:
+                - heading [level=3] [ref=e202]: Contacts
+                - button [ref=e203]:
+                  - img
+                  - text: Add
+              - paragraph [ref=e176]: No contacts yet.
+          - complementary [ref=e177]:
+            - generic [ref=e184]:
+              - heading [level=3] [ref=e204]: Cases
+              - paragraph [ref=e186]: No cases yet.
+            - generic [ref=e179]:
+              - generic [ref=e180]:
+                - heading [level=3] [ref=e205]: Notes
+                - button [ref=e182]:
+                  - img
+              - paragraph [ref=e183]: Individual client created by firm member
+  - alert [ref=e81]
+  - dialog "User button popover" [ref=e207]:
+    - generic [ref=e208]:
+      - generic [ref=e209]:
+        - img "Pavel Popov's logo" [ref=e212]
+        - generic [ref=e214]:
+          - generic [ref=e216]: Pavel Popov
+          - generic [ref=e217]: popovpavel19992@gmail.com
+      - menu [ref=e218]:
+        - menuitem "Manage account" [ref=e219] [cursor=pointer]:
+          - img [ref=e221]
+          - text: Manage account
+        - menuitem "Sign out" [ref=e223] [cursor=pointer]:
+          - img [ref=e225]
+          - text: Sign out
+    - generic [ref=e229]:
+      - generic [ref=e231]:
+        - paragraph [ref=e232]: Secured by
+        - link "Clerk logo" [ref=e233] [cursor=pointer]:
+          - /url: https://go.clerk.com/components
+          - img [ref=e234]
+      - paragraph [ref=e239]: Development mode

@@ -1,0 +1,221 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link [ref=e252] [cursor=pointer]:
+            - /url: /dashboard
+            - text: ClearTerms
+          - button [ref=e8]:
+            - img
+        - separator [ref=e9]
+        - navigation [ref=e10]:
+          - link [ref=e253] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e12]
+            - text: Dashboard
+          - link [ref=e254] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e18]
+            - text: Contracts
+          - link [ref=e255] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e23]
+            - text: Drafts
+          - link [ref=e256] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e26]
+            - text: Quick Analysis
+          - link [ref=e257] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e29]
+            - text: Cases
+          - link [ref=e258] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e33]
+            - text: Clients
+          - link [ref=e259] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e39]
+            - text: Calendar
+          - link [ref=e260] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e42]
+            - text: Templates
+          - link [ref=e261] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e46]
+            - text: Settings
+          - link [ref=e262] [cursor=pointer]:
+            - /url: /settings/team
+            - img [ref=e72]
+            - text: Team
+          - link [ref=e263] [cursor=pointer]:
+            - /url: /invoices
+            - img [ref=e50]
+            - text: Invoices
+        - separator [ref=e53]
+        - button [ref=e264] [cursor=pointer]:
+          - img [ref=e265]
+    - main [ref=e56]:
+      - generic [ref=e58]:
+        - generic [ref=e83]:
+          - generic [ref=e84]:
+            - generic [ref=e85]: Intake
+            - generic [ref=e87]: →
+          - generic [ref=e88]:
+            - generic [ref=e89]: Research
+            - generic [ref=e90]: →
+          - generic [ref=e91]:
+            - generic [ref=e92]: Active Work
+            - generic [ref=e93]: →
+          - generic [ref=e94]:
+            - generic [ref=e95]: Resolution
+            - generic [ref=e96]: →
+          - generic [ref=e98]: Closed
+        - generic [ref=e99]:
+          - generic [ref=e100]:
+            - button [ref=e266]: Overview
+            - button [ref=e267]: Tasks
+            - button [ref=e268]: Calendar
+            - button [ref=e269]: Time
+            - button [ref=e270]: Report
+            - button [ref=e271]: Timeline
+            - button [ref=e272]: Contracts
+          - button [ref=e273]:
+            - text: Change Stage
+            - img
+        - generic [ref=e111]:
+          - generic [ref=e170]:
+            - generic [ref=e171]:
+              - generic [ref=e172]:
+                - paragraph [ref=e173]: Total Hours
+                - paragraph [ref=e174]: 1.52 hr
+              - generic [ref=e175]:
+                - paragraph [ref=e176]: Billable Amount
+                - paragraph [ref=e177]: $0.00
+              - generic [ref=e178]:
+                - paragraph [ref=e179]: Expenses
+                - paragraph [ref=e180]: $150.00
+              - generic [ref=e181]:
+                - paragraph [ref=e182]: Uninvoiced
+                - paragraph [ref=e183]: $150.00
+                - paragraph [ref=e184]: Billable + expenses
+            - generic [ref=e185]:
+              - button [ref=e274]:
+                - img
+                - text: Start Timer
+              - button [ref=e275]:
+                - img
+                - text: Add Entry
+              - button [ref=e276]:
+                - img
+                - text: Set Rates
+            - table [ref=e190]:
+              - rowgroup [ref=e191]:
+                - row [ref=e277]:
+                  - columnheader [ref=e278]: Date
+                  - columnheader [ref=e279]: Activity
+                  - columnheader [ref=e280]: Description
+                  - columnheader [ref=e281]: Duration
+                  - columnheader [ref=e282]: Rate
+                  - columnheader [ref=e283]: Amount
+                  - columnheader [ref=e284]: Actions
+              - rowgroup [ref=e200]:
+                - row [ref=e285]:
+                  - cell [ref=e286]: Apr 13, 2026
+                  - cell [ref=e287]:
+                    - generic [ref=e204]: Research
+                  - cell [ref=e288]:
+                    - generic [ref=e206]: Legal research for case strategy
+                  - cell [ref=e289]: 1.50 hr
+                  - cell [ref=e290]: $0.00/hr
+                  - cell [ref=e291]: $0.00
+                  - cell [ref=e210]:
+                    - generic [ref=e211]:
+                      - button [ref=e212]:
+                        - img
+                      - button [ref=e213]:
+                        - img
+                - row [ref=e292]:
+                  - cell [ref=e293]: Apr 13, 2026
+                  - cell [ref=e294]:
+                    - generic [ref=e217]: Other
+                  - cell [ref=e295]:
+                    - generic [ref=e219]: UAT test timer entry
+                  - cell [ref=e296]: 0.02 hr
+                  - cell [ref=e297]: $0.00/hr
+                  - cell [ref=e298]: $0.00
+                  - cell [ref=e223]:
+                    - generic [ref=e224]:
+                      - button [ref=e225]:
+                        - img
+                      - button [ref=e226]:
+                        - img
+            - separator [ref=e227]
+            - generic [ref=e228]:
+              - heading [level=3] [ref=e299]: Expenses
+              - button [ref=e300]:
+                - img
+                - text: Add Expense
+            - table [ref=e232]:
+              - rowgroup [ref=e233]:
+                - row [ref=e301]:
+                  - columnheader [ref=e302]: Date
+                  - columnheader [ref=e303]: Category
+                  - columnheader [ref=e304]: Description
+                  - columnheader [ref=e305]: Amount
+                  - columnheader [ref=e306]: Actions
+              - rowgroup [ref=e240]:
+                - row [ref=e307]:
+                  - cell [ref=e308]: Apr 13, 2026
+                  - cell [ref=e309]:
+                    - generic [ref=e244]: Filing Fee
+                  - cell [ref=e310]:
+                    - generic [ref=e246]: Court filing fee
+                  - cell [ref=e311]: $150.00
+                  - cell [ref=e248]:
+                    - generic [ref=e249]:
+                      - button [ref=e250]:
+                        - img
+                      - button [ref=e251]:
+                        - img
+          - generic [ref=e148]:
+            - generic [ref=e149]:
+              - heading [level=3] [ref=e312]: Client
+              - link [ref=e313] [cursor=pointer]:
+                - /url: /clients/7f2daf74-e485-4875-874a-54af227cedf5
+                - text: Acme Corporation
+              - generic [ref=e152]:
+                - img [ref=e153]
+                - text: Organization
+            - generic [ref=e157]:
+              - generic [ref=e158]:
+                - heading [level=3] [ref=e314]: Case Team
+                - button [ref=e160]:
+                  - img
+              - generic [ref=e162]:
+                - generic [ref=e163]:
+                  - generic [ref=e164]: AV
+                  - generic [ref=e165]:
+                    - generic [ref=e166]: Alex Vichkov
+                    - generic [ref=e167]: Lead
+                - button [ref=e168]:
+                  - img
+  - button "Open Next.js Dev Tools" [ref=e66] [cursor=pointer]:
+    - img [ref=e67]
+  - alert [ref=e70]
+  - dialog "Case Rate Overrides" [ref=e318]:
+    - heading "Case Rate Overrides" [level=2] [ref=e320]
+    - generic [ref=e322]:
+      - generic [ref=e323]:
+        - paragraph [ref=e324]: Alex Vichkov
+        - paragraph [ref=e325]: "Default: $250.00/hr"
+      - generic [ref=e326]:
+        - generic [ref=e327]: Override rate
+        - spinbutton [ref=e328]
+        - button "Save" [disabled]
+    - button "Close" [active] [ref=e330]
+    - button "Close" [ref=e331]:
+      - img
+      - generic [ref=e332]: Close

@@ -1,0 +1,46 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e247]:
+    - generic [ref=e248]:
+      - generic [ref=e250]:
+        - heading "Sign in to AI project" [level=1] [ref=e251]
+        - paragraph [ref=e252]: Welcome back! Please sign in to continue
+      - generic [ref=e253]:
+        - button "Sign in with Google Continue with Google" [ref=e256] [cursor=pointer]:
+          - generic [ref=e257]:
+            - generic "Sign in with Google" [ref=e259]
+            - generic [ref=e260]: Continue with Google
+        - paragraph [ref=e263]: or
+        - generic [ref=e265]:
+          - generic [ref=e266]:
+            - generic [ref=e269]:
+              - generic [ref=e270]:
+                - generic [ref=e271]: Email address
+                - generic [ref=e272]: Last used
+              - textbox "Email address" [ref=e273]:
+                - /placeholder: Enter your email address
+                - text: popovpavel19992@gmail.com
+            - generic [ref=e277]:
+              - generic [ref=e279]: Password
+              - generic [ref=e280]:
+                - textbox "Password" [ref=e281]:
+                  - /placeholder: Enter your password
+                  - text: ghptD-2684
+                - button "Show password" [ref=e282] [cursor=pointer]:
+                  - img [ref=e283]
+          - button "Continue" [ref=e288] [cursor=pointer]:
+            - generic [ref=e289]:
+              - text: Continue
+              - img [ref=e290]
+    - generic [ref=e292]:
+      - generic [ref=e293]:
+        - generic [ref=e294]: Don’t have an account?
+        - link "Sign up" [ref=e295] [cursor=pointer]:
+          - /url: https://infinite-bear-1.accounts.dev/sign-up#/?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard
+      - generic [ref=e297]:
+        - generic [ref=e299]:
+          - paragraph [ref=e300]: Secured by
+          - link "Clerk logo" [ref=e301] [cursor=pointer]:
+            - /url: https://go.clerk.com/components
+            - img [ref=e302]
+        - paragraph [ref=e307]: Development mode
+  - alert [ref=e67]: My account | AI project

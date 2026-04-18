@@ -1,0 +1,111 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "ClearTerms" [ref=e6] [cursor=pointer]:
+            - /url: /dashboard
+          - button [ref=e8]:
+            - img
+        - separator [ref=e9]
+        - navigation [ref=e10]:
+          - link "Dashboard" [ref=e11] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e12]
+            - text: Dashboard
+          - link "Contracts" [ref=e17] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e18]
+            - text: Contracts
+          - link "Drafts" [ref=e22] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e23]
+            - text: Drafts
+          - link "Quick Analysis" [ref=e25] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e26]
+            - text: Quick Analysis
+          - link "Cases" [ref=e28] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e29]
+            - text: Cases
+          - link "Clients" [ref=e32] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e33]
+            - text: Clients
+          - link "Calendar" [ref=e38] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e39]
+            - text: Calendar
+          - link "Templates" [ref=e41] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e42]
+            - text: Templates
+          - link "Settings" [ref=e45] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e46]
+            - text: Settings
+          - link "Team" [ref=e93] [cursor=pointer]:
+            - /url: /settings/team
+            - img [ref=e94]
+            - text: Team
+          - link "Invoices" [ref=e49] [cursor=pointer]:
+            - /url: /invoices
+            - img [ref=e50]
+            - text: Invoices
+        - separator [ref=e53]
+        - button "Open user menu" [ref=e100] [cursor=pointer]:
+          - img "'s logo" [ref=e103]
+    - main [ref=e56]:
+      - generic [ref=e197]:
+        - generic [ref=e198]:
+          - generic [ref=e199]:
+            - generic [ref=e200]:
+              - heading "INV-0001" [level=1] [ref=e201]
+              - generic [ref=e202]: Paid
+            - link "Acme Corporation" [ref=e203] [cursor=pointer]:
+              - /url: /clients/7f2daf74-e485-4875-874a-54af227cedf5
+            - generic [ref=e204]:
+              - generic [ref=e205]: "Issued: Apr 13, 2026"
+              - generic [ref=e206]: "Due: Apr 13, 2026"
+          - button "PDF" [ref=e251]:
+            - img
+            - text: PDF
+        - generic [ref=e212]:
+          - paragraph [ref=e214]: Acme Corp v. Beta LLC — Contract Dispute
+          - table [ref=e215]:
+            - rowgroup [ref=e216]:
+              - row "Description Qty Rate Amount" [ref=e217]:
+                - columnheader "Description" [ref=e218]
+                - columnheader "Qty" [ref=e219]
+                - columnheader "Rate" [ref=e220]
+                - columnheader "Amount" [ref=e221]
+            - rowgroup [ref=e222]:
+              - row "Legal research for case strategy 1.50 hr $0.00 $0.00" [ref=e223]:
+                - cell "Legal research for case strategy" [ref=e224]
+                - cell "1.50 hr" [ref=e225]
+                - cell "$0.00" [ref=e226]
+                - cell "$0.00" [ref=e227]
+              - row "UAT test timer entry 0.02 hr $0.00 $0.00" [ref=e228]:
+                - cell "UAT test timer entry" [ref=e229]
+                - cell "0.02 hr" [ref=e230]
+                - cell "$0.00" [ref=e231]
+                - cell "$0.00" [ref=e232]
+              - row "Court filing fee 1 $150.00 $150.00" [ref=e233]:
+                - cell "Court filing fee" [ref=e234]
+                - cell "1" [ref=e235]
+                - cell "$150.00" [ref=e236]
+                - cell "$150.00" [ref=e237]
+        - generic [ref=e238]:
+          - generic [ref=e239]:
+            - generic [ref=e240]: Subtotal
+            - generic [ref=e241]: $150.00
+          - generic [ref=e242]:
+            - generic [ref=e243]: Tax
+            - generic [ref=e244]: $0.00
+          - generic [ref=e245]:
+            - generic [ref=e246]: Total
+            - generic [ref=e247]: $150.00
+  - button "Open Next.js Dev Tools" [ref=e88] [cursor=pointer]:
+    - img [ref=e89]
+  - alert [ref=e92]

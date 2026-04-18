@@ -1,0 +1,36 @@
+- generic [ref=e1]:
+  - generic [ref=e55]:
+    - generic [ref=e56]:
+      - generic [ref=e58]:
+        - heading "Enter your password" [level=1] [ref=e59]
+        - paragraph [ref=e60]: Enter the password associated with your account
+        - generic [ref=e61]:
+          - paragraph [ref=e62]: uat-tester+clerk_test@cleartermstest.dev
+          - button "Edit" [ref=e63] [cursor=pointer]:
+            - img [ref=e64]
+      - generic [ref=e66]:
+        - generic [ref=e67]:
+          - generic [ref=e70]:
+            - generic [ref=e71]:
+              - generic [ref=e72]: Password
+              - link "Forgot password?" [ref=e73] [cursor=pointer]:
+                - /url: ""
+            - generic [ref=e74]:
+              - textbox "Password" [active] [ref=e75]:
+                - /placeholder: Enter your password
+              - button "Show password" [ref=e76] [cursor=pointer]:
+                - img [ref=e77]
+          - button "Continue" [ref=e81] [cursor=pointer]:
+            - generic [ref=e82]:
+              - text: Continue
+              - img [ref=e83]
+        - link "Use another method" [ref=e86] [cursor=pointer]:
+          - /url: https://infinite-bear-1.accounts.dev/sign-in/factor-one
+    - generic [ref=e89]:
+      - generic [ref=e91]:
+        - paragraph [ref=e92]: Secured by
+        - link "Clerk logo" [ref=e93] [cursor=pointer]:
+          - /url: https://go.clerk.com/components
+          - img [ref=e94]
+      - paragraph [ref=e99]: Development mode
+  - alert [ref=e4]: My account | AI project

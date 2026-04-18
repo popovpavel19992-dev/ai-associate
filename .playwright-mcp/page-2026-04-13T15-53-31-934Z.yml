@@ -1,0 +1,32 @@
+- generic [ref=e1]:
+  - generic [ref=e108]:
+    - generic [ref=e109]:
+      - generic [ref=e111]:
+        - heading "Check your email" [level=1] [ref=e112]
+        - paragraph [ref=e113]: to continue to AI project
+        - paragraph [ref=e115]: dmitri1997shah@gmail.com
+      - generic [ref=e116]:
+        - generic [ref=e117]:
+          - generic [ref=e119]:
+            - generic:
+              - group
+              - textbox "Enter verification code" [active] [ref=e120]
+          - button "Didn't receive a code? Resend (29)" [disabled]
+        - paragraph [ref=e123]: You're signing in from a new device. We're asking for verification to keep your account secure.
+        - generic [ref=e124]:
+          - button "Continue" [ref=e125] [cursor=pointer]:
+            - generic [ref=e126]:
+              - text: Continue
+              - img [ref=e127]
+          - link "Use another method" [ref=e130] [cursor=pointer]:
+            - /url: http://localhost:3000/sign-in/factor-two
+    - generic [ref=e133]:
+      - generic [ref=e135]:
+        - paragraph [ref=e136]: Secured by
+        - link "Clerk logo" [ref=e137] [cursor=pointer]:
+          - /url: https://go.clerk.com/components
+          - img [ref=e138]
+      - paragraph [ref=e143]: Development mode
+  - button "Open Next.js Dev Tools" [ref=e8] [cursor=pointer]:
+    - img [ref=e9]
+  - alert [ref=e12]

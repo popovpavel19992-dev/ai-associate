@@ -1,0 +1,16 @@
+{"timestamp":"00:10:07.903","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, scandir '/Users/fedorkaspirovich/ClearTerms/.claude/worktrees/2.1.3b-calendar-sync/src/app'"}
+{"timestamp":"00:10:07.914","source":"Server","level":"ERROR","message":"⨯ \"unhandledRejection:\" Error: ENOENT: no such file or directory, scandir '/Users/fedorkaspirovich/ClearTerms/.claude/worktrees/2.1.3b-calendar-sync/src/app'"}
+{"timestamp":"00:10:07.939","source":"Server","level":"ERROR","message":"⨯ \"unhandledRejection: \" Error: ENOENT: no such file or directory, scandir '/Users/fedorkaspirovich/ClearTerms/.claude/worktrees/2.1.3b-calendar-sync/src/app'"}
+{"timestamp":"00:10:17.273","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, open '/Users/fedorkaspirovich/ClearTerms/.claude/worktrees/2.1.3b-calendar-sync/.next/dev/server/app/(app)/settings/integrations/page/build-manifest.json'"}
+{"timestamp":"00:10:17.283","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, scandir '/Users/fedorkaspirovich/ClearTerms/.claude/worktrees/2.1.3b-calendar-sync/src/app'"}
+{"timestamp":"00:10:18.037","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, scandir '/Users/fedorkaspirovich/ClearTerms/.claude/worktrees/2.1.3b-calendar-sync/src/app'"}
+{"timestamp":"00:10:18.040","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, scandir '/Users/fedorkaspirovich/ClearTerms/.claude/worktrees/2.1.3b-calendar-sync/src/app'"}
+{"timestamp":"00:10:18.054","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, scandir '/Users/fedorkaspirovich/ClearTerms/.claude/worktrees/2.1.3b-calendar-sync/src/app'"}
+{"timestamp":"00:10:18.056","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, scandir '/Users/fedorkaspirovich/ClearTerms/.claude/worktrees/2.1.3b-calendar-sync/src/app'"}
+{"timestamp":"00:10:18.079","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, scandir '/Users/fedorkaspirovich/ClearTerms/.claude/worktrees/2.1.3b-calendar-sync/src/app'"}
+{"timestamp":"00:10:18.081","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, scandir '/Users/fedorkaspirovich/ClearTerms/.claude/worktrees/2.1.3b-calendar-sync/src/app'"}
+{"timestamp":"00:10:18.087","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, scandir '/Users/fedorkaspirovich/ClearTerms/.claude/worktrees/2.1.3b-calendar-sync/src/app'"}
+{"timestamp":"00:10:18.089","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, scandir '/Users/fedorkaspirovich/ClearTerms/.claude/worktrees/2.1.3b-calendar-sync/src/app'"}
+{"timestamp":"00:11:42.839","source":"Server","level":"LOG","message":"✓ Compiled in 116s"}
+{"timestamp":"21:08:05.638","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, scandir '/Users/fedorkaspirovich/ClearTerms/.claude/worktrees/2.1.3b-calendar-sync/src/app'"}
+{"timestamp":"21:08:05.686","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, scandir '/Users/fedorkaspirovich/ClearTerms/.claude/worktrees/2.1.3b-calendar-sync/src/app'"}

@@ -1,0 +1,166 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "ClearTerms" [ref=e294] [cursor=pointer]:
+            - /url: /dashboard
+          - button [ref=e8]:
+            - img
+        - separator [ref=e9]
+        - navigation [ref=e10]:
+          - link "Dashboard" [ref=e300] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e12]
+            - text: Dashboard
+          - link "Contracts" [ref=e301] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e18]
+            - text: Contracts
+          - link "Drafts" [ref=e302] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e23]
+            - text: Drafts
+          - link "Quick Analysis" [ref=e303] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e26]
+            - text: Quick Analysis
+          - link "Cases" [ref=e304] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e29]
+            - text: Cases
+          - link "Clients" [ref=e305] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e33]
+            - text: Clients
+          - link "Calendar" [ref=e306] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e39]
+            - text: Calendar
+          - link "Templates" [ref=e307] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e42]
+            - text: Templates
+          - link "Settings" [ref=e308] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e46]
+            - text: Settings
+          - link "Team" [ref=e309] [cursor=pointer]:
+            - /url: /settings/team
+            - img [ref=e84]
+            - text: Team
+          - link "Invoices" [ref=e310] [cursor=pointer]:
+            - /url: /invoices
+            - img [ref=e50]
+            - text: Invoices
+        - separator [ref=e53]
+        - button "Open user menu" [ref=e311] [cursor=pointer]:
+          - img "'s logo" [ref=e312]
+    - main [ref=e56]:
+      - generic [ref=e130]:
+        - generic [ref=e133]:
+          - generic [ref=e134]:
+            - generic [ref=e135]: Intake
+            - generic [ref=e137]: →
+          - generic [ref=e138]:
+            - generic [ref=e139]: Research
+            - generic [ref=e140]: →
+          - generic [ref=e141]:
+            - generic [ref=e142]: Active Work
+            - generic [ref=e143]: →
+          - generic [ref=e144]:
+            - generic [ref=e145]: Resolution
+            - generic [ref=e146]: →
+          - generic [ref=e148]: Closed
+        - generic [ref=e149]:
+          - generic [ref=e150]:
+            - button "Overview" [ref=e313]
+            - button "Tasks" [ref=e314]
+            - button "Calendar" [ref=e315]
+            - button "Time" [ref=e316]
+            - button "Report" [ref=e317]
+            - button "Timeline" [ref=e318]
+            - button "Contracts" [ref=e319]
+          - button "Change Stage" [ref=e320]:
+            - text: Change Stage
+            - img
+        - generic [ref=e161]:
+          - generic [ref=e220]:
+            - generic [ref=e221]:
+              - generic [ref=e222]:
+                - paragraph [ref=e223]: Total Hours
+                - paragraph [ref=e224]: 0.02 hr
+              - generic [ref=e225]:
+                - paragraph [ref=e226]: Billable Amount
+                - paragraph [ref=e227]: $0.00
+              - generic [ref=e228]:
+                - paragraph [ref=e229]: Expenses
+                - paragraph [ref=e230]: $0.00
+              - generic [ref=e231]:
+                - paragraph [ref=e232]: Uninvoiced
+                - paragraph [ref=e233]: $0.00
+                - paragraph [ref=e234]: Billable + expenses
+            - generic [ref=e235]:
+              - button "Start Timer" [ref=e327]:
+                - img
+                - text: Start Timer
+              - button "Add Entry" [ref=e328]:
+                - img
+                - text: Add Entry
+            - table [ref=e335]:
+              - rowgroup [ref=e336]:
+                - row "Date Activity Description Duration Rate Amount Actions" [ref=e337]:
+                  - columnheader "Date" [ref=e338]
+                  - columnheader "Activity" [ref=e339]
+                  - columnheader "Description" [ref=e340]
+                  - columnheader "Duration" [ref=e341]
+                  - columnheader "Rate" [ref=e342]
+                  - columnheader "Amount" [ref=e343]
+                  - columnheader "Actions" [ref=e344]
+              - rowgroup [ref=e345]:
+                - row "Apr 13, 2026 Other UAT test timer entry 0.02 hr $0.00/hr $0.00" [ref=e346]:
+                  - cell "Apr 13, 2026" [ref=e347]
+                  - cell "Other" [ref=e348]:
+                    - generic [ref=e349]: Other
+                  - cell "UAT test timer entry" [ref=e350]:
+                    - generic [ref=e351]: UAT test timer entry
+                  - cell "0.02 hr" [ref=e352]
+                  - cell "$0.00/hr" [ref=e353]
+                  - cell "$0.00" [ref=e354]
+                  - cell [ref=e355]:
+                    - generic [ref=e356]:
+                      - button [ref=e357]:
+                        - img
+                      - button [ref=e358]:
+                        - img
+            - separator [ref=e239]
+            - generic [ref=e240]:
+              - heading "Expenses" [level=3] [ref=e329]
+              - button "Add Expense" [ref=e330]:
+                - img
+                - text: Add Expense
+            - paragraph [ref=e243]: No expenses yet.
+          - generic [ref=e198]:
+            - generic [ref=e199]:
+              - heading "Client" [level=3] [ref=e331]
+              - link "Acme Corporation" [ref=e332] [cursor=pointer]:
+                - /url: /clients/7f2daf74-e485-4875-874a-54af227cedf5
+              - generic [ref=e202]:
+                - img [ref=e203]
+                - text: Organization
+            - generic [ref=e207]:
+              - generic [ref=e208]:
+                - heading "Case Team" [level=3] [ref=e333]
+                - button [ref=e210]:
+                  - img
+              - generic [ref=e212]:
+                - generic [ref=e213]:
+                  - generic [ref=e214]: AV
+                  - generic [ref=e215]:
+                    - generic [ref=e216]: Alex Vichkov
+                    - generic [ref=e217]: Lead
+                - button [ref=e218]:
+                  - img
+  - button "Open Next.js Dev Tools" [ref=e126] [cursor=pointer]:
+    - img [ref=e127]
+  - alert [ref=e82]

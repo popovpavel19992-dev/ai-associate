@@ -1,0 +1,18 @@
+[     551ms] [ERROR]  Note that 'script-src' was not explicitly set, so 'default-src' is used as a fallback. @ https://infinite-bear-1.accounts.dev/_next/static/chunks/pages/_app-b4e172c45530bdbc.js:18
+[     770ms] [WARNING] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview @ https://infinite-bear-1.accounts.dev/_next/static/chunks/pages/_app-b4e172c45530bdbc.js:14
+[    1510ms] [WARNING] Clerk: Structural CSS detected that may break on updates.
+
+Found:
+  - CSS "body.cl-component"
+  - CSS ".cl-component .button:focus-visible"
+
+These selectors depend on the internal DOM structure of Clerk's components, which may change when Clerk deploys component updates.
+To prevent breaking changes, install @clerk/ui and pass it to ClerkProvider:
+
+  import { ui } from '@clerk/ui'
+  <ClerkProvider ui={ui}>
+
+Learn more: https://clerk.com/docs/reference/components/versioning
+(code=structural_css_pin_clerk_ui) @ https://infinite-bear-1.accounts.dev/_next/static/chunks/pages/_app-b4e172c45530bdbc.js:14
+[    1632ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://infinite-bear-1.accounts.dev/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard:0
+[   84953ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://infinite-bear-1.accounts.dev/sign-in/factor-one?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard:0

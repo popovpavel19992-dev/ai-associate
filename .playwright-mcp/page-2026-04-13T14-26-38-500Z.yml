@@ -1,0 +1,51 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e10]:
+        - heading "Sign in to AI project" [level=1] [ref=e11]
+        - paragraph [ref=e12]: Welcome back! Please sign in to continue
+      - generic [ref=e13]:
+        - button "Sign in with Google Continue with Google" [ref=e16] [cursor=pointer]:
+          - generic [ref=e17]:
+            - generic "Sign in with Google" [ref=e19]
+            - generic [ref=e20]: Continue with Google
+        - paragraph [ref=e23]: or
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - generic [ref=e28]:
+              - generic [ref=e29]:
+                - generic [ref=e30]:
+                  - generic [ref=e31]: Email address
+                  - generic [ref=e32]: Last used
+                - textbox "Email address" [ref=e33]:
+                  - /placeholder: Enter your email address
+                  - text: alex76vichkov@gmail.com
+              - generic [ref=e34]: Couldn't find your account.
+              - paragraph [ref=e69]:
+                - img [ref=e70]
+                - text: Couldn't find your account.
+            - generic [ref=e58]:
+              - generic [ref=e60]: Password
+              - generic [ref=e61]:
+                - textbox "Password" [ref=e62]:
+                  - /placeholder: Enter your password
+                  - text: Xtp-rt4678
+                - button "Show password" [ref=e63] [cursor=pointer]:
+                  - img [ref=e64]
+          - button "Continue" [ref=e36] [cursor=pointer]:
+            - generic [ref=e72]:
+              - text: Continue
+              - img [ref=e73]
+    - generic [ref=e40]:
+      - generic [ref=e41]:
+        - generic [ref=e42]: Don’t have an account?
+        - link "Sign up" [ref=e43] [cursor=pointer]:
+          - /url: https://infinite-bear-1.accounts.dev/sign-up#/?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard
+      - generic [ref=e45]:
+        - generic [ref=e47]:
+          - paragraph [ref=e48]: Secured by
+          - link "Clerk logo" [ref=e49] [cursor=pointer]:
+            - /url: https://go.clerk.com/components
+            - img [ref=e50]
+        - paragraph [ref=e55]: Development mode
+  - alert [ref=e4]

@@ -1,0 +1,53 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e172]:
+    - generic [ref=e173]:
+      - generic [ref=e175]:
+        - heading "Create your account" [level=1] [ref=e176]
+        - paragraph [ref=e177]: Welcome! Please fill in the details to get started.
+      - generic [ref=e178]:
+        - generic [ref=e180]:
+          - button "Sign in with Google Continue with Google" [disabled]:
+            - generic:
+              - generic:
+                - generic "Sign in with Google"
+              - generic: Continue with Google
+        - paragraph [ref=e188]: or
+        - generic [ref=e190]:
+          - generic [ref=e191]:
+            - generic [ref=e194]:
+              - generic [ref=e195]:
+                - generic: Email address
+              - textbox "Email address" [disabled]:
+                - /placeholder: Enter your email address
+                - text: popovpavel19992@gmail.com
+            - generic [ref=e200]:
+              - generic [ref=e201]:
+                - generic [ref=e202]:
+                  - generic: Password
+                - generic [ref=e204]:
+                  - textbox "Password" [disabled]:
+                    - /placeholder: Create a password
+                    - text: ghptD-2684
+                  - button "Show password" [ref=e206] [cursor=pointer]:
+                    - img [ref=e207]
+              - generic [ref=e210]: Your password meets all the necessary requirements.
+              - paragraph [ref=e234]:
+                - img [ref=e235]
+                - text: Your password meets all the necessary requirements.
+          - generic [ref=e212]:
+            - button "Loading" [disabled]:
+              - generic:
+                - generic "Loading"
+    - generic [ref=e217]:
+      - generic [ref=e218]:
+        - generic [ref=e219]: Already have an account?
+        - link "Sign in" [ref=e220] [cursor=pointer]:
+          - /url: https://infinite-bear-1.accounts.dev/sign-in#/?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard
+      - generic [ref=e222]:
+        - generic [ref=e224]:
+          - paragraph [ref=e225]: Secured by
+          - link "Clerk logo" [ref=e226] [cursor=pointer]:
+            - /url: https://go.clerk.com/components
+            - img [ref=e227]
+        - paragraph [ref=e232]: Development mode
+  - alert [ref=e67]: My account | AI project

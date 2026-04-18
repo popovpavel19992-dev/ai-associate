@@ -1,0 +1,115 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "ClearTerms" [ref=e6] [cursor=pointer]:
+            - /url: /dashboard
+          - button [ref=e152]:
+            - img
+        - separator [ref=e9]
+        - navigation [ref=e10]:
+          - link "Dashboard" [ref=e11] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e12]
+            - text: Dashboard
+          - link "Contracts" [ref=e17] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e18]
+            - text: Contracts
+          - link "Drafts" [ref=e22] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e23]
+            - text: Drafts
+          - link "Quick Analysis" [ref=e25] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e26]
+            - text: Quick Analysis
+          - link "Cases" [ref=e28] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e29]
+            - text: Cases
+          - link "Clients" [ref=e32] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e33]
+            - text: Clients
+          - link "Calendar" [ref=e38] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e39]
+            - text: Calendar
+          - link "Notifications" [ref=e41] [cursor=pointer]:
+            - /url: /notifications
+            - img [ref=e42]
+            - text: Notifications
+          - link "Templates" [ref=e45] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e46]
+            - text: Templates
+          - link "Settings" [ref=e49] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e50]
+            - text: Settings
+          - link "Team" [ref=e90] [cursor=pointer]:
+            - /url: /settings/team
+            - img [ref=e91]
+            - text: Team
+          - link "Invoices" [ref=e53] [cursor=pointer]:
+            - /url: /invoices
+            - img [ref=e54]
+            - text: Invoices
+        - separator [ref=e57]
+        - button "Open user menu" [ref=e97] [cursor=pointer]:
+          - img "'s logo" [ref=e100]
+    - main [ref=e60]:
+      - generic [ref=e62]:
+        - heading "Notifications" [level=1] [ref=e63]
+        - generic [ref=e64]:
+          - generic [ref=e66]:
+            - button "All" [ref=e67]
+            - button "Unread" [ref=e153]
+          - generic [ref=e69]:
+            - button "All" [ref=e70]
+            - button "Cases" [ref=e71]
+            - button "Billing" [ref=e72]
+            - button "Team" [ref=e73]
+            - button "Calendar" [ref=e74]
+          - generic [ref=e75]:
+            - generic [ref=e104]:
+              - link "Case analysis complete Acme Corp v. Beta LLC — 3 documents analyzed 6m ago" [ref=e106] [cursor=pointer]:
+                - /url: /cases/61e9c86a-4359-49cd-8d59-fdf894e11030
+                - generic [ref=e107]:
+                  - generic [ref=e109]: Case analysis complete
+                  - paragraph [ref=e110]: Acme Corp v. Beta LLC — 3 documents analyzed
+                  - generic [ref=e111]: 6m ago
+              - button "Delete notification" [ref=e112]:
+                - img
+            - generic [ref=e113]:
+              - link "New task assigned Review contract terms — Acme Corp case 9m ago" [ref=e115] [cursor=pointer]:
+                - /url: /cases/61e9c86a-4359-49cd-8d59-fdf894e11030
+                - generic [ref=e116]:
+                  - generic [ref=e119]: New task assigned
+                  - paragraph [ref=e120]: Review contract terms — Acme Corp case
+                  - generic [ref=e121]: 9m ago
+              - button "Delete notification" [ref=e122]:
+                - img
+            - generic [ref=e123]:
+              - 'link "Invoice #1042 sent Client: Acme Corp — $2,500.00 1h ago" [ref=e125] [cursor=pointer]':
+                - /url: /invoices
+                - generic [ref=e126]:
+                  - generic [ref=e129]: "Invoice #1042 sent"
+                  - paragraph [ref=e130]: "Client: Acme Corp — $2,500.00"
+                  - generic [ref=e131]: 1h ago
+              - button "Delete notification" [ref=e132]:
+                - img
+            - generic [ref=e133]:
+              - 'link "Case stage updated Acme Corp: Draft → Active Work 3h ago" [ref=e135] [cursor=pointer]':
+                - /url: /cases/61e9c86a-4359-49cd-8d59-fdf894e11030
+                - generic [ref=e136]:
+                  - generic [ref=e138]: Case stage updated
+                  - paragraph [ref=e139]: "Acme Corp: Draft → Active Work"
+                  - generic [ref=e140]: 3h ago
+              - button "Delete notification" [ref=e141]:
+                - img
+  - button "Open Next.js Dev Tools" [ref=e83] [cursor=pointer]:
+    - img [ref=e84]
+  - alert [ref=e87]

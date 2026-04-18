@@ -1,0 +1,131 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link [ref=e215] [cursor=pointer]:
+            - /url: /dashboard
+            - text: ClearTerms
+          - button [ref=e7]:
+            - img
+        - separator [ref=e8]
+        - navigation [ref=e9]:
+          - link [ref=e216] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e11]
+            - text: Dashboard
+          - link [ref=e217] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e17]
+            - text: Contracts
+          - link [ref=e218] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e22]
+            - text: Drafts
+          - link [ref=e219] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e25]
+            - text: Quick Analysis
+          - link [ref=e220] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e28]
+            - text: Cases
+          - link [ref=e221] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e32]
+            - text: Clients
+          - link [ref=e222] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e38]
+            - text: Calendar
+          - link [ref=e223] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e41]
+            - text: Templates
+          - link [ref=e224] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e45]
+            - text: Settings
+          - link [ref=e225] [cursor=pointer]:
+            - /url: /settings/team
+            - img [ref=e88]
+            - text: Team
+        - separator [ref=e48]
+        - button "Close user menu" [expanded] [active] [ref=e226] [cursor=pointer]:
+          - img "'s logo" [ref=e97]
+    - main [ref=e51]:
+      - generic [ref=e164]:
+        - generic [ref=e165]:
+          - generic [ref=e166]:
+            - heading [level=1] [ref=e228]: Acme Corp
+            - generic [ref=e168]:
+              - generic [ref=e169]:
+                - img [ref=e170]
+                - text: Organization
+              - generic [ref=e174]: Active
+          - button [ref=e229]:
+            - img
+            - text: Archive
+        - generic [ref=e177]:
+          - generic [ref=e178]:
+            - generic [ref=e179]:
+              - generic [ref=e180]:
+                - heading [level=3] [ref=e230]: Info
+                - button [ref=e182]:
+                  - img
+              - generic [ref=e183]:
+                - generic [ref=e184]:
+                  - generic [ref=e185]: Company
+                  - paragraph [ref=e186]: Acme Corp
+                - generic [ref=e187]:
+                  - generic [ref=e188]: Industry
+                  - paragraph [ref=e189]: Technology
+                - generic [ref=e190]:
+                  - generic [ref=e191]: Website
+                  - paragraph [ref=e192]: https://acme.example.com
+                - generic [ref=e193]:
+                  - generic [ref=e194]: EIN
+                  - paragraph [ref=e195]: 12-3456789
+            - generic [ref=e196]:
+              - generic [ref=e197]:
+                - heading [level=3] [ref=e231]: Address
+                - button [ref=e199]:
+                  - img
+              - paragraph [ref=e200]: 123 Main St New York, NY, 10001 US
+            - generic [ref=e201]:
+              - generic [ref=e202]:
+                - heading [level=3] [ref=e232]: Contacts
+                - button [ref=e233]:
+                  - img
+                  - text: Add
+              - paragraph [ref=e205]: No contacts yet.
+          - complementary [ref=e206]:
+            - generic [ref=e207]:
+              - heading [level=3] [ref=e234]: Cases
+              - paragraph [ref=e209]: No cases yet.
+            - generic [ref=e210]:
+              - generic [ref=e211]:
+                - heading [level=3] [ref=e235]: Notes
+                - button [ref=e213]:
+                  - img
+              - paragraph [ref=e214]: Key client for acme technology contracts
+  - alert [ref=e86]
+  - dialog "User button popover" [ref=e237]:
+    - generic [ref=e238]:
+      - generic [ref=e239]:
+        - img "'s logo" [ref=e242]
+        - generic [ref=e246]: alex76vichkov@gmail.com
+      - menu [ref=e247]:
+        - menuitem "Manage account" [ref=e248] [cursor=pointer]:
+          - img [ref=e250]
+          - text: Manage account
+        - menuitem "Sign out" [ref=e252] [cursor=pointer]:
+          - img [ref=e254]
+          - text: Sign out
+    - generic [ref=e258]:
+      - generic [ref=e260]:
+        - paragraph [ref=e261]: Secured by
+        - link "Clerk logo" [ref=e262] [cursor=pointer]:
+          - /url: https://go.clerk.com/components
+          - img [ref=e263]
+      - paragraph [ref=e268]: Development mode

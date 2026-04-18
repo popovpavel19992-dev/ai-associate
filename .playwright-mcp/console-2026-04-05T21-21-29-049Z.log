@@ -1,0 +1,26 @@
+[     451ms] [ERROR]  Note that 'script-src' was not explicitly set, so 'default-src' is used as a fallback. @ https://infinite-bear-1.accounts.dev/_next/static/chunks/pages/_app-b4e172c45530bdbc.js:18
+[     660ms] [WARNING] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview @ https://infinite-bear-1.accounts.dev/_next/static/chunks/pages/_app-b4e172c45530bdbc.js:14
+[    1549ms] [WARNING] Clerk: Structural CSS detected that may break on updates.
+
+Found:
+  - CSS "body.cl-component"
+  - CSS ".cl-component .button:focus-visible"
+
+These selectors depend on the internal DOM structure of Clerk's components, which may change when Clerk deploys component updates.
+To prevent breaking changes, install @clerk/ui and pass it to ClerkProvider:
+
+  import { ui } from '@clerk/ui'
+  <ClerkProvider ui={ui}>
+
+Learn more: https://clerk.com/docs/reference/components/versioning
+(code=structural_css_pin_clerk_ui) @ https://infinite-bear-1.accounts.dev/_next/static/chunks/pages/_app-b4e172c45530bdbc.js:14
+[    1633ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://infinite-bear-1.accounts.dev/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard:0
+[   11034ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://infinite-bear-1.accounts.dev/sign-in/factor-one?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard:0
+[   35229ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1076_next_dist_0kui28m._.js:2432
+[   35333ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1076_next_dist_0kui28m._.js:2432
+[   35765ms] [WARNING] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview @ http://localhost:3000/_next/static/chunks/1076_next_dist_0kui28m._.js:2432
+[   35789ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1076_next_dist_0kui28m._.js:2432
+[   35864ms] [LOG] [Fast Refresh] done in 177ms @ http://localhost:3000/_next/static/chunks/1076_next_dist_0kui28m._.js:2432
+[   36082ms] [LOG] %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit @ http://localhost:3000/_next/static/chunks/1076_next_dist_0kui28m._.js:2432
+[   36083ms] [LOG] %c[Vercel Web Analytics]%c [view] http://localhost:3000/onboarding color: rgb(120, 120, 120) color: inherit {o: http://localhost:3000/onboarding, sv: 0.1.3, sdkn: @vercel/analytics/react, sdkv: 2.0.1, ts: 1775424125131} /_vercel/insights/view @ http://localhost:3000/_next/static/chunks/1076_next_dist_0kui28m._.js:2432
+[   36092ms] [LOG] %c[Vercel Speed Insights]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit @ http://localhost:3000/_next/static/chunks/1076_next_dist_0kui28m._.js:2432

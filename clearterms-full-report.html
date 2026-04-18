@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClearTerms — Full Business Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg-page: #0e0f16;
+    --bg-card: rgba(15, 17, 25, 0.95);
+    --bg-subtle: rgba(30, 35, 50, 0.6);
+    --bg-hover: rgba(52, 211, 153, 0.04);
+    --border: rgba(255,255,255,0.06);
+    --border-accent: rgba(52, 211, 153, 0.2);
+    --text: #e8eaf0;
+    --text-secondary: #8b90a0;
+    --text-dim: #555a6e;
+    --green: #34d399;
+    --blue: #60a5fa;
+    --purple: #a78bfa;
+    --orange: #fb923c;
+    --red: #f87171;
+    --pink: #f472b6;
+    --cyan: #22d3ee;
+    --yellow: #fbbf24;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* ===== COVER ===== */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cover h1 {
+    font-size: 64px;
+    font-weight: 800;
+    letter-spacing: -3px;
+    margin-bottom: 12px;
+  }
+  .cover .tagline {
+    font-size: 22px;
+    color: var(--green);
+    margin-bottom: 40px;
+  }
+  .cover .meta {
+    font-size: 14px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 20px;
+  }
+
+  /* ===== TABLE OF CONTENTS ===== */
+  .toc {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 80px 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .toc h2 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    margin-bottom: 32px;
+  }
+  .toc-section {
+    display: flex;
+    align-items: baseline;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+    color: inherit;
+  }
+  .toc-section:hover {
+    background: var(--bg-hover);
+  }
+  .toc-num {
+    font-size: 14px;
+    font-weight: 700;
+    width: 40px;
+    flex-shrink: 0;
+  }
+  .toc-title {
+    font-size: 17px;
+    font-weight: 600;
+    flex: 1;
+  }
+  .toc-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    text-align: right;
+    max-width: 280px;
+  }
+
+  /* ===== CHAPTERS ===== */
+  .chapter {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 80px 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .chapter-header {
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+  .chapter-num {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .chapter h2 {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+  .chapter .chapter-subtitle {
+    font-size: 16px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    max-width: 680px;
+  }
+
+  /* ===== CONTENT ELEMENTS ===== */
+  .section {
+    margin-bottom: 48px;
+  }
+  .section h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .section h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .section p, .section .text {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .card-accent {
+    border-color: var(--border-accent);
+    background: rgba(52, 211, 153, 0.02);
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-big {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .tag-green { background: rgba(52,211,153,0.15); color: var(--green); }
+  .tag-red { background: rgba(248,113,113,0.15); color: var(--red); }
+  .tag-orange { background: rgba(251,146,60,0.15); color: var(--orange); }
+  .tag-blue { background: rgba(96,165,250,0.15); color: var(--blue); }
+  .tag-purple { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .tag-yellow { background: rgba(251,191,36,0.15); color: var(--yellow); }
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 16px 0;
+  }
+  th {
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+  td {
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  td:first-child { color: var(--text); font-weight: 500; }
+
+  ul { list-style: none; padding: 0; }
+  ul li {
+    padding: 5px 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  ul li::before {
+    content: "→ ";
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+    margin: 16px 0;
+  }
+  .flow-step {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    color: var(--text-dim);
+    font-size: 18px;
+  }
+
+  .callout {
+    padding: 20px 24px;
+    border-radius: 12px;
+    margin: 16px 0;
+  }
+  .callout-green { background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.15); }
+  .callout-red { background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.15); }
+  .callout-orange { background: rgba(251,146,60,0.06); border: 1px solid rgba(251,146,60,0.15); }
+  .callout-blue { background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.15); }
+  .callout-purple { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.15); }
+
+  .divider { height: 1px; background: var(--border); margin: 32px 0; }
+
+  /* Pricing cards */
+  .pricing-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 24px;
+    text-align: center;
+    position: relative;
+  }
+  .pricing-card.featured {
+    border: 2px solid rgba(52,211,153,0.4);
+    background: rgba(52,211,153,0.02);
+  }
+  .pricing-badge {
+    position: absolute;
+    top: -11px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--green);
+    color: var(--bg);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 12px;
+    border-radius: 8px;
+    text-transform: uppercase;
+  }
+  .price {
+    font-size: 44px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    margin: 10px 0 2px;
+  }
+
+  /* Competitor dots */
+  .dot-full { color: var(--green); }
+  .dot-half { color: var(--orange); }
+  .dot-none { color: var(--red); }
+
+  /* Sidebar nav */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 260px;
+    background: rgba(10, 10, 15, 0.97);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    overflow-y: auto;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-toggle {
+    position: fixed;
+    left: 16px;
+    top: 16px;
+    z-index: 101;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  .sidebar-toggle:hover { background: var(--bg-subtle); }
+  .sidebar h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    padding: 0 8px;
+  }
+  .sidebar a {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    transition: all 0.2s;
+    margin-bottom: 2px;
+  }
+  .sidebar a:hover { background: var(--bg-subtle); color: var(--text); }
+  .sidebar a .num {
+    font-size: 11px;
+    font-weight: 700;
+    width: 24px;
+    flex-shrink: 0;
+    color: var(--text-dim);
+  }
+
+  /* Back to top */
+  .back-top {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 50;
+  }
+  .back-top.visible { opacity: 1; }
+  .back-top:hover { background: var(--bg-subtle); }
+
+  @media print {
+    .sidebar, .sidebar-toggle, .back-top { display: none; }
+    .chapter { page-break-before: always; }
+    body { background: white; color: #1a1a1a; }
+  }
+
+  @media (max-width: 768px) {
+    .cover h1 { font-size: 40px; }
+    .chapter { padding: 40px 20px; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .flow { flex-direction: column; }
+    .flow-arrow { justify-content: center; transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Sidebar toggle -->
+<button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" title="Table of Contents">☰</button>
+
+<!-- Sidebar nav -->
+<nav class="sidebar" id="sidebar">
+  <h3>Contents</h3>
+  <a href="#cover" onclick="closeSidebar()"><span class="num"></span> Cover</a>
+  <a href="#toc" onclick="closeSidebar()"><span class="num"></span> Table of Contents</a>
+  <a href="#ch1" onclick="closeSidebar()"><span class="num">01</span> Executive Summary</a>
+  <a href="#ch2" onclick="closeSidebar()"><span class="num">02</span> Problem & Opportunity</a>
+  <a href="#ch3" onclick="closeSidebar()"><span class="num">03</span> Competitive Landscape</a>
+  <a href="#ch4" onclick="closeSidebar()"><span class="num">04</span> Solution & Product</a>
+  <a href="#ch5" onclick="closeSidebar()"><span class="num">05</span> Business Model</a>
+  <a href="#ch6" onclick="closeSidebar()"><span class="num">06</span> Unit Economics</a>
+  <a href="#ch7" onclick="closeSidebar()"><span class="num">07</span> Legal Compliance</a>
+  <a href="#ch8" onclick="closeSidebar()"><span class="num">08</span> Technology</a>
+  <a href="#ch9" onclick="closeSidebar()"><span class="num">09</span> Go-to-Market</a>
+  <a href="#ch10" onclick="closeSidebar()"><span class="num">10</span> Roadmap</a>
+</nav>
+
+<!-- Back to top -->
+<button class="back-top" id="backTop" onclick="document.getElementById('cover').scrollIntoView({behavior:'smooth'})">↑</button>
+
+<!-- ===================== COVER ===================== -->
+<div class="cover" id="cover">
+  <div style="font-size: 14px; letter-spacing: 5px; color: var(--green); font-weight: 300; text-transform: uppercase; margin-bottom: 28px;">Business Report</div>
+  <h1>ClearTerms</h1>
+  <div class="tagline">AI-Powered Contract Analysis for Small Business</div>
+  <div style="font-size: 15px; color: var(--text-secondary); max-width: 550px; margin-bottom: 40px;">
+    A comprehensive business analysis covering market opportunity, competitive landscape, product design, technology, legal compliance, and go-to-market strategy.
+  </div>
+  <div class="meta">
+    <span>April 2026</span>
+    <span>·</span>
+    <span>US Market</span>
+    <span>·</span>
+    <span>B2B SaaS</span>
+    <span>·</span>
+    <span>Legal Tech</span>
+  </div>
+</div>
+
+<!-- ===================== TABLE OF CONTENTS ===================== -->
+<div class="toc" id="toc">
+  <h2>Table of Contents</h2>
+  <a class="toc-section" href="#ch1">
+    <span class="toc-num" style="color: var(--green);">01</span>
+    <span class="toc-title">Executive Summary</span>
+    <span class="toc-desc">Vision, key numbers, and recommendation</span>
+  </a>
+  <a class="toc-section" href="#ch2">
+    <span class="toc-num" style="color: var(--red);">02</span>
+    <span class="toc-title">Problem & Market Opportunity</span>
+    <span class="toc-desc">Why SMBs need this, market size, timing</span>
+  </a>
+  <a class="toc-section" href="#ch3">
+    <span class="toc-num" style="color: var(--blue);">03</span>
+    <span class="toc-title">Competitive Landscape</span>
+    <span class="toc-desc">14 competitors analyzed, gaps identified</span>
+  </a>
+  <a class="toc-section" href="#ch4">
+    <span class="toc-num" style="color: var(--purple);">04</span>
+    <span class="toc-title">Solution & Product Design</span>
+    <span class="toc-desc">Features, user flow, report structure, chat</span>
+  </a>
+  <a class="toc-section" href="#ch5">
+    <span class="toc-num" style="color: var(--orange);">05</span>
+    <span class="toc-title">Business Model & Pricing</span>
+    <span class="toc-desc">Subscription tiers, marketplace, pay-per-doc</span>
+  </a>
+  <a class="toc-section" href="#ch6">
+    <span class="toc-num" style="color: var(--cyan);">06</span>
+    <span class="toc-title">Unit Economics & Projections</span>
+    <span class="toc-desc">Margins, CAC, LTV, revenue forecasts</span>
+  </a>
+  <a class="toc-section" href="#ch7">
+    <span class="toc-num" style="color: var(--red);">07</span>
+    <span class="toc-title">Legal Compliance & UPL Protection</span>
+    <span class="toc-desc">6-layer system, language framework, guardrails</span>
+  </a>
+  <a class="toc-section" href="#ch8">
+    <span class="toc-num" style="color: var(--green);">08</span>
+    <span class="toc-title">Technology & Architecture</span>
+    <span class="toc-desc">Full stack, pipeline, security, infrastructure</span>
+  </a>
+  <a class="toc-section" href="#ch9">
+    <span class="toc-num" style="color: var(--pink);">09</span>
+    <span class="toc-title">Go-to-Market Strategy</span>
+    <span class="toc-desc">3 phases, channels, brand, marketing budget</span>
+  </a>
+  <a class="toc-section" href="#ch10">
+    <span class="toc-num" style="color: var(--blue);">10</span>
+    <span class="toc-title">Product Roadmap</span>
+    <span class="toc-desc">Phase 1 MVP → Phase 2 Marketplace → Phase 3 Scale</span>
+  </a>
+</div>
+
+
+<!-- ===================== CH 1: EXECUTIVE SUMMARY ===================== -->
+<div class="chapter" id="ch1">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color: var(--green);">Chapter 01</div>
+    <h2>Executive Summary</h2>
+    <div class="chapter-subtitle">The 2-minute overview of ClearTerms — what it is, why now, and what the numbers look like.</div>
+  </div>
+
+  <div class="section">
+    <h3>The Vision</h3>
+    <p>ClearTerms is an AI-powered contract analysis platform for US small businesses. Users upload any contract — lease, NDA, vendor agreement, employment contract — and receive a structured, color-coded report in plain English within 60 seconds. They can then chat with AI to ask follow-up questions about any clause.</p>
+    <p>Phase 2 adds an attorney marketplace: when AI analysis isn't enough, users can escalate to a real attorney directly within the platform. Attorney firms pay subscription fees for listing and a commission per consultation.</p>
+  </div>
+
+  <div class="grid-4" style="margin-bottom: 32px;">
+    <div class="stat-card">
+      <div class="stat-big" style="color: var(--green);">$35B</div>
+      <div class="stat-label">Legal tech market</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-big" style="color: var(--blue);">33M</div>
+      <div class="stat-label">US small businesses</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-big" style="color: var(--purple);">75-85%</div>
+      <div class="stat-label">Gross margin</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-big" style="color: var(--orange);">6-8 wk</div>
+      <div class="stat-label">MVP timeline</div>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <h4 style="color: var(--green); margin-bottom: 8px;">Key Insight</h4>
+    <p style="margin: 0;">There's a massive pricing gap in legal tech: professional tools cost $500+/month (too expensive for SMBs), consumer tools cost $3-50/month (too shallow). ClearTerms at $29-99/month fills this gap with professional-grade AI analysis at SMB-friendly pricing.</p>
+  </div>
+
+  <div class="section">
+    <h3>Revenue Model</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4 style="color: var(--green);">Engine 1: SaaS Subscriptions</h4>
+        <p>Three tiers ($29 / $79 / $199 per month) plus pay-per-document ($14.99). Free first document as trial. Billing periods: monthly, 6-month (15% off), annual (25% off).</p>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--purple);">Engine 2: Attorney Marketplace</h4>
+        <p>Attorney firms pay $299-999/month for platform listing plus 15-20% commission per consultation. Powered by Stripe Connect. Launches in Phase 2.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Conservative Revenue Projections</h3>
+    <div class="grid-4">
+      <div class="stat-card"><div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Month 3</div><div style="font-size: 28px; font-weight: 800; margin-top: 6px;">$2K</div><div class="stat-label">~40 users</div></div>
+      <div class="stat-card"><div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Month 6</div><div style="font-size: 28px; font-weight: 800; margin-top: 6px;">$8K</div><div class="stat-label">~120 users</div></div>
+      <div class="stat-card"><div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Month 12</div><div style="font-size: 28px; font-weight: 800; color: var(--green); margin-top: 6px;">$25K</div><div class="stat-label">~350 users</div></div>
+      <div class="stat-card" style="border-color: var(--border-accent);"><div style="font-size: 11px; color: var(--green); text-transform: uppercase;">Month 18</div><div style="font-size: 28px; font-weight: 800; color: var(--green); margin-top: 6px;">$60K</div><div class="stat-label">~700 users</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== CH 2: PROBLEM ===================== -->
+<div class="chapter" id="ch2">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color: var(--red);">Chapter 02</div>
+    <h2>Problem & Market Opportunity</h2>
+    <div class="chapter-subtitle">Small businesses sign contracts they don't understand — and it costs them thousands every year.</div>
+  </div>
+
+  <div class="section">
+    <h3>The Core Problem</h3>
+    <p>Every small business signs dozens of contracts annually: office leases, vendor agreements, NDAs, employment contracts, SaaS terms, insurance policies. Each one contains clauses that could cost them thousands if they're not caught.</p>
+    <p>The catch-22: hiring an attorney at $300+/hour for every contract is unaffordable. Not reviewing them is risky. Most small business owners choose to sign and hope for the best.</p>
+
+    <div class="grid-3" style="margin-top: 24px;">
+      <div class="stat-card">
+        <div class="stat-big" style="color: var(--red);">73%</div>
+        <div class="stat-label">of SMB owners sign without full review</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-big" style="color: var(--orange);">$12K</div>
+        <div class="stat-label">avg cost of one bad clause</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-big" style="color: var(--blue);">$300+/hr</div>
+        <div class="stat-label">attorney rate for contract review</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Why Now?</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4 style="color: var(--green);">LLM Breakthrough</h4>
+        <p>Models like Claude can now understand and analyze legal documents with high accuracy. 200K token context windows mean entire contracts fit in a single prompt. This wasn't possible 2 years ago.</p>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--blue);">Cost Structure Shift</h4>
+        <p>AI analysis costs $0.50-2.00 per document vs. $500+ for an attorney. This 250x cost reduction makes professional-grade analysis accessible to every small business.</p>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--purple);">Digital-First Business</h4>
+        <p>Post-pandemic, more contracts are digital. Remote work and online business formation have accelerated contract volume for small businesses.</p>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--orange);">Regulatory Pressure</h4>
+        <p>Growing privacy laws (GDPR, CCPA, state privacy acts) mean more contracts with compliance implications. SMBs need help understanding these obligations.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Market Size</h3>
+    <table>
+      <thead>
+        <tr><th>Segment</th><th>Size</th><th>Growth</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Global Legal Tech</td><td>$29-35B (2025)</td><td>15-20% CAGR</td><td>Projected $68-98B by 2032</td></tr>
+        <tr><td>Contract Management (CLM)</td><td>$2.5-3.5B (2025)</td><td>17% CAGR</td><td>Fastest growth in AI-native tools</td></tr>
+        <tr><td>AI in Legal Tech</td><td>$1.5B (2025)</td><td>25%+ CAGR</td><td>Projected $5B+ by 2028</td></tr>
+        <tr><td>US Small Businesses</td><td>33.2M businesses</td><td>—</td><td>99.9% of all US businesses</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Target Customer Profile</h3>
+    <div class="card card-accent">
+      <div class="grid-2">
+        <div>
+          <h4 style="color: var(--green);">Primary: Small Business Owner</h4>
+          <ul>
+            <li>1-50 employees, US-based</li>
+            <li>Signs 10-50 contracts per year</li>
+            <li>No in-house legal team</li>
+            <li>Currently either skips review or pays attorney per document</li>
+            <li>Needs fast turnaround (often same-day)</li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="color: var(--blue);">Key Verticals</h4>
+          <ul>
+            <li>Professional services (agencies, consulting firms)</li>
+            <li>Retail / e-commerce (vendor contracts)</li>
+            <li>Real estate (lease agreements)</li>
+            <li>Tech startups (SaaS agreements, NDAs)</li>
+            <li>Construction / trades (subcontractor agreements)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== CH 3: COMPETITIVE LANDSCAPE ===================== -->
+<div class="chapter" id="ch3">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color: var(--blue);">Chapter 03</div>
+    <h2>Competitive Landscape</h2>
+    <div class="chapter-subtitle">We analyzed 14 competitors across 4 categories. The gap is clear: nobody serves SMBs with AI-grade analysis at an affordable price.</div>
+  </div>
+
+  <div class="section">
+    <h3>The Price Gap</h3>
+    <div class="card" style="padding: 28px;">
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 130px; font-size: 13px; color: var(--text-dim); text-align: right;">$500-2,000+/mo</div>
+          <div style="flex: 1; padding: 12px 18px; background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.15); border-radius: 8px;">
+            <span style="font-size: 13px; font-weight: 600; color: var(--red);">Enterprise CLM</span>
+            <span style="font-size: 12px; color: var(--text-dim); margin-left: 8px;">Ironclad · LinkSquares · Evisort · ContractPodAi</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 130px; font-size: 13px; color: var(--text-dim); text-align: right;">$100-500/mo</div>
+          <div style="flex: 1; padding: 12px 18px; background: rgba(251,146,60,0.06); border: 1px solid rgba(251,146,60,0.15); border-radius: 8px;">
+            <span style="font-size: 13px; font-weight: 600; color: var(--orange);">Pro / Mid-Market</span>
+            <span style="font-size: 12px; color: var(--text-dim); margin-left: 8px;">Harvey AI · Spellbook · Juro · SpotDraft</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 130px; font-size: 13px; font-weight: 700; color: var(--green); text-align: right;">$29-99/mo</div>
+          <div style="flex: 1; padding: 14px 18px; background: rgba(52,211,153,0.08); border: 2px solid rgba(52,211,153,0.35); border-radius: 8px; box-shadow: 0 0 30px rgba(52,211,153,0.04);">
+            <span style="font-size: 14px; font-weight: 700; color: var(--green);">⭐ ClearTerms</span>
+            <span style="font-size: 12px; color: var(--text-secondary); margin-left: 8px;">AI-powered · Plain English · Built for SMBs</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 130px; font-size: 13px; color: var(--text-dim); text-align: right;">$3-50/mo</div>
+          <div style="flex: 1; padding: 12px 18px; background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.15); border-radius: 8px;">
+            <span style="font-size: 13px; font-weight: 600; color: var(--blue);">Consumer Tools</span>
+            <span style="font-size: 12px; color: var(--text-dim); margin-left: 8px;">DoNotPay · GPT wrappers · Legalese Decoder</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Detailed Competitor Analysis</h3>
+
+    <h4 style="margin-top: 24px; color: var(--red);">Enterprise CLM (Not our competition — too expensive)</h4>
+    <table>
+      <thead><tr><th>Company</th><th>Price</th><th>Target</th><th>Funding</th><th>Key Weakness for SMBs</th></tr></thead>
+      <tbody>
+        <tr><td>Ironclad</td><td>$30K+/yr</td><td>Enterprise</td><td>$334M (val $3.2B)</td><td>Overkill, 4-6 month implementation</td></tr>
+        <tr><td>LinkSquares</td><td>$25-75K/yr</td><td>Enterprise</td><td>$190M</td><td>Post-execution focus, enterprise pricing</td></tr>
+        <tr><td>Evisort (Workday)</td><td>$50K+/yr</td><td>Enterprise</td><td>Acquired by Workday</td><td>Workday ecosystem lock-in</td></tr>
+        <tr><td>ContractPodAi</td><td>$30K+/yr</td><td>Enterprise</td><td>$115M</td><td>Complex Microsoft-dependent setup</td></tr>
+      </tbody>
+    </table>
+
+    <h4 style="margin-top: 32px; color: var(--orange);">Pro / Mid-Market (Adjacent — some overlap)</h4>
+    <table>
+      <thead><tr><th>Company</th><th>Price</th><th>Target</th><th>Funding</th><th>Key Weakness for SMBs</th></tr></thead>
+      <tbody>
+        <tr><td>Harvey AI</td><td>$100-200/user/mo</td><td>BigLaw firms</td><td>$180M+ (val $1.5B)</td><td>For lawyers, not business owners</td></tr>
+        <tr><td>Spellbook</td><td>$100-300/mo</td><td>Small law firms</td><td>$20M+</td><td>Requires legal knowledge to use</td></tr>
+        <tr><td>Juro</td><td>~$500/mo</td><td>Mid-market</td><td>$23M</td><td>Still too expensive for micro-SMBs</td></tr>
+        <tr><td>SpotDraft</td><td>$500-1K/mo</td><td>Growth companies</td><td>$46M</td><td>Designed for legal teams, not owners</td></tr>
+        <tr><td>CoCounsel (TR)</td><td>$200-500/user/mo</td><td>Law firms</td><td>Part of Thomson Reuters</td><td>Lawyer tool, not self-service</td></tr>
+      </tbody>
+    </table>
+
+    <h4 style="margin-top: 32px; color: var(--blue);">Consumer / SMB-Accessible (Direct competition)</h4>
+    <table>
+      <thead><tr><th>Company</th><th>Price</th><th>Target</th><th>Funding</th><th>Key Weakness</th></tr></thead>
+      <tbody>
+        <tr><td style="color: var(--red); font-weight: 600;">LegalZoom ⚠️</td><td>$30-50/mo</td><td>SMB + Consumer</td><td>Public ($1.5-2B)</td><td>Weak AI, focused on doc creation not analysis</td></tr>
+        <tr><td>Rocket Lawyer</td><td>~$40/mo</td><td>SMB + Consumer</td><td>$46M+</td><td>Basic AI, template-focused</td></tr>
+        <tr><td>DoNotPay</td><td>~$3/mo</td><td>Consumer</td><td>$28M</td><td>UPL lawsuits ($193K settlement), shallow analysis</td></tr>
+        <tr><td>GPT Wrappers</td><td>$10-50/mo</td><td>Consumer</td><td>Small</td><td>No differentiation from ChatGPT, accuracy issues</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Feature Comparison</h3>
+    <table>
+      <thead>
+        <tr><th>Feature</th><th style="text-align:center;">ClearTerms</th><th style="text-align:center;">LegalZoom</th><th style="text-align:center;">DoNotPay</th><th style="text-align:center;">Enterprise CLMs</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Deep AI contract analysis</td><td style="text-align:center;" class="dot-full">●</td><td style="text-align:center;" class="dot-half">◐</td><td style="text-align:center;" class="dot-half">◐</td><td style="text-align:center;" class="dot-full">●</td></tr>
+        <tr><td>Plain English reports</td><td style="text-align:center;" class="dot-full">●</td><td style="text-align:center;" class="dot-none">○</td><td style="text-align:center;" class="dot-half">◐</td><td style="text-align:center;" class="dot-none">○</td></tr>
+        <tr><td>Affordable for SMBs ($29-99)</td><td style="text-align:center;" class="dot-full">●</td><td style="text-align:center;" class="dot-full">●</td><td style="text-align:center;" class="dot-full">●</td><td style="text-align:center;" class="dot-none">○</td></tr>
+        <tr><td>Follow-up AI chat</td><td style="text-align:center;" class="dot-full">●</td><td style="text-align:center;" class="dot-none">○</td><td style="text-align:center;" class="dot-none">○</td><td style="text-align:center;" class="dot-half">◐</td></tr>
+        <tr><td>Visual risk scoring</td><td style="text-align:center;" class="dot-full">●</td><td style="text-align:center;" class="dot-none">○</td><td style="text-align:center;" class="dot-none">○</td><td style="text-align:center;" class="dot-full">●</td></tr>
+        <tr><td>Photo/scan OCR support</td><td style="text-align:center;" class="dot-full">●</td><td style="text-align:center;" class="dot-none">○</td><td style="text-align:center;" class="dot-half">◐</td><td style="text-align:center;" class="dot-full">●</td></tr>
+        <tr><td>Attorney escalation</td><td style="text-align:center;" class="dot-half">◐ (Phase 2)</td><td style="text-align:center;" class="dot-full">●</td><td style="text-align:center;" class="dot-none">○</td><td style="text-align:center;" class="dot-none">○</td></tr>
+      </tbody>
+    </table>
+    <div style="font-size: 12px; color: var(--text-dim); margin-top: 8px;">
+      <span class="dot-full">●</span> Full support &nbsp; <span class="dot-half">◐</span> Partial &nbsp; <span class="dot-none">○</span> None
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Market Gaps ClearTerms Exploits</h3>
+    <div class="grid-2">
+      <div class="callout callout-green">
+        <h4 style="color: var(--green);">Pricing Gap ($50-500 dead zone)</h4>
+        <p style="margin: 0;">Capable tools start at $500+/mo. Below $50 it's shallow GPT wrappers. ClearTerms at $29-99 delivers professional quality at SMB pricing.</p>
+      </div>
+      <div class="callout callout-blue">
+        <h4 style="color: var(--blue);">Non-Lawyer UX</h4>
+        <p style="margin: 0;">Every existing tool assumes the user is a lawyer. SMB owners need plain English, color-coded risks, and "what does this mean for me?" context.</p>
+      </div>
+      <div class="callout callout-orange">
+        <h4 style="color: var(--orange);">No Benchmarking</h4>
+        <p style="margin: 0;">Nobody answers "is this normal?" SMBs have no way to know if terms are standard or predatory for their industry.</p>
+      </div>
+      <div class="callout callout-purple">
+        <h4 style="color: var(--purple);">AI + Attorney Hybrid</h4>
+        <p style="margin: 0;">Pure AI tools lack legal weight. Pure attorney services are slow and expensive. ClearTerms combines both — AI for speed, attorneys for depth.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== CH 4: SOLUTION & PRODUCT ===================== -->
+<div class="chapter" id="ch4">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color: var(--purple);">Chapter 04</div>
+    <h2>Solution & Product Design</h2>
+    <div class="chapter-subtitle">A detailed walkthrough of the product — from upload to AI report to interactive chat.</div>
+  </div>
+
+  <div class="section">
+    <h3>Core User Journey</h3>
+    <div class="flow">
+      <div class="flow-step"><div style="font-size: 24px; margin-bottom: 6px;">🌐</div><div style="font-size: 13px; font-weight: 600; color: var(--blue);">Land</div><div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">Marketing site + value prop</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div style="font-size: 24px; margin-bottom: 6px;">🔐</div><div style="font-size: 13px; font-weight: 600; color: var(--yellow);">Sign Up</div><div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">Email, Google, or Apple</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div style="font-size: 24px; margin-bottom: 6px;">📄</div><div style="font-size: 13px; font-weight: 600; color: var(--green);">Upload</div><div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">PDF, DOCX, or photo</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div style="font-size: 24px; margin-bottom: 6px;">⏳</div><div style="font-size: 13px; font-weight: 600; color: var(--cyan);">Process</div><div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">OCR → AI (30-90s)</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div style="font-size: 24px; margin-bottom: 6px;">📊</div><div style="font-size: 13px; font-weight: 600; color: var(--pink);">Report</div><div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">Full analysis + risk score</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div style="font-size: 24px; margin-bottom: 6px;">💬</div><div style="font-size: 13px; font-weight: 600; color: var(--purple);">Chat</div><div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">Ask follow-up questions</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Feature 1: Smart Document Upload</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4>Supported Formats</h4>
+        <ul>
+          <li>PDF (native text extraction)</li>
+          <li>DOCX (direct parsing via mammoth.js)</li>
+          <li>Photos & scans (OCR via Google Cloud Vision)</li>
+          <li>Multi-page documents up to 50 pages</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Security Shown Upfront</h4>
+        <ul>
+          <li>"Your document is encrypted (AES-256)"</li>
+          <li>"Never used for AI training"</li>
+          <li>"Auto-deleted after 30 days"</li>
+          <li>Presigned S3 URLs — docs never touch our servers</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Feature 2: AI Analysis Report</h3>
+    <p>The core product. Every report follows the same structure, making it easy to compare across documents:</p>
+
+    <div class="card" style="margin-top: 16px; padding: 0; overflow: hidden;">
+      <div style="padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+        <div><div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Analysis Report</div><div style="font-size: 16px; font-weight: 600; margin-top: 2px;">Office Lease — XYZ Properties</div></div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(251,146,60,0.12); border: 3px solid var(--orange); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: var(--orange);">6.2</div>
+          <div><div style="font-size: 13px; font-weight: 600; color: var(--orange);">Moderate Risk</div></div>
+        </div>
+      </div>
+      <div style="padding: 18px 24px; background: rgba(255,255,255,0.015); border-bottom: 1px solid var(--border);">
+        <div style="font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Plain English Summary</div>
+        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">3-year office lease for 2,500 sq ft at $4,200/month. Landlord can increase rent up to 5% annually. You're responsible for maintenance over $500. Early termination = 6 months' rent penalty. Auto-renews for 2 years unless you give 90-day written notice.</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border);">
+        <div style="padding: 18px 24px; border-right: 1px solid var(--border);">
+          <div style="font-size: 12px; font-weight: 600; color: var(--green); margin-bottom: 8px;">✅ Favorable (4)</div>
+          <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.8;">60-day grace period<br>Landlord covers structural repairs<br>Subletting allowed with approval<br>5 free parking spots</div>
+        </div>
+        <div style="padding: 18px 24px;">
+          <div style="font-size: 12px; font-weight: 600; color: var(--red); margin-bottom: 8px;">⚠️ Unfavorable (5)</div>
+          <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.8;">5% annual increase (mkt avg: 3%)<br>6-month early termination penalty<br>90-day non-renewal notice<br>You pay maintenance over $500<br>Landlord can relocate you</div>
+        </div>
+      </div>
+      <div style="padding: 18px 24px; border-bottom: 1px solid var(--border);">
+        <div style="font-size: 12px; font-weight: 600; color: var(--orange); margin-bottom: 10px;">🔓 Vulnerabilities (3)</div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; align-items: baseline; gap: 8px;"><span class="tag tag-red">HIGH</span><span style="font-size: 12px; color: var(--text-secondary);">§12.3: Landlord can terminate with 30-day notice "for any business reason"</span></div>
+          <div style="display: flex; align-items: baseline; gap: 8px;"><span class="tag tag-orange">MED</span><span style="font-size: 12px; color: var(--text-secondary);">§8.1: Vague "normal wear and tear" — deposit dispute risk</span></div>
+          <div style="display: flex; align-items: baseline; gap: 8px;"><span class="tag tag-blue">LOW</span><span style="font-size: 12px; color: var(--text-secondary);">§15.2: Arbitration clause limits ability to sue</span></div>
+        </div>
+      </div>
+      <div style="padding: 18px 24px; border-bottom: 1px solid var(--border);">
+        <div style="font-size: 12px; font-weight: 600; color: var(--blue); margin-bottom: 10px;">📏 Key Obligations & Deadlines</div>
+        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.8;">
+          Rent due 1st of month, late after 5th (+$200 fee)<br>
+          Insurance certificate due within 30 days of signing<br>
+          Non-renewal notice: 90 days before lease end<br>
+          Annual inspection: landlord can enter with 24hr notice
+        </div>
+      </div>
+      <div style="padding: 12px 24px; font-size: 11px; color: var(--text-dim);">⚖️ This analysis is for informational purposes only and does not constitute legal advice.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Feature 3: Contract Chat</h3>
+    <p>After the report, users can ask follow-up questions. The AI retains the full contract context and answers in plain English with informational disclaimers.</p>
+    <div class="card" style="margin-top: 12px;">
+      <div style="font-size: 13px; color: var(--text-dim); margin-bottom: 16px;">Example conversation:</div>
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; gap: 10px;"><div style="width: 26px; height: 26px; border-radius: 50%; background: rgba(96,165,250,0.15); display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">👤</div><div style="background: rgba(96,165,250,0.1); border-radius: 10px; padding: 10px 14px; font-size: 13px; color: var(--text-secondary);">Can the landlord really kick me out with just 30 days notice?</div></div>
+        <div style="display: flex; gap: 10px;"><div style="width: 26px; height: 26px; border-radius: 50%; background: rgba(52,211,153,0.15); display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">🤖</div><div style="background: var(--bg-subtle); border-radius: 10px; padding: 10px 14px; font-size: 13px; color: var(--text-secondary); line-height: 1.6;"><strong style="color: var(--red);">Section 12.3 is highly unusual.</strong> In standard commercial leases, early termination by the landlord typically requires cause. A "for any business reason" clause gives nearly unlimited power to end your lease. Most commercial leases either don't allow this or require 6-12 months notice with relocation assistance. <span style="color: var(--text-dim);">ℹ️ This is informational, not legal advice.</span></div></div>
+      </div>
+    </div>
+    <div class="text" style="margin-top: 12px;">Suggested questions are auto-generated based on the contract's flagged issues, making it easy for non-lawyers to explore the most important topics.</div>
+  </div>
+
+  <div class="section">
+    <h3>Feature 4: Dashboard</h3>
+    <p>Central hub for all analyzed documents with risk scores, dates, and quick access to reports and chat.</p>
+    <ul>
+      <li>Document list with risk score badges (color-coded)</li>
+      <li>Trial usage tracker ("2 of 3 free analyses remaining")</li>
+      <li>Quick "New Analysis" upload button</li>
+      <li>PDF export for any report</li>
+      <li>Document deletion (user-controlled)</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h3>MVP Scope</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4 style="color: var(--green);">✅ Phase 1 (MVP)</h4>
+        <ul>
+          <li>Document upload (PDF, DOCX, photo)</li>
+          <li>AI analysis report (full structure)</li>
+          <li>Risk score (1-10, color-coded)</li>
+          <li>Follow-up chat per document</li>
+          <li>Dashboard with document history</li>
+          <li>Free first document trial</li>
+          <li>Subscription plans + pay-per-doc</li>
+          <li>UPL disclaimers on every screen</li>
+          <li>PDF report export</li>
+          <li>Auto-delete documents (30 days)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--text-dim);">🔜 Phase 2+</h4>
+        <ul style="color: var(--text-dim);">
+          <li>Attorney marketplace</li>
+          <li>Contract generation / drafting</li>
+          <li>Portfolio management</li>
+          <li>Contract comparison / benchmarking</li>
+          <li>Team accounts / multi-user</li>
+          <li>iOS app</li>
+          <li>API for integrations</li>
+          <li>Multi-language support</li>
+          <li>Bulk document upload</li>
+          <li>Contract templates library</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== CH 5: BUSINESS MODEL ===================== -->
+<div class="chapter" id="ch5">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color: var(--orange);">Chapter 05</div>
+    <h2>Business Model & Pricing</h2>
+    <div class="chapter-subtitle">Two revenue engines: SaaS subscriptions (Phase 1) and attorney marketplace commissions (Phase 2).</div>
+  </div>
+
+  <div class="section">
+    <h3>Subscription Tiers</h3>
+    <div class="grid-3">
+      <div class="pricing-card">
+        <div style="font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;">Starter</div>
+        <div class="price">$29</div>
+        <div style="font-size: 13px; color: var(--text-dim);">/month · 5 documents</div>
+        <div class="divider"></div>
+        <div style="text-align: left; font-size: 13px; color: var(--text-secondary); line-height: 2.0;">
+          ✅ Full AI analysis report<br>✅ Risk scoring<br>✅ 10 chat messages/doc<br>✅ PDF export
+        </div>
+        <div style="margin-top: 14px; font-size: 12px; color: var(--text-dim);">Best for: freelancers, solopreneurs</div>
+      </div>
+      <div class="pricing-card featured">
+        <div class="pricing-badge">Most Popular</div>
+        <div style="font-size: 12px; color: var(--green); text-transform: uppercase; letter-spacing: 1px;">Professional</div>
+        <div class="price">$79</div>
+        <div style="font-size: 13px; color: var(--text-dim);">/month · 20 documents</div>
+        <div class="divider"></div>
+        <div style="text-align: left; font-size: 13px; color: var(--text-secondary); line-height: 2.0;">
+          ✅ Everything in Starter<br>✅ Unlimited chat per doc<br>✅ Priority processing<br>✅ Email support
+        </div>
+        <div style="margin-top: 14px; font-size: 12px; color: var(--text-dim);">Best for: small businesses (2-10 people)</div>
+      </div>
+      <div class="pricing-card">
+        <div style="font-size: 12px; color: var(--purple); text-transform: uppercase; letter-spacing: 1px;">Business</div>
+        <div class="price">$199</div>
+        <div style="font-size: 13px; color: var(--text-dim);">/month · 50 documents</div>
+        <div class="divider"></div>
+        <div style="text-align: left; font-size: 13px; color: var(--text-secondary); line-height: 2.0;">
+          ✅ Everything in Pro<br>✅ Bulk upload (10 at once)<br>✅ Priority support<br>✅ Team features (Phase 2)
+        </div>
+        <div style="margin-top: 14px; font-size: 12px; color: var(--text-dim);">Best for: growing businesses (10-50)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Additional Revenue Options</h3>
+    <div class="grid-3">
+      <div class="callout callout-orange">
+        <h4 style="color: var(--orange);">Pay-Per-Document — $14.99</h4>
+        <p style="margin: 0; font-size: 13px;">No subscription needed. Full analysis + risk score + 5 chat messages + PDF export. Perfect for one-off reviews.</p>
+      </div>
+      <div class="callout callout-blue">
+        <h4 style="color: var(--blue);">Free Trial — $0</h4>
+        <p style="margin: 0; font-size: 13px;">First document completely free. No credit card required. Full analysis experience to demonstrate value.</p>
+      </div>
+      <div class="callout callout-green">
+        <h4 style="color: var(--green);">Billing Periods</h4>
+        <p style="margin: 0; font-size: 13px;">Monthly (full price), 6-month (15% off), Annual (25% off). Longer commitment = better retention + cash flow.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Phase 2: Attorney Marketplace Revenue</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4 style="color: var(--purple);">Attorney Firm Subscription: $299-999/mo</h4>
+        <ul>
+          <li>Firm profile with reviews and ratings</li>
+          <li>Lead dashboard and analytics</li>
+          <li>Response management tools</li>
+          <li>Verified badge on platform</li>
+          <li>Tier pricing based on firm size</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--pink);">Transaction Commission: 15-20%</h4>
+        <ul>
+          <li>Applied to each paid consultation</li>
+          <li>Powered by Stripe Connect</li>
+          <li>Escrow until client confirms delivery</li>
+          <li>Decreasing % at volume tiers</li>
+          <li>Automated invoicing and payouts</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== CH 6: UNIT ECONOMICS ===================== -->
+<div class="chapter" id="ch6">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color: var(--cyan);">Chapter 06</div>
+    <h2>Unit Economics & Financial Projections</h2>
+    <div class="chapter-subtitle">Healthy SaaS margins from day one. AI costs are low, and the model scales efficiently.</div>
+  </div>
+
+  <div class="section">
+    <h3>Cost Structure Per Analysis</h3>
+    <table>
+      <thead><tr><th>Component</th><th>Cost</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Claude API (analysis)</td><td>$0.30 - $1.50</td><td>Depends on document length. 200K context handles any contract.</td></tr>
+        <tr><td>Claude API (chat, per message)</td><td>$0.03 - $0.10</td><td>Shorter context with cached document. Prompt caching reduces cost.</td></tr>
+        <tr><td>Google Vision OCR</td><td>$0.01 - $0.10</td><td>Only for photos/scans. PDFs use free text extraction.</td></tr>
+        <tr><td>S3 storage + transfer</td><td>~$0.01</td><td>Minimal. Documents auto-deleted after 30 days.</td></tr>
+        <tr><td><strong style="color: var(--text);">Total per analysis</strong></td><td><strong style="color: var(--green);">$0.50 - $2.00</strong></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Margin Analysis by Plan</h3>
+    <div class="grid-3">
+      <div class="stat-card">
+        <div style="font-size: 12px; color: var(--text-dim); text-transform: uppercase;">Starter ($29/mo)</div>
+        <div class="stat-big" style="color: var(--green); margin-top: 8px;">~83%</div>
+        <div class="stat-label">$29 - ~$5 cost (5 docs) = ~$24 profit</div>
+      </div>
+      <div class="stat-card" style="border-color: var(--border-accent);">
+        <div style="font-size: 12px; color: var(--green); text-transform: uppercase;">Professional ($79/mo)</div>
+        <div class="stat-big" style="color: var(--green); margin-top: 8px;">~75%</div>
+        <div class="stat-label">$79 - ~$20 cost (20 docs) = ~$59 profit</div>
+      </div>
+      <div class="stat-card">
+        <div style="font-size: 12px; color: var(--text-dim); text-transform: uppercase;">Pay-Per-Doc ($14.99)</div>
+        <div class="stat-big" style="color: var(--green); margin-top: 8px;">~87%</div>
+        <div class="stat-label">$14.99 - ~$2 cost = ~$13 profit</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Key Metrics Targets</h3>
+    <div class="grid-4">
+      <div class="stat-card"><div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Activation</div><div style="font-size: 20px; font-weight: 700; color: var(--green); margin-top: 6px;">Trial → Upload</div><div class="stat-label">Target: >60%</div></div>
+      <div class="stat-card"><div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Conversion</div><div style="font-size: 20px; font-weight: 700; color: var(--blue); margin-top: 6px;">Trial → Paid</div><div class="stat-label">Target: >20%</div></div>
+      <div class="stat-card"><div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Retention</div><div style="font-size: 20px; font-weight: 700; color: var(--orange); margin-top: 6px;">Monthly churn</div><div class="stat-label">Target: <5%</div></div>
+      <div class="stat-card"><div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Economics</div><div style="font-size: 20px; font-weight: 700; color: var(--purple); margin-top: 6px;">LTV:CAC</div><div class="stat-label">Target: >3:1</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Revenue Projections (Conservative)</h3>
+    <table>
+      <thead><tr><th>Month</th><th>Users</th><th>MRR</th><th>Key Milestone</th></tr></thead>
+      <tbody>
+        <tr><td>Month 1</td><td>15</td><td>$600</td><td>Launch + Product Hunt</td></tr>
+        <tr><td>Month 3</td><td>40</td><td>$2,000</td><td>Product-market fit validation</td></tr>
+        <tr><td>Month 6</td><td>120</td><td>$8,000</td><td>Attorney marketplace launch</td></tr>
+        <tr><td>Month 9</td><td>230</td><td>$15,000</td><td>SEO traffic kicking in</td></tr>
+        <tr><td style="color: var(--green); font-weight: 600;">Month 12</td><td style="color: var(--green);">350</td><td style="color: var(--green); font-weight: 600;">$25,000</td><td>Paid acquisition scaling</td></tr>
+        <tr><td style="color: var(--green); font-weight: 600;">Month 18</td><td style="color: var(--green);">700</td><td style="color: var(--green); font-weight: 600;">$60,000</td><td>+ iOS + portfolio management</td></tr>
+      </tbody>
+    </table>
+    <div style="font-size: 12px; color: var(--text-dim); margin-top: 8px;">Assumes: 5% monthly churn, 60/30/10% Starter/Pro/Business mix, 15% pay-per-doc revenue.</div>
+  </div>
+
+  <div class="section">
+    <h3>Infrastructure Costs</h3>
+    <table>
+      <thead><tr><th>Service</th><th>Monthly Cost</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Vercel (hosting)</td><td>$20-50</td><td>Pro plan. Auto-scales.</td></tr>
+        <tr><td>Supabase (database)</td><td>$25-75</td><td>Pro plan. Managed Postgres.</td></tr>
+        <tr><td>Upstash Redis</td><td>$10-30</td><td>Pay-per-use. Rate limiting + sessions.</td></tr>
+        <tr><td>AWS S3 + KMS</td><td>$10-50</td><td>Document storage. Encrypted.</td></tr>
+        <tr><td>Clerk (auth)</td><td>$25-50</td><td>Pro plan. OAuth, MFA, orgs.</td></tr>
+        <tr><td>Inngest (jobs)</td><td>$0-25</td><td>Free tier covers MVP.</td></tr>
+        <tr><td>Resend (email)</td><td>$0-20</td><td>Free tier covers early stage.</td></tr>
+        <tr><td><strong style="color: var(--text);">Total fixed infra</strong></td><td><strong style="color: var(--orange);">$90-300/mo</strong></td><td>Before usage-based AI costs</td></tr>
+      </tbody>
+    </table>
+    <div class="callout callout-green" style="margin-top: 16px;">
+      <h4 style="color: var(--green);">Breakeven: ~50-80 paying users</h4>
+      <p style="margin: 0;">Fixed infrastructure (~$200-500/mo) + variable AI costs are covered with approximately 60 users at average revenue of $50/user/month.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== CH 7: LEGAL COMPLIANCE ===================== -->
+<div class="chapter" id="ch7">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color: var(--red);">Chapter 07</div>
+    <h2>Legal Compliance & UPL Protection</h2>
+    <div class="chapter-subtitle">The single most important regulatory risk in legal tech — and exactly how ClearTerms handles it.</div>
+  </div>
+
+  <div class="section">
+    <h3>Understanding UPL</h3>
+    <div class="callout callout-red">
+      <h4 style="color: var(--red);">Unauthorized Practice of Law (UPL)</h4>
+      <p style="margin: 0;">Every US state prohibits non-lawyers from giving legal advice. The definition varies by state but generally includes giving specific advice about someone's particular legal situation. AI tools that say "don't sign this" or "you should negotiate" are potentially violating UPL laws.</p>
+    </div>
+
+    <div class="grid-2" style="margin-top: 16px;">
+      <div class="card">
+        <h4 style="color: var(--green);">✅ Legal Information (Safe)</h4>
+        <ul>
+          <li>"This clause allows termination with 30-day notice"</li>
+          <li>"This rate is above market average"</li>
+          <li>"This section contains an arbitration clause"</li>
+          <li>"Similar contracts typically include X"</li>
+          <li>"This is flagged because it's unusual for this type"</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--red);">❌ Legal Advice (UPL Risk)</h4>
+        <ul style="color: var(--red);">
+          <li>"You should not sign this contract"</li>
+          <li>"I recommend removing section 5"</li>
+          <li>"You have a strong case against the landlord"</li>
+          <li>"Your best option is to negotiate"</li>
+          <li>"You should consult a lawyer about this"</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Precedents</h3>
+    <div class="card">
+      <h4 style="color: var(--red);">DoNotPay Settlement (2024)</h4>
+      <p>Settled class action for $193K for falsely claiming to be a "robot lawyer." Multiple state bars investigated. Key lesson: never position as a legal service provider. Always position as a technology/information tool.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>ClearTerms Language Framework</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4 style="color: var(--red);">🚫 Banned Words & Phrases</h4>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;">
+          <span class="tag tag-red">should</span><span class="tag tag-red">recommend</span><span class="tag tag-red">advise</span><span class="tag tag-red">must</span><span class="tag tag-red">legal advice</span><span class="tag tag-red">your lawyer</span><span class="tag tag-red">your rights</span><span class="tag tag-red">we suggest</span><span class="tag tag-red">best option</span><span class="tag tag-red">you have a case</span>
+        </div>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--green);">✅ Approved Alternatives</h4>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;">
+          <span class="tag tag-green">analysis indicates</span><span class="tag tag-green">consider</span><span class="tag tag-green">this clause means</span><span class="tag tag-green">note that</span><span class="tag tag-green">typically in similar contracts</span><span class="tag tag-green">this is flagged because</span><span class="tag tag-green">a licensed attorney can help with</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>6-Layer Disclaimer System</h3>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="card" style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(96,165,250,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--blue); flex-shrink: 0;">1</div>
+        <div><div style="font-size: 14px; font-weight: 600; color: var(--blue);">Terms of Service</div><div style="font-size: 12px; color: var(--text-secondary);">Explicit checkbox at signup agreeing ClearTerms provides information, not legal advice.</div></div>
+      </div>
+      <div class="card" style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(34,211,238,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--cyan); flex-shrink: 0;">2</div>
+        <div><div style="font-size: 14px; font-weight: 600; color: var(--cyan);">Upload Page Banner</div><div style="font-size: 12px; color: var(--text-secondary);">"ClearTerms helps you understand contracts. For legal advice, connect with an attorney."</div></div>
+      </div>
+      <div class="card" style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(52,211,153,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--green); flex-shrink: 0;">3</div>
+        <div><div style="font-size: 14px; font-weight: 600; color: var(--green);">Report Footer</div><div style="font-size: 12px; color: var(--text-secondary);">Full disclaimer on every analysis report. Non-removable.</div></div>
+      </div>
+      <div class="card" style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(251,146,60,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--orange); flex-shrink: 0;">4</div>
+        <div><div style="font-size: 14px; font-weight: 600; color: var(--orange);">Chat Reminders</div><div style="font-size: 12px; color: var(--text-secondary);">Inline disclaimer every 5 messages with CTA to attorney marketplace.</div></div>
+      </div>
+      <div class="card" style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(244,114,182,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--pink); flex-shrink: 0;">5</div>
+        <div><div style="font-size: 14px; font-weight: 600; color: var(--pink);">PDF Export Watermark</div><div style="font-size: 12px; color: var(--text-secondary);">Every exported PDF includes permanent header/footer disclaimer.</div></div>
+      </div>
+      <div class="card" style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(167,139,250,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--purple); flex-shrink: 0;">6</div>
+        <div><div style="font-size: 14px; font-weight: 600; color: var(--purple);">AI System Prompt Guardrails</div><div style="font-size: 12px; color: var(--text-secondary);">Hardcoded instructions prohibiting legal advice. Input sanitization + output validation pipeline.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>AI Guardrail Pipeline</h3>
+    <div class="flow">
+      <div class="flow-step" style="border-color: rgba(248,113,113,0.2);"><div style="font-size: 13px; font-weight: 600; color: var(--red);">Input Filter</div><div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">Block prompt injection, detect advice requests</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="border-color: rgba(96,165,250,0.2);"><div style="font-size: 13px; font-weight: 600; color: var(--blue);">System Prompt</div><div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">Hardcoded: "Never give legal advice"</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="border-color: rgba(167,139,250,0.2);"><div style="font-size: 13px; font-weight: 600; color: var(--purple);">Claude LLM</div><div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">Generates informational analysis</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="border-color: rgba(251,146,60,0.2);"><div style="font-size: 13px; font-weight: 600; color: var(--orange);">Output Filter</div><div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">Scan for banned words, auto-fix</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="border-color: rgba(52,211,153,0.2);"><div style="font-size: 13px; font-weight: 600; color: var(--green);">Clean Output</div><div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">Compliant analysis + disclaimer</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Additional Safeguards</h3>
+    <div class="grid-2">
+      <div class="card"><h4>📋 State Registration</h4><p>Register as technology company, NOT legal services provider.</p></div>
+      <div class="card"><h4>🛡️ E&O Insurance</h4><p>Errors & Omissions insurance from day one (~$1-3K/year).</p></div>
+      <div class="card"><h4>📊 Audit Logging</h4><p>Every AI output logged. Full audit trail for compliance.</p></div>
+      <div class="card"><h4>👨‍⚖️ Pre-Launch Legal Review</h4><p>UPL attorney reviews all prompts, disclaimers, and sample outputs (~$2-5K).</p></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== CH 8: TECHNOLOGY ===================== -->
+<div class="chapter" id="ch8">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color: var(--green);">Chapter 08</div>
+    <h2>Technology & Architecture</h2>
+    <div class="chapter-subtitle">A modern, serverless stack optimized for speed of development, low operational cost, and future iOS expansion.</div>
+  </div>
+
+  <div class="section">
+    <h3>System Architecture</h3>
+    <div class="card" style="padding: 28px;">
+      <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
+        <div style="padding: 14px 32px; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.2); border-radius: 10px; text-align: center;"><div style="font-size: 14px; font-weight: 600; color: var(--blue);">👤 User (Browser)</div><div style="font-size: 11px; color: var(--text-dim);">Upload · View Reports · Chat</div></div>
+        <div style="color: var(--text-dim);">↕</div>
+        <div style="padding: 14px 32px; background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); border-radius: 10px; text-align: center;"><div style="font-size: 14px; font-weight: 600; color: var(--green);">Next.js 15 Frontend</div><div style="font-size: 11px; color: var(--text-dim);">React · TypeScript · Tailwind · shadcn/ui</div></div>
+        <div style="color: var(--text-dim);">↕</div>
+        <div style="padding: 14px 32px; background: rgba(251,146,60,0.08); border: 1px solid rgba(251,146,60,0.2); border-radius: 10px; text-align: center;"><div style="font-size: 14px; font-weight: 600; color: var(--orange);">API Layer (tRPC)</div><div style="font-size: 11px; color: var(--text-dim);">Auth · Uploads · Analysis · Chat · Payments</div></div>
+        <div style="color: var(--text-dim);">↕</div>
+        <div class="grid-4" style="width: 100%;">
+          <div style="padding: 12px; background: rgba(244,114,182,0.08); border: 1px solid rgba(244,114,182,0.2); border-radius: 8px; text-align: center;"><div style="font-size: 12px; font-weight: 600; color: var(--pink);">OCR</div><div style="font-size: 10px; color: var(--text-dim);">Google Vision</div></div>
+          <div style="padding: 12px; background: rgba(34,211,238,0.08); border: 1px solid rgba(34,211,238,0.2); border-radius: 8px; text-align: center;"><div style="font-size: 12px; font-weight: 600; color: var(--cyan);">AI</div><div style="font-size: 10px; color: var(--text-dim);">Claude API</div></div>
+          <div style="padding: 12px; background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.2); border-radius: 8px; text-align: center;"><div style="font-size: 12px; font-weight: 600; color: var(--purple);">Payments</div><div style="font-size: 10px; color: var(--text-dim);">Stripe</div></div>
+          <div style="padding: 12px; background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2); border-radius: 8px; text-align: center;"><div style="font-size: 12px; font-weight: 600; color: var(--yellow);">Auth</div><div style="font-size: 10px; color: var(--text-dim);">Clerk</div></div>
+        </div>
+        <div style="color: var(--text-dim);">↕</div>
+        <div class="grid-3" style="width: 100%;">
+          <div style="padding: 12px; background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); border-radius: 8px; text-align: center;"><div style="font-size: 12px; font-weight: 600; color: var(--green);">PostgreSQL</div><div style="font-size: 10px; color: var(--text-dim);">Supabase</div></div>
+          <div style="padding: 12px; background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.2); border-radius: 8px; text-align: center;"><div style="font-size: 12px; font-weight: 600; color: var(--blue);">Object Storage</div><div style="font-size: 10px; color: var(--text-dim);">S3 + KMS</div></div>
+          <div style="padding: 12px; background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); border-radius: 8px; text-align: center;"><div style="font-size: 12px; font-weight: 600; color: var(--red);">Cache</div><div style="font-size: 10px; color: var(--text-dim);">Upstash Redis</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Full Tech Stack</h3>
+    <table>
+      <thead><tr><th>Layer</th><th>Technology</th><th>Rationale</th></tr></thead>
+      <tbody>
+        <tr><td>Framework</td><td style="color: var(--green);">Next.js 15 (App Router)</td><td>Full-stack in one repo. SSR for SEO. API routes for backend.</td></tr>
+        <tr><td>Language</td><td style="color: var(--green);">TypeScript</td><td>Type safety across entire stack. Fewer runtime bugs.</td></tr>
+        <tr><td>Styling</td><td style="color: var(--green);">Tailwind CSS + shadcn/ui</td><td>Rapid UI dev. Copy-paste components, no vendor lock-in.</td></tr>
+        <tr><td>API</td><td style="color: var(--green);">tRPC</td><td>End-to-end type safety. Zero API schema maintenance.</td></tr>
+        <tr><td>ORM</td><td style="color: var(--green);">Drizzle ORM</td><td>Type-safe SQL. Lightweight. Better perf than Prisma.</td></tr>
+        <tr><td>Auth</td><td style="color: var(--green);">Clerk</td><td>Drop-in auth with OAuth, MFA, org management. B2B-ready.</td></tr>
+        <tr><td>AI / LLM</td><td style="color: var(--green);">Claude API (Anthropic)</td><td>200K context window. Superior legal reasoning. Structured output.</td></tr>
+        <tr><td>OCR</td><td style="color: var(--green);">Google Cloud Vision</td><td>Best-in-class accuracy for photos, scans, handwriting.</td></tr>
+        <tr><td>Payments</td><td style="color: var(--green);">Stripe</td><td>Subscriptions + one-time. Customer portal. Tax handling.</td></tr>
+        <tr><td>Storage</td><td style="color: var(--green);">AWS S3 + KMS</td><td>AES-256 encryption at rest. Presigned URLs. HIPAA-eligible.</td></tr>
+        <tr><td>Database</td><td style="color: var(--green);">PostgreSQL (Supabase)</td><td>Managed Postgres. RLS for security. Generous free tier.</td></tr>
+        <tr><td>Cache</td><td style="color: var(--green);">Upstash Redis</td><td>Serverless Redis. Rate limiting + sessions. Pay-per-use.</td></tr>
+        <tr><td>Jobs</td><td style="color: var(--green);">Inngest</td><td>Background job processing for OCR → AI pipeline.</td></tr>
+        <tr><td>Hosting</td><td style="color: var(--green);">Vercel</td><td>Zero-config Next.js. Edge functions. Auto-scaling.</td></tr>
+        <tr><td>Email</td><td style="color: var(--green);">Resend</td><td>Transactional + marketing email. React Email templates.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Document Processing Pipeline</h3>
+    <div class="flow">
+      <div class="flow-step"><div style="font-size: 20px;">📄</div><div style="font-size: 12px; font-weight: 600; color: var(--blue); margin-top: 4px;">Upload</div><div style="font-size: 10px; color: var(--text-dim);">Presigned URL → S3 (AES-256)</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div style="font-size: 20px;">🔍</div><div style="font-size: 12px; font-weight: 600; color: var(--pink); margin-top: 4px;">Extract</div><div style="font-size: 10px; color: var(--text-dim);">PDF: pdf-parse / Photo: Google Vision OCR</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div style="font-size: 20px;">🤖</div><div style="font-size: 12px; font-weight: 600; color: var(--cyan); margin-top: 4px;">Analyze</div><div style="font-size: 10px; color: var(--text-dim);">Claude: structured JSON output with risk scoring</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div style="font-size: 20px;">🛡️</div><div style="font-size: 12px; font-weight: 600; color: var(--orange); margin-top: 4px;">Validate</div><div style="font-size: 10px; color: var(--text-dim);">Output filter: banned words, disclaimer append</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div style="font-size: 20px;">📊</div><div style="font-size: 12px; font-weight: 600; color: var(--green); margin-top: 4px;">Deliver</div><div style="font-size: 10px; color: var(--text-dim);">Store report + notify user</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Security & Privacy</h3>
+    <div class="grid-2">
+      <div class="card"><h4 style="color: var(--green);">🔒 Encryption</h4><p>AES-256 at rest (S3 KMS). TLS 1.3 in transit. Zero-knowledge document storage.</p></div>
+      <div class="card"><h4 style="color: var(--blue);">🗑️ Auto-Delete</h4><p>Documents purged after 30 days (configurable). Users can delete immediately anytime.</p></div>
+      <div class="card"><h4 style="color: var(--orange);">🚫 No Training</h4><p>Documents never used for AI model training. Claude API doesn't train on inputs by default.</p></div>
+      <div class="card"><h4 style="color: var(--pink);">🛡️ SOC 2 Path</h4><p>Stack chosen for SOC 2 readiness. Audit logging enabled from day one.</p></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== CH 9: GO-TO-MARKET ===================== -->
+<div class="chapter" id="ch9">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color: var(--pink);">Chapter 09</div>
+    <h2>Go-to-Market Strategy</h2>
+    <div class="chapter-subtitle">From zero to 2,000+ users: manual seeding, organic growth, then paid scale.</div>
+  </div>
+
+  <div class="section">
+    <h3>Phase 1: Seed (Weeks 1-4) — First 50 Users</h3>
+    <p>Manual, high-touch, zero budget. The goal is product-market fit validation, not scale.</p>
+    <div class="grid-2" style="margin-top: 16px;">
+      <div class="card">
+        <h4 style="color: var(--blue);">🏢 SMB Communities</h4>
+        <ul>
+          <li>Reddit: r/smallbusiness, r/entrepreneur, r/startups</li>
+          <li>Facebook Groups: local business owner groups</li>
+          <li>LinkedIn: small business owner communities</li>
+          <li>Local Chamber of Commerce meetups</li>
+        </ul>
+        <p style="font-size: 13px; margin-top: 8px;"><strong style="color: var(--text);">Approach:</strong> Share value first — "I analyzed 100 standard leases and here are the 5 most common traps" — then mention the tool.</p>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--green);">🎯 Direct Outreach</h4>
+        <ul>
+          <li>New business filings (signing first leases)</li>
+          <li>Co-working space members</li>
+          <li>Startup incubators and accelerators</li>
+          <li>Freelancer communities (Upwork, Toptal)</li>
+        </ul>
+        <p style="font-size: 13px; margin-top: 8px;"><strong style="color: var(--text);">Offer:</strong> "Upload your next contract for free — we'll show you what you're missing."</p>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--orange);">📱 Product Hunt Launch</h4>
+        <ul>
+          <li>Compelling demo video</li>
+          <li>Tuesday/Wednesday launch for max visibility</li>
+          <li>"TurboTax for contracts" hook</li>
+        </ul>
+        <p style="font-size: 13px; margin-top: 8px;"><strong style="color: var(--text);">Goal:</strong> Top 5 of the day → 200+ signups → 30-50 trial users</p>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--pink);">🐦 Twitter/X Build in Public</h4>
+        <ul>
+          <li>Development journey thread</li>
+          <li>Share shocking anonymized contract clauses</li>
+          <li>"Did you know?" educational content</li>
+          <li>Fear-based hooks that drive engagement</li>
+        </ul>
+        <p style="font-size: 13px; margin-top: 8px;"><strong style="color: var(--text);">Content:</strong> "The clause in your lease that could bankrupt you"</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Phase 2: Grow (Months 2-4) — 50 → 500 Users</h3>
+    <p>Repeatable, scalable organic channels.</p>
+    <div class="grid-2" style="margin-top: 16px;">
+      <div class="card">
+        <h4 style="color: var(--green);">🔍 SEO Content Engine</h4>
+        <p><strong style="color: var(--text);">High-intent keywords:</strong></p>
+        <ul>
+          <li>"how to review a commercial lease"</li>
+          <li>"NDA red flags small business"</li>
+          <li>"vendor contract risks"</li>
+          <li>"contract review service for small business"</li>
+        </ul>
+        <p style="font-size: 13px; margin-top: 8px;"><strong style="color: var(--text);">Content types:</strong> blog posts, clause explainers, industry guides, free checklists.</p>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--blue);">🤝 Strategic Partnerships</h4>
+        <ul>
+          <li>Accounting tools (QuickBooks, FreshBooks)</li>
+          <li>Business formation (Stripe Atlas, Firstbase)</li>
+          <li>Co-working spaces (WeWork, Industrious)</li>
+          <li>Business insurance providers</li>
+          <li>SBA resources and programs</li>
+        </ul>
+        <p style="font-size: 13px; margin-top: 8px;"><strong style="color: var(--text);">Model:</strong> "Signing a new lease? Check it with ClearTerms first."</p>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--orange);">📧 Email Nurture Sequence</h4>
+        <ul>
+          <li>Day 0: Welcome + how to upload first doc</li>
+          <li>Day 2: "Did you know?" contract risk stats</li>
+          <li>Day 5: Case study — "How we saved $12K"</li>
+          <li>Day 7: Free trial expiring reminder</li>
+          <li>Day 10: 20% off first month offer</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--pink);">🔄 Referral Program</h4>
+        <p><strong style="color: var(--text);">Double-sided rewards:</strong></p>
+        <ul>
+          <li>Referrer: 1 free document analysis</li>
+          <li>Referee: Extended trial (3 docs instead of 1)</li>
+        </ul>
+        <p style="font-size: 13px; margin-top: 8px;">Business owners talk to each other. "I found 3 issues in my lease" is naturally shareable.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Phase 3: Scale (Months 5-8) — 500 → 2,000+ Users</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4 style="color: var(--purple);">💰 Paid Acquisition</h4>
+        <ul>
+          <li>Google Ads: high-intent legal keywords ($5-15 CPC)</li>
+          <li>LinkedIn Ads: SMB owner demographic targeting</li>
+          <li>Facebook/Instagram: retargeting site visitors</li>
+        </ul>
+        <p style="font-size: 13px; margin-top: 8px;"><strong style="color: var(--text);">Target CAC:</strong> <$50 &nbsp;|&nbsp; <strong style="color: var(--text);">Budget:</strong> Start at $2K/mo</p>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--cyan);">⚖️ Marketplace Flywheel</h4>
+        <ul>
+          <li>Users find complex issues → need attorney</li>
+          <li>Attorneys join for leads → attract more users</li>
+          <li>More users → more attorneys want in</li>
+          <li>Attorneys refer clients for pre-screening</li>
+        </ul>
+        <p style="font-size: 13px; margin-top: 8px;"><strong style="color: var(--text);">This is the long-term moat.</strong> Network effects make it harder to compete.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Brand & Messaging</h3>
+    <div class="card card-accent" style="text-align: center; padding: 32px;">
+      <div style="font-size: 32px; font-weight: 800; letter-spacing: -1px;">ClearTerms</div>
+      <div style="font-size: 16px; color: var(--green); margin: 8px 0 24px;">Understand Every Contract Before You Sign</div>
+      <div class="grid-3" style="text-align: left;">
+        <div><div style="font-size: 11px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;">Core Message</div><div style="font-size: 13px; color: var(--text-secondary);">"Don't sign what you don't understand. ClearTerms analyzes any contract in 60 seconds."</div></div>
+        <div><div style="font-size: 11px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;">Trust Angle</div><div style="font-size: 13px; color: var(--text-secondary);">"Your documents are encrypted, never shared, never used for AI training."</div></div>
+        <div><div style="font-size: 11px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;">Fear Hook</div><div style="font-size: 13px; color: var(--text-secondary);">"The average contract has 3 clauses that could cost you thousands."</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Marketing Budget (First 6 Months)</h3>
+    <table>
+      <thead><tr><th>Channel</th><th>Monthly</th><th>Users/mo</th><th>CAC</th></tr></thead>
+      <tbody>
+        <tr><td>Organic / Community</td><td style="color: var(--green);">$0</td><td>20-40</td><td style="color: var(--green);">$0</td></tr>
+        <tr><td>SEO / Content</td><td>$500</td><td>30-60</td><td>$8-17</td></tr>
+        <tr><td>Google Ads</td><td style="color: var(--orange);">$2,000</td><td>40-80</td><td>$25-50</td></tr>
+        <tr><td>Product Hunt</td><td style="color: var(--green);">$0</td><td>100-200 (one-time)</td><td style="color: var(--green);">$0</td></tr>
+        <tr><td>Email / Referral</td><td>$50</td><td>10-20</td><td>$2-5</td></tr>
+        <tr><td style="font-weight: 600;">Total</td><td style="font-weight: 600;">~$2,550/mo</td><td style="font-weight: 600;">100-200/mo</td><td style="font-weight: 600;">~$15-25 avg</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ===================== CH 10: ROADMAP ===================== -->
+<div class="chapter" id="ch10">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color: var(--blue);">Chapter 10</div>
+    <h2>Product Roadmap</h2>
+    <div class="chapter-subtitle">Three phases from MVP to full platform with attorney marketplace, iOS, and portfolio management.</div>
+  </div>
+
+  <div class="section">
+    <div class="grid-3">
+      <div class="card" style="border-top: 3px solid var(--green);">
+        <div style="font-size: 11px; color: var(--green); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Phase 1 · 6-8 weeks</div>
+        <h3 style="margin-top: 10px;">MVP Launch</h3>
+        <p>Core AI contract analysis with subscriptions and free trial.</p>
+        <ul>
+          <li>Document upload (PDF, DOCX, photo)</li>
+          <li>Google Vision OCR for scans</li>
+          <li>Claude AI analysis with structured output</li>
+          <li>Interactive report with risk scoring</li>
+          <li>Follow-up chat per document</li>
+          <li>Stripe subscriptions + pay-per-doc</li>
+          <li>Free first document trial</li>
+          <li>Dashboard with document history</li>
+          <li>PDF report export</li>
+          <li>6-layer UPL disclaimer system</li>
+          <li>AI guardrail pipeline</li>
+          <li>Auto-delete (30 days)</li>
+        </ul>
+      </div>
+      <div class="card" style="border-top: 3px solid var(--blue);">
+        <div style="font-size: 11px; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Phase 2 · +4-6 weeks</div>
+        <h3 style="margin-top: 10px;">Attorney Marketplace</h3>
+        <p>Connect users with real attorneys for complex issues.</p>
+        <ul>
+          <li>Attorney firm onboarding flow</li>
+          <li>Firm profiles with ratings and reviews</li>
+          <li>Consultation booking system</li>
+          <li>Stripe Connect for payouts</li>
+          <li>Lead management dashboard (attorneys)</li>
+          <li>In-platform messaging</li>
+          <li>Commission tracking and invoicing</li>
+          <li>"Connect with attorney" CTAs in reports</li>
+          <li>Attorney verification system</li>
+          <li>Consultation escrow</li>
+        </ul>
+      </div>
+      <div class="card" style="border-top: 3px solid var(--purple);">
+        <div style="font-size: 11px; color: var(--purple); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Phase 3 · +6-8 weeks</div>
+        <h3 style="margin-top: 10px;">Scale & Expand</h3>
+        <p>Portfolio management, iOS, and enterprise features.</p>
+        <ul>
+          <li>Contract portfolio management</li>
+          <li>Obligation tracking and alerts</li>
+          <li>Renewal deadline notifications</li>
+          <li>Contract comparison / benchmarking</li>
+          <li>iOS app (React Native / Expo)</li>
+          <li>Team / multi-user accounts</li>
+          <li>Bulk document upload</li>
+          <li>API for integrations</li>
+          <li>Multi-language support</li>
+          <li>Contract templates library</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" style="text-align: center; padding-top: 32px;">
+    <div class="divider"></div>
+    <div style="font-size: 36px; font-weight: 800; letter-spacing: -1px; margin: 32px 0 8px;">ClearTerms</div>
+    <div style="font-size: 18px; color: var(--green); margin-bottom: 20px;">Understand Every Contract Before You Sign</div>
+    <div style="font-size: 14px; color: var(--text-dim);">B2B SaaS · AI Legal Tech · $29-199/mo · 75-85% margins · $35B market · 33M potential customers</div>
+  </div>
+</div>
+
+<script>
+  // Sidebar close on mobile
+  function closeSidebar() { document.querySelector('.sidebar').classList.remove('open'); }
+
+  // Back to top button
+  const backTop = document.getElementById('backTop');
+  window.addEventListener('scroll', () => {
+    backTop.classList.toggle('visible', window.scrollY > 600);
+  });
+
+  // Smooth scroll for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelector(a.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+
+</body>
+</html>

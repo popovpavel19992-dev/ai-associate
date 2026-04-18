@@ -1,0 +1,36 @@
+[    1128ms] [ERROR]  Note that 'script-src' was not explicitly set, so 'default-src' is used as a fallback. @ https://infinite-bear-1.accounts.dev/_next/static/chunks/pages/_app-b4e172c45530bdbc.js:18
+[    1649ms] [WARNING] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview @ https://infinite-bear-1.accounts.dev/_next/static/chunks/pages/_app-b4e172c45530bdbc.js:14
+[    2439ms] [WARNING] Clerk: Structural CSS detected that may break on updates.
+
+Found:
+  - CSS "body.cl-component"
+  - CSS ".cl-component .button:focus-visible"
+
+These selectors depend on the internal DOM structure of Clerk's components, which may change when Clerk deploys component updates.
+To prevent breaking changes, install @clerk/ui and pass it to ClerkProvider:
+
+  import { ui } from '@clerk/ui'
+  <ClerkProvider ui={ui}>
+
+Learn more: https://clerk.com/docs/reference/components/versioning
+(code=structural_css_pin_clerk_ui) @ https://infinite-bear-1.accounts.dev/_next/static/chunks/pages/_app-b4e172c45530bdbc.js:14
+[    2467ms] [ERROR] Access to fetch at 'https://clerk-telemetry.com/v1/event' from origin 'https://infinite-bear-1.accounts.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://infinite-bear-1.accounts.dev/sign-in/tasks?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fsettings%2Fteam:0
+[    2468ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clerk-telemetry.com/v1/event:0
+[    2473ms] [ERROR] Access to fetch at 'https://clerk-telemetry.com/v1/event' from origin 'https://infinite-bear-1.accounts.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://infinite-bear-1.accounts.dev/sign-in/tasks?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fsettings%2Fteam:0
+[    2473ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clerk-telemetry.com/v1/event:0
+[    2670ms] [ERROR] Access to fetch at 'https://clerk-telemetry.com/v1/event' from origin 'https://infinite-bear-1.accounts.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://infinite-bear-1.accounts.dev/sign-in/tasks?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fsettings%2Fteam:0
+[    2670ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clerk-telemetry.com/v1/event:0
+[   22631ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   22663ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   22709ms] [LOG] %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   22709ms] [LOG] %c[Vercel Web Analytics]%c [view] http://localhost:3000/settings/team color: rgb(120, 120, 120) color: inherit {o: http://localhost:3000/settings/team, sv: 0.1.3, sdkn: @vercel/analytics/react, sdkv: 2.0.1, ts: 1775576402383} /_vercel/insights/view @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   22711ms] [LOG] %c[Vercel Speed Insights]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   22781ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   22782ms] [LOG] [Fast Refresh] done in 101ms @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   22983ms] [WARNING] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   23760ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   23770ms] [LOG] [Fast Refresh] done in 112ms @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   36271ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   36453ms] [LOG] [Fast Refresh] done in 283ms @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   63922ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   63924ms] [LOG] [Fast Refresh] done in 101ms @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432

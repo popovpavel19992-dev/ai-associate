@@ -1,0 +1,30 @@
+- generic [ref=e1]:
+  - generic [ref=e100]:
+    - generic [ref=e101]:
+      - generic [ref=e103]:
+        - heading "Check your email" [level=1] [ref=e104]
+        - paragraph [ref=e105]: to continue to AI project
+        - paragraph [ref=e107]: uat-tester+clerk_test@cleartermstest.dev
+      - generic [ref=e108]:
+        - generic [ref=e109]:
+          - generic [ref=e111]:
+            - generic:
+              - group
+              - textbox "Enter verification code" [active] [ref=e112]
+          - button "Didn't receive a code? Resend (29)" [disabled]
+        - paragraph [ref=e115]: You're signing in from a new device. We're asking for verification to keep your account secure.
+        - generic [ref=e116]:
+          - button "Continue" [ref=e117] [cursor=pointer]:
+            - generic [ref=e118]:
+              - text: Continue
+              - img [ref=e119]
+          - link "Use another method" [ref=e122] [cursor=pointer]:
+            - /url: https://infinite-bear-1.accounts.dev/sign-in/factor-two
+    - generic [ref=e125]:
+      - generic [ref=e127]:
+        - paragraph [ref=e128]: Secured by
+        - link "Clerk logo" [ref=e129] [cursor=pointer]:
+          - /url: https://go.clerk.com/components
+          - img [ref=e130]
+      - paragraph [ref=e135]: Development mode
+  - alert [ref=e4]: My account | AI project

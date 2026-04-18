@@ -1,0 +1,113 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "ClearTerms" [ref=e6] [cursor=pointer]:
+            - /url: /dashboard
+          - button [ref=e7]:
+            - img
+        - separator [ref=e8]
+        - navigation [ref=e9]:
+          - link "Dashboard" [ref=e10] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e11]
+            - text: Dashboard
+          - link "Contracts" [ref=e16] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e17]
+            - text: Contracts
+          - link "Drafts" [ref=e21] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e22]
+            - text: Drafts
+          - link "Quick Analysis" [ref=e24] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e25]
+            - text: Quick Analysis
+          - link "Cases" [ref=e27] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e28]
+            - text: Cases
+          - link "Clients" [ref=e31] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e32]
+            - text: Clients
+          - link "Calendar" [ref=e37] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e38]
+            - text: Calendar
+          - link "Templates" [ref=e40] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e41]
+            - text: Templates
+          - link "Settings" [ref=e44] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e45]
+            - text: Settings
+          - link "Team" [ref=e87] [cursor=pointer]:
+            - /url: /settings/team
+            - img [ref=e88]
+            - text: Team
+        - separator [ref=e48]
+        - button "Open user menu" [ref=e94] [cursor=pointer]:
+          - img "'s logo" [ref=e97]
+    - main [ref=e51]:
+      - generic [ref=e164]:
+        - generic [ref=e165]:
+          - generic [ref=e166]:
+            - heading "Acme Corp" [level=1] [ref=e167]
+            - generic [ref=e168]:
+              - generic [ref=e169]:
+                - img [ref=e170]
+                - text: Organization
+              - generic [ref=e174]: Active
+          - button "Archive" [ref=e176]:
+            - img
+            - text: Archive
+        - generic [ref=e177]:
+          - generic [ref=e178]:
+            - generic [ref=e179]:
+              - generic [ref=e180]:
+                - heading "Info" [level=3] [ref=e181]
+                - button [ref=e182]:
+                  - img
+              - generic [ref=e183]:
+                - generic [ref=e184]:
+                  - generic [ref=e185]: Company
+                  - paragraph [ref=e186]: Acme Corp
+                - generic [ref=e187]:
+                  - generic [ref=e188]: Industry
+                  - paragraph [ref=e189]: Technology
+                - generic [ref=e190]:
+                  - generic [ref=e191]: Website
+                  - paragraph [ref=e192]: https://acme.example.com
+                - generic [ref=e193]:
+                  - generic [ref=e194]: EIN
+                  - paragraph [ref=e195]: 12-3456789
+            - generic [ref=e196]:
+              - generic [ref=e197]:
+                - heading "Address" [level=3] [ref=e198]
+                - button [ref=e199]:
+                  - img
+              - paragraph [ref=e200]: 123 Main St New York, NY, 10001 US
+            - generic [ref=e201]:
+              - generic [ref=e202]:
+                - heading "Contacts" [level=3] [ref=e203]
+                - button "Add" [ref=e204]:
+                  - img
+                  - text: Add
+              - paragraph [ref=e205]: No contacts yet.
+          - complementary [ref=e206]:
+            - generic [ref=e207]:
+              - heading "Cases" [level=3] [ref=e208]
+              - paragraph [ref=e209]: No cases yet.
+            - generic [ref=e210]:
+              - generic [ref=e211]:
+                - heading "Notes" [level=3] [ref=e212]
+                - button [ref=e213]:
+                  - img
+              - paragraph [ref=e214]: Key client for acme technology contracts
+  - button "Open Next.js Dev Tools" [ref=e82] [cursor=pointer]:
+    - img [ref=e83]
+  - alert [ref=e86]

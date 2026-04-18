@@ -1,0 +1,118 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "ClearTerms" [ref=e6] [cursor=pointer]:
+            - /url: /dashboard
+          - button [ref=e7]:
+            - img
+        - separator [ref=e8]
+        - navigation [ref=e9]:
+          - link "Dashboard" [ref=e10] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e11]
+            - text: Dashboard
+          - link "Contracts" [ref=e16] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e17]
+            - text: Contracts
+          - link "Drafts" [ref=e21] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e22]
+            - text: Drafts
+          - link "Quick Analysis" [ref=e24] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e25]
+            - text: Quick Analysis
+          - link "Cases" [ref=e27] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e28]
+            - text: Cases
+          - link "Clients" [ref=e31] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e32]
+            - text: Clients
+          - link "Calendar" [ref=e37] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e38]
+            - text: Calendar
+          - link "Templates" [ref=e40] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e41]
+            - text: Templates
+          - link "Settings" [ref=e44] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e45]
+            - text: Settings
+          - link "Team" [ref=e64] [cursor=pointer]:
+            - /url: /settings/team
+            - img [ref=e65]
+            - text: Team
+        - separator [ref=e48]
+        - button "Open user menu" [ref=e71] [cursor=pointer]:
+          - img "'s logo" [ref=e74]
+    - main [ref=e51]:
+      - generic [ref=e53]:
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - heading "Acme Corp" [level=1] [ref=e78]
+            - generic [ref=e79]:
+              - generic [ref=e80]:
+                - img [ref=e81]
+                - text: Organization
+              - generic [ref=e85]: Active
+          - button "Archive" [ref=e87]:
+            - img
+            - text: Archive
+        - generic [ref=e88]:
+          - generic [ref=e89]:
+            - generic [ref=e90]:
+              - generic [ref=e91]:
+                - heading "Info" [level=3] [ref=e92]
+                - button [ref=e93]:
+                  - img
+              - generic [ref=e94]:
+                - generic [ref=e95]:
+                  - generic [ref=e96]: Company
+                  - paragraph [ref=e97]: Acme Corp
+                - generic [ref=e98]:
+                  - generic [ref=e99]: Industry
+                  - paragraph [ref=e100]: Technology
+                - generic [ref=e101]:
+                  - generic [ref=e102]: Website
+                  - paragraph [ref=e103]: https://acme.example.com
+                - generic [ref=e104]:
+                  - generic [ref=e105]: EIN
+                  - paragraph [ref=e106]: 12-3456789
+            - generic [ref=e107]:
+              - generic [ref=e108]:
+                - heading "Address" [level=3] [ref=e109]
+                - button [ref=e110]:
+                  - img
+              - paragraph [ref=e111]: 123 Main St New York, NY, 10001 US
+            - generic [ref=e112]:
+              - generic [ref=e113]:
+                - heading "Contacts" [level=3] [ref=e114]
+                - button "Add" [ref=e115]:
+                  - img
+                  - text: Add
+              - paragraph [ref=e116]: No contacts yet.
+          - complementary [ref=e117]:
+            - generic [ref=e118]:
+              - heading "Cases" [level=3] [ref=e119]
+              - list [ref=e120]:
+                - listitem [ref=e121]:
+                  - link "Acme Corp v. Beta LLC — Contract Dispute" [ref=e122] [cursor=pointer]:
+                    - /url: /cases/61e9c86a-4359-49cd-8d59-fdf894e11030
+                    - img [ref=e123]
+                    - text: Acme Corp v. Beta LLC — Contract Dispute
+            - generic [ref=e126]:
+              - generic [ref=e127]:
+                - heading "Notes" [level=3] [ref=e128]
+                - button [ref=e129]:
+                  - img
+              - paragraph [ref=e130]: Key client for acme technology contracts
+  - button "Open Next.js Dev Tools" [ref=e59] [cursor=pointer]:
+    - img [ref=e60]
+  - alert [ref=e63]

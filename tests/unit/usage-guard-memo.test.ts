@@ -63,9 +63,15 @@ describe("UsageGuard.checkAndIncrementMemo", () => {
     // memoCount = 51 > cap 50 for professional → should throw
     const { db } = makeMockDb([{ memoCount: 51 }]);
     const guard = new UsageGuard({ db });
-    await expect(
-      guard.checkAndIncrementMemo({ userId: "u1", plan: "professional" }),
-    ).rejects.toBeInstanceOf(UsageLimitExceededError);
+    let caught: unknown;
+    try {
+      await guard.checkAndIncrementMemo({ userId: "u1", plan: "professional" });
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(UsageLimitExceededError);
+    const e = caught as UsageLimitExceededError;
+    expect(e.message).toMatch(/Memo usage limit exceeded: \d+\/\d+/);
   });
 
   it("business plan = unlimited (very high memoCount still passes)", async () => {

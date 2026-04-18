@@ -1,0 +1,145 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link [ref=e162] [cursor=pointer]:
+            - /url: /dashboard
+            - text: ClearTerms
+          - button [ref=e7]:
+            - img
+        - separator [ref=e8]
+        - navigation [ref=e9]:
+          - link [ref=e163] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e11]
+            - text: Dashboard
+          - link [ref=e164] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e17]
+            - text: Contracts
+          - link [ref=e165] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e22]
+            - text: Drafts
+          - link [ref=e166] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e25]
+            - text: Quick Analysis
+          - link [ref=e167] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e28]
+            - text: Cases
+          - link [ref=e168] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e32]
+            - text: Clients
+          - link [ref=e169] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e38]
+            - text: Calendar
+          - link [ref=e170] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e41]
+            - text: Templates
+          - link [ref=e171] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e45]
+            - text: Settings
+          - link [ref=e172] [cursor=pointer]:
+            - /url: /settings/team
+            - img [ref=e65]
+            - text: Team
+        - separator [ref=e48]
+        - button [ref=e173] [cursor=pointer]:
+          - img [ref=e174]
+    - main [ref=e51]:
+      - generic [ref=e53]:
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - heading [level=1] [ref=e175]: Acme Corporation
+            - generic [ref=e79]:
+              - generic [ref=e80]:
+                - img [ref=e81]
+                - text: Organization
+              - generic [ref=e85]: Active
+          - button [ref=e176]:
+            - img
+            - text: Archive
+        - generic [ref=e88]:
+          - generic [ref=e89]:
+            - generic [ref=e90]:
+              - generic [ref=e91]:
+                - heading [level=3] [ref=e177]: Info
+                - button [ref=e151]:
+                  - img
+              - generic [ref=e94]:
+                - generic [ref=e95]:
+                  - generic [ref=e96]: Company
+                  - paragraph [ref=e152]: Acme Corporation
+                - generic [ref=e98]:
+                  - generic [ref=e99]: Industry
+                  - paragraph [ref=e153]: Technology
+                - generic [ref=e101]:
+                  - generic [ref=e102]: Website
+                  - paragraph [ref=e154]: https://acmecorp.com
+                - generic [ref=e104]:
+                  - generic [ref=e105]: EIN
+                  - paragraph [ref=e155]: 12-3456789
+            - generic [ref=e107]:
+              - generic [ref=e108]:
+                - heading [level=3] [ref=e178]: Address
+                - button [ref=e110]:
+                  - img
+              - paragraph [ref=e111]: 123 Main St New York, NY, 10001 US
+            - generic [ref=e112]:
+              - generic [ref=e113]:
+                - heading [level=3] [ref=e179]: Contacts
+                - button [ref=e180]:
+                  - img
+                  - text: Add
+              - paragraph [ref=e116]: No contacts yet.
+          - complementary [ref=e117]:
+            - generic [ref=e118]:
+              - heading [level=3] [ref=e181]: Cases
+              - list [ref=e120]:
+                - listitem [ref=e121]:
+                  - link [ref=e182] [cursor=pointer]:
+                    - /url: /cases/61e9c86a-4359-49cd-8d59-fdf894e11030
+                    - img [ref=e123]
+                    - text: Acme Corp v. Beta LLC — Contract Dispute
+            - generic [ref=e126]:
+              - generic [ref=e127]:
+                - heading [level=3] [ref=e183]: Notes
+                - button [ref=e160]:
+                  - img
+              - paragraph [ref=e161]: Key client for acme technology contracts. Updated notes with priority flag.
+  - alert [ref=e63]
+  - dialog "Add contact" [ref=e187]:
+    - heading "Add contact" [level=2] [ref=e189]
+    - generic [ref=e190]:
+      - generic [ref=e191]:
+        - generic [ref=e192]: Name
+        - textbox [active] [ref=e193]
+      - generic [ref=e194]:
+        - generic [ref=e195]:
+          - generic [ref=e196]: Title
+          - textbox [ref=e197]
+        - generic [ref=e198]:
+          - generic [ref=e199]: Phone
+          - textbox [ref=e200]
+      - generic [ref=e201]:
+        - generic [ref=e202]: Email
+        - textbox [ref=e203]
+      - generic [ref=e204]:
+        - generic [ref=e205]: Notes
+        - textbox [ref=e206]
+      - generic [ref=e207]:
+        - checkbox "Primary contact" [ref=e208]
+        - text: Primary contact
+    - generic [ref=e209]:
+      - button "Cancel" [ref=e210]
+      - button "Save" [disabled]
+    - button "Close" [ref=e211]:
+      - img
+      - generic [ref=e212]: Close
