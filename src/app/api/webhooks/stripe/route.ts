@@ -5,7 +5,9 @@ import { db } from "@/server/db";
 import { subscriptions } from "@/server/db/schema/subscriptions";
 import { users } from "@/server/db/schema/users";
 import { organizations } from "@/server/db/schema/organizations";
+import { invoices } from "@/server/db/schema/invoices";
 import { eq } from "drizzle-orm";
+import { inngest } from "@/server/inngest/client";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -78,6 +80,27 @@ function getPlanFromSubscription(subscription: Stripe.Subscription): string {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  // Handle portal invoice payment
+  if (session.mode === "payment" && session.metadata?.invoiceId) {
+    const invoiceId = session.metadata.invoiceId;
+    await db
+      .update(invoices)
+      .set({ status: "paid", paidDate: new Date() })
+      .where(eq(invoices.id, invoiceId));
+
+    await inngest.send({
+      name: "notification/send",
+      data: {
+        type: "invoice_paid",
+        title: "Invoice paid",
+        body: "Invoice has been paid",
+        orgId: session.metadata.orgId,
+        metadata: { invoiceId },
+      },
+    });
+    return;
+  }
+
   if (session.mode !== "subscription" || !session.subscription) return;
 
   const subId =

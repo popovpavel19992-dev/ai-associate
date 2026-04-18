@@ -23,6 +23,18 @@ import { notificationsRouter } from "./routers/notifications";
 import { notificationPreferencesRouter } from "./routers/notification-preferences";
 import { notificationMutesRouter } from "./routers/notification-mutes";
 import { pushSubscriptionsRouter } from "./routers/push-subscriptions";
+import { portalAuthRouter } from "./routers/portal-auth";
+import { portalCasesRouter } from "./routers/portal-cases";
+import { portalDocumentsRouter } from "./routers/portal-documents";
+import { portalMessagesRouter } from "./routers/portal-messages";
+import { portalInvoicesRouter } from "./routers/portal-invoices";
+import { portalCalendarRouter } from "./routers/portal-calendar";
+import { portalTasksRouter } from "./routers/portal-tasks";
+import { portalNotificationsRouter } from "./routers/portal-notifications";
+import { portalUsersRouter } from "./routers/portal-users";
+import { portalNotificationPreferencesRouter } from "./routers/portal-notification-preferences";
+import { portalLawyerRouter } from "./routers/portal-lawyer";
+import { researchRouter } from "./routers/research";
 
 export const appRouter = router({
   users: usersRouter,
@@ -49,6 +61,18 @@ export const appRouter = router({
   notificationPreferences: notificationPreferencesRouter,
   notificationMutes: notificationMutesRouter,
   pushSubscriptions: pushSubscriptionsRouter,
+  portalAuth: portalAuthRouter,
+  portalCases: portalCasesRouter,
+  portalDocuments: portalDocumentsRouter,
+  portalMessages: portalMessagesRouter,
+  portalInvoices: portalInvoicesRouter,
+  portalCalendar: portalCalendarRouter,
+  portalTasks: portalTasksRouter,
+  portalNotifications: portalNotificationsRouter,
+  portalUsers: portalUsersRouter,
+  portalNotificationPreferences: portalNotificationPreferencesRouter,
+  portalLawyer: portalLawyerRouter,
+  research: researchRouter,
 });
 
 export type AppRouter = typeof appRouter;

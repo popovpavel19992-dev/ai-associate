@@ -10,6 +10,8 @@ interface CaseOverviewProps {
   documentsCount: number;
   contractsCount: number;
   stageTaskTemplates: { title: string; priority: string }[];
+  opposingParty: string | null;
+  opposingCounsel: string | null;
 }
 
 export function CaseOverview({
@@ -19,6 +21,8 @@ export function CaseOverview({
   documentsCount,
   contractsCount,
   stageTaskTemplates,
+  opposingParty,
+  opposingCounsel,
 }: CaseOverviewProps) {
   return (
     <div className="grid gap-4 p-4 md:grid-cols-2">
@@ -68,6 +72,23 @@ export function CaseOverview({
         <p className="text-sm text-zinc-300">
           {description || "No description provided."}
         </p>
+      </div>
+
+      {/* Opposing Parties */}
+      <div className="rounded-lg border border-zinc-800 p-4 md:col-span-2">
+        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+          Opposing Parties
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <p className="text-xs text-zinc-500 mb-1">Opposing Party</p>
+            <p className="text-sm text-zinc-300">{opposingParty || "\u2014"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-zinc-500 mb-1">Opposing Counsel</p>
+            <p className="text-sm text-zinc-300">{opposingCounsel || "\u2014"}</p>
+          </div>
+        </div>
       </div>
 
       {/* Quick Stats */}

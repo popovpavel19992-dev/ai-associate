@@ -18,5 +18,6 @@ export const documents = pgTable("documents", {
   status: documentStatusEnum("status").default("uploading").notNull(),
   extractedText: text("extracted_text"),
   creditsConsumed: integer("credits_consumed").default(1).notNull(),
+  uploadedByPortalUserId: uuid("uploaded_by_portal_user_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });

@@ -15,7 +15,9 @@ import { CaseCalendar } from "@/components/calendar/case-calendar";
 import { CaseTeamPanel } from "@/components/cases/case-team-panel";
 import { CaseClientBlock } from "@/components/cases/case-client-block";
 import { CaseTimeTab } from "@/components/time-billing/case-time-tab";
+import { CaseResearchTab } from "@/components/cases/case-research-tab";
 import { CaseMuteButton } from "@/components/notifications/case-mute-button";
+import { PortalVisibilityPanel } from "@/components/portal/portal-visibility-panel";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -26,6 +28,7 @@ const TABS = [
   { key: "report", label: "Report" },
   { key: "timeline", label: "Timeline" },
   { key: "contracts", label: "Contracts" },
+  { key: "research", label: "Research" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -165,6 +168,8 @@ export default function CaseDetailPage({
             documentsCount={caseData.documents.length}
             contractsCount={linkedContracts?.length ?? 0}
             stageTaskTemplates={stageTaskTemplatesList}
+            opposingParty={caseData.opposingParty}
+            opposingCounsel={caseData.opposingCounsel}
           />
         )}
 
@@ -213,11 +218,16 @@ export default function CaseDetailPage({
             />
           </div>
         )}
+
+        {activeTab === "research" && (
+          <CaseResearchTab caseId={caseData.id} />
+        )}
         </div>
         {(caseData.client || caseData.orgId) && (
           <div className="hidden w-56 shrink-0 space-y-4 overflow-y-auto border-l border-zinc-800 p-4 lg:block">
             {caseData.client && <CaseClientBlock client={caseData.client} />}
             {caseData.orgId && <CaseTeamPanel caseId={id} userRole={profile?.role ?? null} />}
+            <PortalVisibilityPanel caseId={id} portalVisibility={caseData.portalVisibility} />
           </div>
         )}
       </div>

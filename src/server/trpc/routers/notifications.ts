@@ -10,7 +10,7 @@ export const notificationsRouter = router({
     .input(
       z.object({
         filter: z.enum(["all", "unread"]).default("all"),
-        category: z.enum(["cases", "billing", "team", "calendar"]).optional(),
+        category: z.enum(["cases", "billing", "team", "calendar", "portal", "research"]).optional(),
         limit: z.number().int().min(1).max(50).default(20),
         offset: z.number().int().min(0).default(0),
       }),

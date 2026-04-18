@@ -28,6 +28,10 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   added_to_case: "Added to case",
   event_reminder: "Event reminder",
   calendar_sync_failed: "Calendar sync failed",
+  portal_message_received: "Portal message received",
+  portal_document_uploaded: "Portal document uploaded",
+  research_bookmark_added: "Research bookmark added",
+  research_session_linked: "Research session linked",
 };
 
 const CHANNEL_LABELS: Record<NotificationChannel, string> = {

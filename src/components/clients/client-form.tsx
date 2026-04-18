@@ -1,9 +1,9 @@
 // src/components/clients/client-form.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,17 @@ export function ClientForm({ mode }: Props) {
   const [country, setCountry] = useState("US");
 
   const [notes, setNotes] = useState("");
+
+  const [conflictName, setConflictName] = useState("");
+  const conflictCheck = trpc.clients.checkConflict.useQuery(
+    { name: conflictName },
+    { enabled: conflictName.length >= 2 },
+  );
+  const conflictTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerConflictCheck = (name: string) => {
+    if (conflictTimerRef.current) clearTimeout(conflictTimerRef.current);
+    conflictTimerRef.current = setTimeout(() => setConflictName(name), 500);
+  };
 
   const create = trpc.clients.create.useMutation({
     onSuccess: ({ client }) => {
@@ -119,7 +130,7 @@ export function ClientForm({ mode }: Props) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last name</Label>
-              <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} maxLength={100} />
+              <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} maxLength={100} onBlur={() => { const fullName = `${firstName} ${lastName}`.trim(); if (fullName.length >= 2) triggerConflictCheck(fullName); }} />
             </div>
             <div className="space-y-2 col-span-2">
               <Label htmlFor="dob">Date of birth</Label>
@@ -130,7 +141,7 @@ export function ClientForm({ mode }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2 col-span-2">
               <Label htmlFor="company">Company name</Label>
-              <Input id="company" value={companyName} onChange={(e) => setCompanyName(e.target.value)} maxLength={200} />
+              <Input id="company" value={companyName} onChange={(e) => setCompanyName(e.target.value)} maxLength={200} onBlur={() => { if (companyName.trim().length >= 2) triggerConflictCheck(companyName.trim()); }} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="ein">EIN</Label>
@@ -163,6 +174,24 @@ export function ClientForm({ mode }: Props) {
           <Label htmlFor="notes">Notes</Label>
           <Textarea id="notes" rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={5000} />
         </div>
+
+        {conflictCheck.data?.matches && conflictCheck.data.matches.length > 0 && (
+          <div className="rounded-md border border-yellow-500/50 bg-yellow-500/10 p-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-500" />
+              <div className="space-y-1 text-sm">
+                <p className="font-medium text-yellow-500">Potential conflict of interest</p>
+                {conflictCheck.data.matches.map((m) => (
+                  <p key={m.caseId} className="text-muted-foreground">
+                    &ldquo;{m.opposingParty || m.opposingCounsel}&rdquo; in case{" "}
+                    <span className="font-medium">{m.caseName}</span>
+                    {m.clientDisplayName && <> (client: {m.clientDisplayName})</>}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         <Button onClick={submit} disabled={!canSubmit || create.isPending} className="w-full">
           {create.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

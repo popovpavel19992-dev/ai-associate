@@ -10,6 +10,7 @@ import { ClientAddressSection } from "@/components/clients/client-address-sectio
 import { ClientNotes } from "@/components/clients/client-notes";
 import { ContactsList } from "@/components/clients/contacts-list";
 import { ClientCasesList } from "@/components/clients/client-cases-list";
+import { PortalAccessPanel } from "@/components/portal/portal-access-panel";
 
 export default function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -44,6 +45,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
         </div>
         <aside className="space-y-4">
           <ClientCasesList clientId={data.client.id} />
+          <PortalAccessPanel clientId={data.client.id} />
           <ClientNotes client={data.client} />
         </aside>
       </div>

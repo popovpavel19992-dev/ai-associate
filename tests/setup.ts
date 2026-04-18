@@ -4,6 +4,8 @@ import { vi } from "vitest";
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL ?? "postgresql://localhost:5432/clearterms_test";
 process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
 process.env.ANTHROPIC_API_KEY = "test-key";
+process.env.COURTLISTENER_API_TOKEN = "test-token";
+process.env.GOVINFO_API_KEY = "test-govinfo-key";
 process.env.RESEND_API_KEY = "";
 process.env.AWS_S3_BUCKET = "test-bucket";
 process.env.AWS_REGION = "us-east-1";
@@ -20,6 +22,13 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = "test";
 process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_test_fake";
 process.env.CLERK_SECRET_KEY = "sk_test_fake";
 process.env.CLERK_WEBHOOK_SECRET = "whsec_test";
+process.env.RESEND_API_KEY = "re_test";
+process.env.CALENDAR_ENCRYPTION_KEY = "0".repeat(64);
+process.env.GOOGLE_CLIENT_ID = "test-google-client-id";
+process.env.GOOGLE_CLIENT_SECRET = "test-google-client-secret";
+process.env.MICROSOFT_CLIENT_ID = "test-ms-client-id";
+process.env.MICROSOFT_CLIENT_SECRET = "test-ms-client-secret";
+process.env.PORTAL_JWT_SECRET = "a".repeat(32);
 
 // Mock external services by default
 vi.mock("@/server/services/s3", () => ({

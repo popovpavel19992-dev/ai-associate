@@ -106,6 +106,58 @@ export async function deleteObject(s3Key: string): Promise<void> {
   );
 }
 
+const PROFILE_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const PROFILE_SIZE_LIMITS: Record<string, number> = {
+  avatar: 2 * 1024 * 1024,    // 2MB
+  signature: 1 * 1024 * 1024, // 1MB
+};
+
+export function validateProfileUpload(
+  category: "avatar" | "signature",
+  contentType: string,
+  fileSize: number,
+) {
+  if (!PROFILE_IMAGE_TYPES.has(contentType)) {
+    throw new Error(`Unsupported image type: ${contentType}. Allowed: JPEG, PNG, WebP.`);
+  }
+  const maxSize = PROFILE_SIZE_LIMITS[category]!;
+  if (fileSize > maxSize) {
+    throw new Error(`File too large: ${(fileSize / 1024 / 1024).toFixed(1)}MB. Maximum: ${(maxSize / 1024 / 1024).toFixed(0)}MB.`);
+  }
+  if (fileSize <= 0) {
+    throw new Error("File size must be greater than 0.");
+  }
+}
+
+export async function generateProfilePresignedUrl(
+  userId: string,
+  category: "avatar" | "signature",
+  filename: string,
+  contentType: string,
+  fileSize: number,
+): Promise<{ uploadUrl: string; s3Key: string }> {
+  validateProfileUpload(category, contentType, fileSize);
+
+  const fileId = crypto.randomUUID();
+  const sanitizedFilename = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const s3Key = `profiles/${userId}/${category}/${fileId}/${sanitizedFilename}`;
+
+  const command = new PutObjectCommand({
+    Bucket: getBucket(),
+    Key: s3Key,
+    ContentType: contentType,
+    ContentLength: fileSize,
+    ServerSideEncryption: "aws:kms",
+    SSEKMSKeyId: getKmsKeyId(),
+  });
+
+  const uploadUrl = await getSignedUrl(getClient(), command, {
+    expiresIn: PRESIGN_EXPIRY_SECONDS,
+  });
+
+  return { uploadUrl, s3Key };
+}
+
 export async function getObject(
   s3Key: string,
 ): Promise<{ body: ReadableStream; contentType?: string }> {
