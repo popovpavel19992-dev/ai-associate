@@ -12,6 +12,11 @@ export type ParsedCitation =
 // USC: single section; ranges like "§§ 1981-1988" capture first section only.
 const USC_PATTERN = /\b(\d+)\s+U\.S\.C\.\s+§§?\s*(\d+[a-z]?)(?:\s*[-–]\s*\d+[a-z]?)?\b/gi;
 
+// Guard used in the REPORTER_PATTERNS loop to skip strings that are USC or CFR
+// references — those are already handled by the dedicated loops above and should
+// not be emitted as source: "case".
+const STATUTE_GUARD = /U\.S\.C\.|C\.?F\.?R\.?/i;
+
 // CFR: supports subparts like 35.104(a)(2). Periods in "C.F.R." are optional.
 const CFR_PATTERN = /\b(\d+)\s+C\.?F\.?R\.?\s+§§?\s*(\d+\.\d+[a-z]?(?:\([a-z0-9]+\))*)/gi;
 
@@ -43,6 +48,8 @@ export function parseCitations(text: string): ParsedCitation[] {
   for (const pattern of REPORTER_PATTERNS) {
     for (const match of text.matchAll(pattern)) {
       const citation = match[0].trim();
+      // Skip USC/CFR hits — those are already captured by the dedicated loops.
+      if (STATUTE_GUARD.test(citation)) continue;
       const key = `case|${citation.toLowerCase()}`;
       if (seen.has(key)) continue;
       seen.add(key);

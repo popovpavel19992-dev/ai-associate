@@ -18,6 +18,8 @@ export const REPORTER_PATTERNS: readonly RegExp[] = [
   /\b\d+\s+Tex\.\s+\d+\b/gi, // "123 Tex. 456"
   /\b\d+\s+So\.\s?(?:2d|3d)?\s+\d+\b/gi, // "123 So.2d 456"
   /\b\d+\s+Ill\.(?:\s?(?:2d|3d))?\s+\d+\b/gi, // "123 Ill. 456" / "123 Ill.2d 456" / "123 Ill.3d 456"
+  /\b\d+\s+U\.S\.C\.\s+§§?\s*\d+[a-z]?\b/gi, // "42 U.S.C. § 1983"
+  /\b\d+\s+C\.?F\.?R\.?\s+§§?\s*\d+\.\d+[a-z]?(?:\([a-z0-9]+\))*/gi, // "28 CFR § 35.104(a)(2)"
 ];
 
 /**

@@ -119,10 +119,46 @@ describe("validateCitations", () => {
 });
 
 describe("REPORTER_PATTERNS", () => {
-  it("exports exactly 9 compiled regex patterns", () => {
-    expect(REPORTER_PATTERNS).toHaveLength(9);
+  it("exports exactly 11 compiled regex patterns", () => {
+    expect(REPORTER_PATTERNS).toHaveLength(11);
     for (const pattern of REPORTER_PATTERNS) {
       expect(pattern).toBeInstanceOf(RegExp);
     }
+  });
+});
+
+describe("extractCitations — USC and CFR", () => {
+  it("extracts a USC citation", () => {
+    const result = extractCitations("See 42 U.S.C. § 1983.");
+    expect(result).toContain("42 U.S.C. § 1983");
+  });
+
+  it("extracts a CFR citation with subpart", () => {
+    const result = extractCitations("per 28 CFR § 35.104(a)");
+    expect(result).toContain("28 CFR § 35.104(a)");
+  });
+});
+
+describe("validateCitations — USC and CFR", () => {
+  it("verifies a USC citation present in context", () => {
+    const text = "The regulation at 42 U.S.C. § 1983 and 384 U.S. 436 apply.";
+    const context = ["42 U.S.C. § 1983", "384 U.S. 436"];
+    const { verified, unverified } = validateCitations(text, context);
+    expect(verified).toContain("42 U.S.C. § 1983");
+    expect(verified).toContain("384 U.S. 436");
+    expect(unverified).toEqual([]);
+  });
+
+  it("flags a USC citation absent from context as unverified", () => {
+    const text = "See 42 U.S.C. § 1983 for detail.";
+    const { verified, unverified } = validateCitations(text, []);
+    expect(verified).toEqual([]);
+    expect(unverified).toContain("42 U.S.C. § 1983");
+  });
+
+  it("matches USC citation case-insensitively across casing variants", () => {
+    // Canonical form in context; lowercase input in text
+    const { verified } = validateCitations("See 42 u.s.c. § 1983.", ["42 U.S.C. § 1983"]);
+    expect(verified).toContain("42 u.s.c. § 1983");
   });
 });
