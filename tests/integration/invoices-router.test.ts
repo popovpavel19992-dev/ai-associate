@@ -323,8 +323,10 @@ describe("invoices.send", () => {
     const { db, updateCalls, enqueueSelect } = makeMockDb();
     const ctx: Ctx = { db, user: { id: ID.user, orgId: ID.org, role: "owner" } };
 
-    // assertInvoiceManage: fetch invoice
+    // assertInvoiceManage: fetch invoice; then notification side-effects select orgMembers + clientRecord.
     enqueueSelect([makeInvoice({ status: "draft", paymentTerms: "Net 30" })]);
+    enqueueSelect([]); // orgMembers
+    enqueueSelect([]); // clientRecord
 
     const result = await caller(ctx).send({ id: ID.invoice });
 
@@ -351,6 +353,8 @@ describe("invoices.send", () => {
     const ctx: Ctx = { db, user: { id: ID.user, orgId: ID.org, role: "owner" } };
 
     enqueueSelect([makeInvoice({ status: "draft", paymentTerms: "Due on receipt" })]);
+    enqueueSelect([]); // orgMembers
+    enqueueSelect([]); // clientRecord
 
     await caller(ctx).send({ id: ID.invoice });
 
@@ -371,6 +375,8 @@ describe("invoices.markPaid", () => {
     const ctx: Ctx = { db, user: { id: ID.user, orgId: ID.org, role: "owner" } };
 
     enqueueSelect([makeSentInvoice()]);
+    enqueueSelect([]); // orgMembers (notification side-effect)
+    enqueueSelect([]); // clientRecord
 
     const result = await caller(ctx).markPaid({ id: ID.invoice });
 

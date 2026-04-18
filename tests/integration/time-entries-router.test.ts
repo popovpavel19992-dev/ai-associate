@@ -168,9 +168,9 @@ describe("timeEntries.list", () => {
     const { db, enqueueSelect } = makeMockDb();
     const ctx: Ctx = { db, user: { id: ID.user, orgId: ID.org, role: "owner" } };
 
-    // (1) assertCaseAccess, (2) list entries
+    // (1) assertCaseAccess, (2) list entries — query returns joined rows { entry, invoiceLineItemId, invoiceStatus }
     enqueueSelect([{ id: ID.case1 }]);
-    enqueueSelect([makeEntry()]);
+    enqueueSelect([{ entry: makeEntry(), invoiceLineItemId: null, invoiceStatus: null }]);
 
     const result = await caller(ctx).list({ caseId: ID.case1 });
     expect(result.entries).toHaveLength(1);
