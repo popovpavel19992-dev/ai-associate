@@ -27,6 +27,7 @@ import { researchSessions } from "@/server/db/schema/research-sessions";
 import { researchQueries } from "@/server/db/schema/research-queries";
 import { cachedOpinions } from "@/server/db/schema/cached-opinions";
 import type { db as realDb } from "@/server/db";
+import { researchMemoRouter } from "./research-memo";
 
 // ---------------------------------------------------------------------------
 // Shared schemas
@@ -605,4 +606,5 @@ export const researchRouter = router({
   sessions: sessionsRouter,
   bookmarks: bookmarksRouter,
   statutes: statutesRouter,
+  memo: researchMemoRouter,
 });
