@@ -84,7 +84,7 @@ export class CourtListenerClient {
       hits: (raw.results ?? []).flatMap((r: any) => {
         const hit = this.normalizeHit(r);
         if (!hit) {
-          console.warn(`[CourtListener] unmapped court slug "${r.court ?? ""}"; dropping hit ${r.id ?? "?"}`);
+          console.warn(`[CourtListener] unmapped court slug "${r.court_id ?? r.court ?? ""}"; dropping hit ${r.id ?? "?"}`);
           return [];
         }
         return [hit];
@@ -129,12 +129,24 @@ export class CourtListenerClient {
   }
 
   private normalizeHit(r: any): OpinionSearchHit | null {
-    const courtSlug: string = r.court ?? "";
+    // CourtListener v4 search: `court_id` is the slug ("scotus"), `court` is the display name.
+    // Opinion detail endpoint sometimes returns only `court` as a resource URL (e.g. ".../courts/scotus/") —
+    // derive the slug from the trailing path segment as a fallback.
+    let courtSlug: string = r.court_id ?? "";
+    if (!courtSlug && typeof r.court === "string" && r.court.includes("/")) {
+      const m = r.court.match(/\/courts\/([^/]+)\/?$/);
+      if (m) courtSlug = m[1];
+    }
     const mapping = COURT_MAP[courtSlug];
     if (!mapping) return null;
+    // v4 opinion search returns `cluster_id` (the stable legal identifier); detail endpoint uses `id`.
+    // Fall back cluster_id → id → opinions[0].id to cover both shapes.
+    const courtlistenerId =
+      r.cluster_id ?? r.id ?? (Array.isArray(r.opinions) ? r.opinions[0]?.id : undefined);
+    if (typeof courtlistenerId !== "number") return null;
     const citation = Array.isArray(r.citation) ? r.citation[0] : r.citation;
     return {
-      courtlistenerId: r.id,
+      courtlistenerId,
       caseName: r.caseName ?? r.case_name ?? "Unknown case",
       court: courtSlug,
       jurisdiction: mapping.jurisdiction,
