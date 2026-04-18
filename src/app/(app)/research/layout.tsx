@@ -9,9 +9,11 @@ export default function ResearchLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  // On opinion pages the viewer renders its own right-rail chat panel, so
-  // suppress the layout-level stub to avoid two competing 384px rails.
-  const hideRightRail = pathname?.startsWith("/research/opinions/") ?? false;
+  // On opinion + statute detail pages the viewer renders its own right-rail
+  // chat panel, so suppress the layout-level stub to avoid two competing rails.
+  const hideRightRail =
+    pathname?.startsWith("/research/opinions/") === true ||
+    pathname?.startsWith("/research/statutes/") === true;
 
   return (
     <div className="flex h-full min-h-0 overflow-hidden">
