@@ -62,7 +62,8 @@ export class EcfrClient {
     if (!/^[\w.-]+$/.test(section)) {
       throw new RangeError(`Invalid CFR section: ${section}`);
     }
-    const today = new Date().toISOString().slice(0, 10);
+    // Use local date (not UTC) so a user at e.g. 23:00 ET doesn't request tomorrow's not-yet-published date.
+    const today = new Date().toLocaleDateString("en-CA"); // "YYYY-MM-DD" in local TZ
     const url = `${BASE_URL}/versioner/v1/structure/${today}/title-${title}.json`;
     const res = await this.fetchWithRetry(url);
     if (res.status === 404) return null;
@@ -141,6 +142,8 @@ export class EcfrClient {
       starts_on?: string;
       type?: string;
     };
+    // Reject chapter/part/title hits — only "section" type produces valid CfrSectionResult.
+    if (r.type !== "section") return null;
     const titleRaw = r.hierarchy?.title;
     const section = r.hierarchy?.section;
     if (titleRaw === undefined || !section) return null;

@@ -197,6 +197,38 @@ describe("EcfrClient", () => {
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
+  it("searchCfr skips non-section result types (chapter/part/title)", async () => {
+    fetchMock = makeFetch([
+      {
+        status: 200,
+        json: {
+          results: [
+            {
+              type: "chapter",
+              hierarchy: { title: "28", section: "I" },
+              headings: { section: "Department of Justice" },
+              full_text_excerpt: "...",
+              starts_on: "2024-01-01",
+            },
+            {
+              type: "section",
+              hierarchy: { title: "28", section: "35.104" },
+              headings: { section: "Definitions" },
+              full_text_excerpt: "...",
+              starts_on: "2024-01-01",
+            },
+          ],
+        },
+      },
+    ]);
+    client = makeClient(fetchMock);
+
+    const hits = await client.searchCfr("justice", 5);
+    expect(hits).toHaveLength(1);
+    expect(hits[0].section).toBe("35.104");
+    expect(hits[0].source).toBe("cfr");
+  });
+
   it("rejects section values with disallowed characters", async () => {
     const c = new EcfrClient({
       fetchImpl: makeFetch([]) as unknown as typeof fetch,
