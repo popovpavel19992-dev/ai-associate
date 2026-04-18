@@ -26,6 +26,7 @@ import * as researchSessionsSchema from "./schema/research-sessions";
 import * as researchQueriesSchema from "./schema/research-queries";
 import * as researchChatMessagesSchema from "./schema/research-chat-messages";
 import * as cachedOpinionsSchema from "./schema/cached-opinions";
+import * as cachedStatutesSchema from "./schema/cached-statutes";
 import * as opinionBookmarksSchema from "./schema/opinion-bookmarks";
 import * as researchUsageSchema from "./schema/research-usage";
 
@@ -59,6 +60,7 @@ export const db = drizzle(client, {
     ...researchQueriesSchema,
     ...researchChatMessagesSchema,
     ...cachedOpinionsSchema,
+    ...cachedStatutesSchema,
     ...opinionBookmarksSchema,
     ...researchUsageSchema,
   },

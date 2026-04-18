@@ -14,6 +14,7 @@ export const researchChatMessages = pgTable(
     mode: researchChatModeEnum("mode"),
     opinionId: uuid("opinion_id"),
     opinionContextIds: jsonb("opinion_context_ids").$type<string[]>().default([]).notNull(),
+    statuteContextIds: jsonb("statute_context_ids").$type<string[]>().default([]).notNull(),
     tokensUsed: integer("tokens_used").default(0).notNull(),
     flags: jsonb("flags").$type<{
       unverifiedCitations?: string[];
