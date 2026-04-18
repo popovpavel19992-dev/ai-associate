@@ -12,9 +12,14 @@ import { asc, desc, eq } from "drizzle-orm";
 import { db as defaultDb } from "@/server/db";
 import { researchChatMessages } from "@/server/db/schema/research-chat-messages";
 import { cachedOpinions, type CachedOpinion } from "@/server/db/schema/cached-opinions";
+import type { CachedStatute } from "@/server/db/schema/cached-statutes";
 import { applyUplFilter } from "@/server/services/research/upl-filter";
 import { validateCitations } from "@/server/services/research/citation-validator";
 import type { OpinionCacheService } from "@/server/services/research/opinion-cache";
+import type { StatuteCacheService } from "@/server/services/research/statute-cache";
+import type { GovInfoClient } from "@/server/services/govinfo/client";
+import type { EcfrClient } from "@/server/services/ecfr/client";
+import { parseCitations, type ParsedCitation } from "./citation-parser";
 
 export type ResearchMode = "broad" | "deep";
 
@@ -44,6 +49,9 @@ export interface LegalRagServiceDeps {
   db?: typeof defaultDb;
   anthropic?: Anthropic;
   opinionCache: OpinionCacheService;
+  statuteCache?: StatuteCacheService;
+  govinfo?: GovInfoClient;
+  ecfr?: EcfrClient;
 }
 
 type ChatMsg = { role: "user" | "assistant"; content: string };
@@ -64,17 +72,35 @@ const SYSTEM_PROMPT =
   "You are a legal research assistant for a licensed-attorney audience. You analyze provided U.S. case law and give factual, well-cited summaries.\n\n" +
   "You do NOT give legal advice, predict outcomes, recommend actions, or address the reader's specific situation. Use only the opinions provided in this context. If the provided opinions do not address the question, say so explicitly.\n\n" +
   "Never use these words or phrases: should, must, recommend, advise, your rights, we suggest, best option, you have a case, legal advice. Prefer: \"the court held\", \"this opinion indicates\", \"consider that\", \"typically courts in this circuit\", \"the provided opinions do not address\".\n\n" +
-  "Every factual claim must cite a provided opinion using its Bluebook citation. Do not invent citations. If uncertain, say so.";
+  "Every factual claim must cite a provided opinion using its Bluebook citation. Do not invent citations. If uncertain, say so.\n\n" +
+  "The provided materials may include case opinions AND statutory/regulatory sections (U.S.C. and C.F.R.). Cite U.S.C. sections as `42 U.S.C. § 1983` and C.F.R. sections as `28 C.F.R. § 35.104`. Cases remain cited via Bluebook reporter format. Every factual claim about law must cite one of the provided materials.";
+
+const USC_CFR_PATTERN = /\d+\s+(U\.S\.C\.|C\.F\.R\.|USC|CFR)/;
+function isStatuteOriented(question: string): boolean {
+  if (question.includes("§")) return true;
+  if (/\b(statute|regulation)\b/i.test(question)) return true;
+  if (USC_CFR_PATTERN.test(question)) return true;
+  return false;
+}
 
 function trim(text: string): string {
   return text.length <= MAX_CTX_CHARS ? text : text.slice(0, Math.floor(text.length * TRIM_RATIO));
 }
 
-function assembleBroad(opinions: CachedOpinion[], question: string): string {
+function assembleBroad(opinions: CachedOpinion[], statutes: CachedStatute[], question: string): string {
   const blocks = opinions
     .map((o) => `## ${o.caseName} — ${o.citationBluebook}\n${trim(o.fullText ?? o.snippet ?? "")}`)
     .join("\n\n---\n\n");
-  return `<opinions>\n\n${blocks}\n\n</opinions>\n\n${question}`;
+  const statutesBlock =
+    statutes.length === 0
+      ? ""
+      : `<statutes>\n${statutes
+          .map(
+            (s) =>
+              `<${s.source}>## ${s.citationBluebook}\n${trim(s.bodyText ?? "")}\n</${s.source}>`,
+          )
+          .join("\n")}\n</statutes>`;
+  return `<opinions>\n\n${blocks}\n\n</opinions>\n\n${statutesBlock}\n${question}`;
 }
 
 function assembleDeep(o: CachedOpinion, question: string): string {
@@ -92,11 +118,17 @@ export class LegalRagService {
   private readonly db: typeof defaultDb;
   private readonly anthropic: Anthropic;
   private readonly cache: OpinionCacheService;
+  private readonly statuteCache?: StatuteCacheService;
+  private readonly govinfo?: GovInfoClient;
+  private readonly ecfr?: EcfrClient;
 
   constructor(deps: LegalRagServiceDeps) {
     this.db = deps.db ?? defaultDb;
     this.anthropic = deps.anthropic ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
     this.cache = deps.opinionCache;
+    this.statuteCache = deps.statuteCache;
+    this.govinfo = deps.govinfo;
+    this.ecfr = deps.ecfr;
   }
 
   async *askBroad(input: AskBroadInput): AsyncGenerator<StreamChunk> {
@@ -108,13 +140,22 @@ export class LegalRagService {
       .orderBy(desc(cachedOpinions.lastAccessedAt))
       .limit(topN);
     const opinions = await this.hydrate(rows as CachedOpinion[]);
+
+    const cited = parseCitations(input.question);
+    const statuteRows = await this.retrieveStatutes(input.question, cited);
+    const statutes = await this.hydrateStatutes(statuteRows);
+
     yield* this.runTurn({
       sessionId: input.sessionId,
       question: input.question,
       history,
-      userContent: assembleBroad(opinions, input.question),
-      contextCitations: opinions.map((o) => o.citationBluebook),
+      userContent: assembleBroad(opinions, statutes, input.question),
+      contextCitations: [
+        ...opinions.map((o) => o.citationBluebook),
+        ...statutes.map((s) => s.citationBluebook),
+      ],
       opinionContextIds: opinions.map((o) => o.id),
+      statuteContextIds: statutes.map((s) => s.id),
       mode: "broad",
       opinionId: null,
     });
@@ -141,9 +182,68 @@ export class LegalRagService {
       userContent: assembleDeep(opinion, input.question),
       contextCitations: [opinion.citationBluebook],
       opinionContextIds: [opinion.id],
+      statuteContextIds: [],
       mode: "deep",
       opinionId: opinion.id,
     });
+  }
+
+  private async retrieveStatutes(
+    question: string,
+    cited: ParsedCitation[],
+  ): Promise<CachedStatute[]> {
+    if (!this.statuteCache || !this.govinfo || !this.ecfr) return [];
+
+    const explicit = cited.filter(
+      (c): c is ParsedCitation & { source: "usc" | "cfr" } =>
+        c.source === "usc" || c.source === "cfr",
+    );
+
+    if (explicit.length > 0) {
+      const hits: CachedStatute[] = [];
+      for (const c of explicit) {
+        const detail =
+          c.source === "usc"
+            ? await this.govinfo.lookupUscSection(c.title, c.section)
+            : await this.ecfr.lookupCfrSection(c.title, c.section);
+        if (detail) {
+          const row = await this.statuteCache.upsertSearchHit(detail);
+          hits.push(row);
+        }
+      }
+      return hits;
+    }
+
+    if (!isStatuteOriented(question)) return [];
+
+    const [uscHits, cfrHits] = await Promise.all([
+      this.govinfo.searchUsc(question, 3).catch(() => []),
+      this.ecfr.searchCfr(question, 3).catch(() => []),
+    ]);
+
+    const rows: CachedStatute[] = [];
+    for (const h of [...uscHits, ...cfrHits].slice(0, 5)) {
+      rows.push(await this.statuteCache.upsertSearchHit(h));
+    }
+    return rows;
+  }
+
+  private async hydrateStatutes(rows: CachedStatute[]): Promise<CachedStatute[]> {
+    if (!this.statuteCache || rows.length === 0) return rows;
+    const cache = this.statuteCache;
+    const out: CachedStatute[] = [];
+    for (let i = 0; i < rows.length; i += 5) {
+      const batch = rows.slice(i, i + 5);
+      const hydrated = await Promise.all(
+        batch.map((r) =>
+          r.bodyText && r.bodyText.length > 0
+            ? Promise.resolve(r)
+            : cache.getOrFetch(r.id).catch(() => r),
+        ),
+      );
+      out.push(...hydrated);
+    }
+    return out;
   }
 
   private async loadHistory(sessionId: string): Promise<ChatMsg[]> {
@@ -175,6 +275,7 @@ export class LegalRagService {
     userContent: string;
     contextCitations: string[];
     opinionContextIds: string[];
+    statuteContextIds: string[];
     mode: ResearchMode;
     opinionId: string | null;
   }): AsyncGenerator<StreamChunk> {
@@ -186,6 +287,7 @@ export class LegalRagService {
       mode: opts.mode,
       opinionId: opts.opinionId,
       opinionContextIds: opts.opinionContextIds,
+      statuteContextIds: opts.statuteContextIds,
       tokensUsed: 0,
       flags: {},
     });
@@ -239,6 +341,7 @@ export class LegalRagService {
         mode: opts.mode,
         opinionId: opts.opinionId,
         opinionContextIds: opts.opinionContextIds,
+        statuteContextIds: opts.statuteContextIds,
         tokensUsed: usage.input_tokens + usage.output_tokens,
         flags: { unverifiedCitations: unverified, uplViolations: filtered.violations },
       })

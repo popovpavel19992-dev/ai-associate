@@ -25,6 +25,12 @@ const streamMock = anthropicModule.__streamMock as ReturnType<typeof vi.fn>;
 
 import { LegalRagService } from "@/server/services/research/legal-rag";
 import type { OpinionCacheService } from "@/server/services/research/opinion-cache";
+import type { StatuteCacheService } from "@/server/services/research/statute-cache";
+import type { GovInfoClient } from "@/server/services/govinfo/client";
+import type { EcfrClient } from "@/server/services/ecfr/client";
+import type { UscSectionResult } from "@/server/services/govinfo/types";
+import type { CfrSectionResult } from "@/server/services/ecfr/types";
+import type { CachedStatute } from "@/server/db/schema/cached-statutes";
 
 // ---------------------------------------------------------------------------
 // Stable UUIDs
@@ -199,6 +205,93 @@ function makeStreamWithAbort(
       opts.abortRef.called = true;
     },
   });
+}
+
+// ---------------------------------------------------------------------------
+// Statute fixtures + mock statute clients/cache
+// ---------------------------------------------------------------------------
+function mockStatute(overrides: Partial<CachedStatute> = {}): CachedStatute {
+  return {
+    id: "cccccccc-cccc-4ccc-accc-cccccccccccc",
+    source: "usc",
+    citationBluebook: "42 U.S.C. § 1983",
+    title: "42",
+    chapter: null,
+    section: "1983",
+    heading: "Civil action for deprivation of rights",
+    bodyText:
+      "Every person who, under color of any statute, ordinance, regulation, custom, or usage...",
+    effectiveDate: null,
+    metadata: {},
+    firstCachedAt: new Date(),
+    lastAccessedAt: new Date(),
+    ...overrides,
+  } as CachedStatute;
+}
+
+function mockUscResult(overrides: Partial<UscSectionResult> = {}): UscSectionResult {
+  return {
+    source: "usc",
+    title: 42,
+    section: "1983",
+    heading: "Civil action for deprivation of rights",
+    bodyText:
+      "Every person who, under color of any statute, ordinance, regulation, custom, or usage...",
+    citationBluebook: "42 U.S.C. § 1983",
+    granuleId: "USCODE-2023-title42-chap21-subchapI-sec1983",
+    packageId: "USCODE-2023-title42",
+    metadata: {},
+    ...overrides,
+  };
+}
+
+function mockCfrResult(overrides: Partial<CfrSectionResult> = {}): CfrSectionResult {
+  return {
+    source: "cfr",
+    title: 28,
+    section: "35.104",
+    heading: "Definitions",
+    bodyText: "For purposes of this part, the following definitions apply...",
+    citationBluebook: "28 C.F.R. § 35.104",
+    metadata: {},
+    ...overrides,
+  };
+}
+
+function makeMockGovInfo(): GovInfoClient {
+  return {
+    lookupUscSection: vi.fn(async () => null),
+    searchUsc: vi.fn(async () => []),
+    fetchBody: vi.fn(async () => ""),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+}
+
+function makeMockEcfr(): EcfrClient {
+  return {
+    lookupCfrSection: vi.fn(async () => null),
+    searchCfr: vi.fn(async () => []),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+}
+
+function makeMockStatuteCache(): StatuteCacheService {
+  return {
+    upsertSearchHit: vi.fn(async (hit: UscSectionResult | CfrSectionResult): Promise<CachedStatute> =>
+      mockStatute({
+        id: `id-${hit.source}-${hit.title}-${hit.section}`,
+        source: hit.source,
+        citationBluebook: hit.citationBluebook,
+        title: String(hit.title),
+        section: hit.section,
+        heading: hit.heading,
+        bodyText: hit.bodyText,
+      }),
+    ),
+    getOrFetch: vi.fn(async (id: string) => mockStatute({ id })),
+    getByInternalIds: vi.fn(async () => []),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
 }
 
 // ---------------------------------------------------------------------------
@@ -540,5 +633,252 @@ describe("LegalRagService.askDeep", () => {
     const last = chunks[chunks.length - 1];
     expect(last.type).toBe("error");
     expect(last.error).toMatch(/not.?found|missing|found/i);
+  });
+});
+
+describe("LegalRagService.askBroad — statute retrieval", () => {
+  it("triggers USC lookup when question has an explicit USC citation", async () => {
+    const { db, enqueueSelect, insertCalls } = makeMockDb();
+    const op = mockOpinion();
+    const cache = makeMockCache([op]);
+    const govinfo = makeMockGovInfo();
+    const ecfr = makeMockEcfr();
+    const statuteCache = makeMockStatuteCache();
+
+    const uscHit = mockUscResult();
+    (govinfo.lookupUscSection as ReturnType<typeof vi.fn>).mockResolvedValueOnce(uscHit);
+
+    enqueueSelect([]); // history
+    enqueueSelect([op]); // opinions
+
+    streamMock.mockReturnValueOnce(
+      makeStream(["ok"], "Per 42 U.S.C. § 1983 and 123 F.3d 456 the rule holds."),
+    );
+
+    const svc = new LegalRagService({
+      db,
+      opinionCache: cache,
+      statuteCache,
+      govinfo,
+      ecfr,
+    });
+    await collect(
+      svc.askBroad({
+        sessionId: ID.session,
+        userId: ID.user,
+        question: "interpret 42 U.S.C. § 1983",
+      }),
+    );
+
+    expect(govinfo.lookupUscSection).toHaveBeenCalledWith(42, "1983");
+    const streamArgs = streamMock.mock.calls[0]![0] as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    const userContent = streamArgs.messages[streamArgs.messages.length - 1]!.content;
+    expect(userContent).toContain("42 U.S.C. § 1983");
+    expect(userContent).toContain("Every person who, under color");
+
+    // Persisted assistant message should include statute id
+    const assistantRow = insertCalls[1]!.values as Record<string, unknown>;
+    expect((assistantRow.statuteContextIds as string[]).length).toBeGreaterThan(0);
+  });
+
+  it("triggers search when statute-oriented question lacks citation", async () => {
+    const mockDb = makeMockDb();
+    const op = mockOpinion();
+    const cache = makeMockCache([op]);
+    const govinfo = makeMockGovInfo();
+    const ecfr = makeMockEcfr();
+    const statuteCache = makeMockStatuteCache();
+
+    (govinfo.searchUsc as ReturnType<typeof vi.fn>).mockResolvedValueOnce([mockUscResult()]);
+    (ecfr.searchCfr as ReturnType<typeof vi.fn>).mockResolvedValueOnce([mockCfrResult()]);
+
+    mockDb.enqueueSelect([]);
+    mockDb.enqueueSelect([op]);
+
+    streamMock.mockReturnValueOnce(makeStream(["ok"], "See 42 U.S.C. § 1983 and 123 F.3d 456."));
+
+    const svc = new LegalRagService({
+      db: mockDb.db,
+      opinionCache: cache,
+      statuteCache,
+      govinfo,
+      ecfr,
+    });
+    await collect(
+      svc.askBroad({
+        sessionId: ID.session,
+        userId: ID.user,
+        question: "what regulations govern § 504?",
+      }),
+    );
+
+    const uscCalls = (govinfo.searchUsc as ReturnType<typeof vi.fn>).mock.calls.length;
+    const cfrCalls = (ecfr.searchCfr as ReturnType<typeof vi.fn>).mock.calls.length;
+    expect(uscCalls + cfrCalls).toBeGreaterThanOrEqual(1);
+
+    const streamArgs = streamMock.mock.calls[0]![0] as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    const userContent = streamArgs.messages[streamArgs.messages.length - 1]!.content;
+    // At least one search hit's citation should appear in context
+    const hasUsc = userContent.includes("42 U.S.C. § 1983");
+    const hasCfr = userContent.includes("28 C.F.R. § 35.104");
+    expect(hasUsc || hasCfr).toBe(true);
+  });
+
+  it("does NOT call statute clients for pure case-law question", async () => {
+    const { db, enqueueSelect } = makeMockDb();
+    const op = mockOpinion();
+    const cache = makeMockCache([op]);
+    const govinfo = makeMockGovInfo();
+    const ecfr = makeMockEcfr();
+    const statuteCache = makeMockStatuteCache();
+
+    enqueueSelect([]);
+    enqueueSelect([op]);
+
+    streamMock.mockReturnValueOnce(makeStream(["ok"], "123 F.3d 456 summarizes."));
+
+    const svc = new LegalRagService({
+      db,
+      opinionCache: cache,
+      statuteCache,
+      govinfo,
+      ecfr,
+    });
+    await collect(
+      svc.askBroad({
+        sessionId: ID.session,
+        userId: ID.user,
+        question: "what's the standard for summary judgment?",
+      }),
+    );
+
+    expect(govinfo.lookupUscSection).not.toHaveBeenCalled();
+    expect(govinfo.searchUsc).not.toHaveBeenCalled();
+    expect(ecfr.lookupCfrSection).not.toHaveBeenCalled();
+    expect(ecfr.searchCfr).not.toHaveBeenCalled();
+  });
+
+  it("does NOT trigger statute retrieval for bare 'section 3' token (false-positive guard)", async () => {
+    const { db, enqueueSelect } = makeMockDb();
+    const op = mockOpinion();
+    const cache = makeMockCache([op]);
+    const govinfo = makeMockGovInfo();
+    const ecfr = makeMockEcfr();
+    const statuteCache = makeMockStatuteCache();
+
+    enqueueSelect([]);
+    enqueueSelect([op]);
+
+    streamMock.mockReturnValueOnce(makeStream(["ok"], "Summary per 123 F.3d 456."));
+
+    const svc = new LegalRagService({
+      db,
+      opinionCache: cache,
+      statuteCache,
+      govinfo,
+      ecfr,
+    });
+    await collect(
+      svc.askBroad({
+        sessionId: ID.session,
+        userId: ID.user,
+        question: "section 3 of our engagement letter",
+      }),
+    );
+
+    expect(govinfo.lookupUscSection).not.toHaveBeenCalled();
+    expect(govinfo.searchUsc).not.toHaveBeenCalled();
+    expect(ecfr.lookupCfrSection).not.toHaveBeenCalled();
+    expect(ecfr.searchCfr).not.toHaveBeenCalled();
+  });
+
+  it("flags unverified USC citation and re-prompts at >=2 unverified", async () => {
+    const { db, enqueueSelect, insertCalls } = makeMockDb();
+    const op = mockOpinion();
+    const cache = makeMockCache([op]);
+    const govinfo = makeMockGovInfo();
+    const ecfr = makeMockEcfr();
+    const statuteCache = makeMockStatuteCache();
+
+    enqueueSelect([]);
+    enqueueSelect([op]);
+
+    // First response: cites bogus "99 U.S.C. § 9999" AND a bogus case — 2 unverified → re-prompt
+    streamMock.mockReturnValueOnce(
+      makeStream(["bad"], "See 99 U.S.C. § 9999 and 777 U.S. 8 for details."),
+    );
+    // Retry: cite only the valid opinion.
+    streamMock.mockReturnValueOnce(
+      makeStream(["good"], "The court in 123 F.3d 456 held the clause enforceable."),
+    );
+
+    const svc = new LegalRagService({
+      db,
+      opinionCache: cache,
+      statuteCache,
+      govinfo,
+      ecfr,
+    });
+    await collect(
+      svc.askBroad({
+        sessionId: ID.session,
+        userId: ID.user,
+        question: "what's the standard?",
+      }),
+    );
+
+    expect(streamMock).toHaveBeenCalledTimes(2);
+    // First stream's unverified list (captured in retry-prompt user message)
+    const secondCallArgs = streamMock.mock.calls[1]![0] as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    const retryPrompt = secondCallArgs.messages[secondCallArgs.messages.length - 1]!.content;
+    expect(retryPrompt).toMatch(/99 U\.S\.C\. § 9999/);
+
+    // Final persisted flags should be empty after successful retry.
+    const assistantRow = insertCalls[1]!.values as Record<string, unknown>;
+    const flags = assistantRow.flags as { unverifiedCitations?: string[] };
+    expect(flags.unverifiedCitations).toEqual([]);
+  });
+
+  it("persists BOTH opinionContextIds and statuteContextIds after mixed-context success", async () => {
+    const { db, enqueueSelect, insertCalls } = makeMockDb();
+    const op = mockOpinion();
+    const cache = makeMockCache([op]);
+    const govinfo = makeMockGovInfo();
+    const ecfr = makeMockEcfr();
+    const statuteCache = makeMockStatuteCache();
+
+    (govinfo.lookupUscSection as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockUscResult());
+
+    enqueueSelect([]);
+    enqueueSelect([op]);
+
+    streamMock.mockReturnValueOnce(
+      makeStream(["ok"], "Per 42 U.S.C. § 1983 and 123 F.3d 456 the rule holds."),
+    );
+
+    const svc = new LegalRagService({
+      db,
+      opinionCache: cache,
+      statuteCache,
+      govinfo,
+      ecfr,
+    });
+    await collect(
+      svc.askBroad({
+        sessionId: ID.session,
+        userId: ID.user,
+        question: "interpret 42 U.S.C. § 1983",
+      }),
+    );
+
+    const assistantRow = insertCalls[1]!.values as Record<string, unknown>;
+    expect((assistantRow.opinionContextIds as string[]).length).toBeGreaterThan(0);
+    expect((assistantRow.statuteContextIds as string[]).length).toBeGreaterThan(0);
   });
 });
