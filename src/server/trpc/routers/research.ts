@@ -32,9 +32,20 @@ import type { db as realDb } from "@/server/db";
 // Shared schemas
 // ---------------------------------------------------------------------------
 const FiltersSchema = z.object({
-  jurisdictions: z.array(z.enum(["federal", "ca", "ny", "tx", "fl", "il"])).optional(),
+  jurisdictions: z
+    .array(z.enum(["federal", "ca", "ny", "tx", "fl", "il", "other"]))
+    .optional(),
   courtLevels: z
-    .array(z.enum(["scotus", "circuit", "district", "state_supreme", "state_appellate"]))
+    .array(
+      z.enum([
+        "scotus",
+        "circuit",
+        "district",
+        "state_supreme",
+        "state_appellate",
+        "state_other",
+      ]),
+    )
     .optional(),
   fromYear: z.number().int().min(1900).max(2100).optional(),
   toYear: z.number().int().min(1900).max(2100).optional(),

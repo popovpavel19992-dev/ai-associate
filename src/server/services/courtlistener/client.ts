@@ -37,14 +37,70 @@ const COURT_MAP: Record<string, { jurisdiction: Jurisdiction; level: CourtLevel 
   illappct: { jurisdiction: "il", level: "state_appellate" },
 };
 
+// Known state-court slugs that bucket into the catch-all "other" jurisdiction.
+// Listed explicitly so logs show "we know this court exists, just not first-class"
+// rather than the generic unmapped warning. Promote to first-class above when a
+// jurisdiction earns its own filter chip.
+const STATE_OTHER_COURTS: ReadonlySet<string> = new Set([
+  // Top-volume states beyond CA/NY/TX/FL/IL
+  "pa", "pasuperct", "pacommwct",
+  "ohio", "ohioctapp",
+  "mass", "massappct",
+  "nj", "njsuperctappdiv",
+  "wash", "washctapp",
+  "ga", "gactapp",
+  "mich", "michctapp",
+  "nc", "ncctapp",
+  "va", "vactapp",
+  "ariz", "arizctapp",
+  "colo", "coloctapp",
+  "iowa", "iowactapp",
+  "minn", "minnctapp",
+  "wis", "wisctapp",
+  "mo", "moctapp",
+  "tenn", "tennctapp",
+  "ind", "indctapp",
+  "or", "orctapp",
+  "md", "mdctspecapp",
+  "conn", "connappct",
+  "nev",
+  "utah", "utahctapp",
+  "kan", "kanctapp",
+  "ky", "kyctapp",
+  "ala", "alactapp",
+  "sc", "scctapp",
+  "okla", "oklactapp",
+  "ark", "arkctapp",
+  "miss", "missctapp",
+  "la", "lactapp",
+  "haw", "hawctapp",
+  "alaska", "alaskactapp",
+  "me",
+  "nh",
+  "vt",
+  "ri",
+  "del",
+  "mont",
+  "idaho", "idahoctapp",
+  "wyo",
+  "nd",
+  "sd",
+  "neb", "nebctapp",
+  "nm", "nmctapp",
+  "wva",
+  "dc", "dcctapp",
+]);
+
 // Derived from COURT_MAP to prevent drift between the two tables.
 const JURISDICTION_COURTS: Record<Jurisdiction, string[]> = Object.entries(COURT_MAP).reduce(
   (acc, [slug, { jurisdiction }]) => {
     (acc[jurisdiction] ??= []).push(slug);
     return acc;
   },
-  { federal: [], ca: [], ny: [], tx: [], fl: [], il: [] } as Record<Jurisdiction, string[]>,
+  { federal: [], ca: [], ny: [], tx: [], fl: [], il: [], other: [] } as Record<Jurisdiction, string[]>,
 );
+// "other" jurisdiction maps to the catch-all state-court slugs above.
+JURISDICTION_COURTS.other = Array.from(STATE_OTHER_COURTS);
 
 export class CourtListenerRateLimitError extends Error {
   constructor() {
@@ -84,7 +140,7 @@ export class CourtListenerClient {
       hits: (raw.results ?? []).flatMap((r: any) => {
         const hit = this.normalizeHit(r);
         if (!hit) {
-          console.warn(`[CourtListener] unmapped court slug "${r.court_id ?? r.court ?? ""}"; dropping hit ${r.id ?? "?"}`);
+          console.warn(`[CourtListener] missing court slug on result ${r.id ?? r.cluster_id ?? "?"}; dropping`);
           return [];
         }
         return [hit];
@@ -137,7 +193,9 @@ export class CourtListenerClient {
       const m = r.court.match(/\/courts\/([^/]+)\/?$/);
       if (m) courtSlug = m[1];
     }
-    const mapping = COURT_MAP[courtSlug];
+    const mapping: { jurisdiction: Jurisdiction; level: CourtLevel } | null =
+      COURT_MAP[courtSlug] ??
+      (courtSlug ? { jurisdiction: "other", level: "state_other" } : null);
     if (!mapping) return null;
     // v4 opinion search returns `cluster_id` (the stable legal identifier); detail endpoint uses `id`.
     // Fall back cluster_id → id → opinions[0].id to cover both shapes.

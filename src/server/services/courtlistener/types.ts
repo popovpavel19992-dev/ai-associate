@@ -1,5 +1,11 @@
-export type Jurisdiction = "federal" | "ca" | "ny" | "tx" | "fl" | "il";
-export type CourtLevel = "scotus" | "circuit" | "district" | "state_supreme" | "state_appellate";
+export type Jurisdiction = "federal" | "ca" | "ny" | "tx" | "fl" | "il" | "other";
+export type CourtLevel =
+  | "scotus"
+  | "circuit"
+  | "district"
+  | "state_supreme"
+  | "state_appellate"
+  | "state_other";
 
 export interface SearchFilters {
   jurisdictions?: Jurisdiction[];
