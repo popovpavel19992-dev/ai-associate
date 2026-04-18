@@ -164,6 +164,11 @@ describe("GovInfoClient", () => {
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
+  it("rejects section values containing query operators", async () => {
+    const client = new GovInfoClient({ apiKey: "test-govinfo-key", fetchImpl: makeFetch([]) as unknown as typeof fetch });
+    await expect(client.lookupUscSection(42, "1983 OR collection:CFR")).rejects.toThrow(RangeError);
+  });
+
   it("retries on 429 same as 500", async () => {
     fetchMock = makeFetch([
       { status: 429, text: "" },

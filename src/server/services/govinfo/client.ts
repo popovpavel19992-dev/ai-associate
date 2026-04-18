@@ -36,6 +36,9 @@ export class GovInfoClient {
   constructor(private readonly deps: { apiKey: string; fetchImpl?: typeof fetch }) {}
 
   async lookupUscSection(title: number, section: string): Promise<UscSectionResult | null> {
+    if (!/^[\w.-]+$/.test(section)) {
+      throw new RangeError(`Invalid USC section: ${section}`);
+    }
     const query = `collection:USCODE AND uscodetitlenumber:${title} AND ${section}`;
     const hits = await this.search(query, 1);
     return hits[0] ?? null;
