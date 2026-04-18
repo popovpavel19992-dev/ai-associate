@@ -154,8 +154,22 @@ export class CourtListenerClient {
   async getOpinion(courtlistenerId: number): Promise<OpinionDetail> {
     const url = `${this.baseUrl}/api/rest/v4/opinions/${courtlistenerId}/`;
     const raw = await this.requestJson<any>(url);
-    const normalized = this.normalizeHit(raw);
-    if (!normalized) throw new CourtListenerError(`Unmappable opinion ${courtlistenerId}`);
+    // CourtListener v4 stores court info on the cluster, not the opinion. The
+    // opinion detail JSON typically has no court_id / court fields, so
+    // normalizeHit returns null. Fall back to a stub OpinionDetail — callers
+    // (opinion-cache.getOrFetch) only need fullText for already-cached rows
+    // and preserve the existing court/jurisdiction via onConflictDoUpdate.
+    const normalized =
+      this.normalizeHit(raw) ?? {
+        courtlistenerId,
+        caseName: raw.caseName ?? raw.case_name ?? "Unknown case",
+        court: "",
+        jurisdiction: "other" as Jurisdiction,
+        courtLevel: "state_other" as CourtLevel,
+        decisionDate: raw.dateFiled ?? raw.date_filed ?? "",
+        citationBluebook: Array.isArray(raw.citation) ? (raw.citation[0] ?? "") : (raw.citation ?? ""),
+        snippet: raw.snippet ?? "",
+      };
     return {
       ...normalized,
       fullText: raw.plain_text ?? raw.html_with_citations ?? "",
