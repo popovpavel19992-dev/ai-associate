@@ -42,9 +42,10 @@ describe("CourtListenerClient", () => {
         count: 1,
         results: [
           {
-            id: 12345,
+            cluster_id: 12345,
             caseName: "Smith v. Jones",
-            court: "ca9",
+            court: "Court of Appeals for the Ninth Circuit",
+            court_id: "ca9",
             court_type: "F",
             dateFiled: "2020-03-15",
             citation: ["987 F.3d 456"],
@@ -83,9 +84,9 @@ describe("CourtListenerClient", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        id: 12345,
+        cluster_id: 12345,
         caseName: "Smith v. Jones",
-        court: "ca9",
+        court: "https://www.courtlistener.com/api/rest/v4/courts/ca9/",
         court_type: "F",
         dateFiled: "2020-03-15",
         citation: ["987 F.3d 456"],
