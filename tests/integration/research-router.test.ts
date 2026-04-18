@@ -19,10 +19,42 @@ vi.mock("@/server/services/courtlistener/client", () => ({
   CourtListenerRateLimitError: class CourtListenerRateLimitError extends Error {},
 }));
 
+// Mock GovInfo/Ecfr clients (no-op constructors — the router only instantiates
+// them to pass to StatuteCacheService, which is itself mocked).
+vi.mock("@/server/services/govinfo/client", () => ({
+  GovInfoClient: vi.fn(),
+  GovInfoError: class GovInfoError extends Error {},
+}));
+vi.mock("@/server/services/ecfr/client", () => ({
+  EcfrClient: vi.fn(),
+  EcfrError: class EcfrError extends Error {},
+}));
+
+// Mock StatuteCacheService so the router's statutes.* procedures can be tested
+// without touching the DB.
+const mockStatuteGetOrFetch = vi.fn();
+const mockStatuteUpsertMetadataOnly = vi.fn();
+vi.mock("@/server/services/research/statute-cache", () => ({
+  StatuteCacheService: vi.fn(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function (this: any) {
+      this.getOrFetch = mockStatuteGetOrFetch;
+      this.upsertMetadataOnly = mockStatuteUpsertMetadataOnly;
+    } as unknown as () => void,
+  ),
+}));
+
+// Mock inngest client so we can assert enrichment event sends.
+vi.mock("@/server/inngest/client", () => ({
+  inngest: { send: vi.fn().mockResolvedValue(undefined) },
+}));
+
 import * as CL from "@/server/services/courtlistener/client";
 import { researchRouter } from "@/server/trpc/routers/research";
+import { inngest } from "@/server/inngest/client";
 
 const MockCL = vi.mocked(CL.CourtListenerClient);
+const mockInngestSend = vi.mocked(inngest.send);
 
 // ---------------------------------------------------------------------------
 // Stable UUIDs
@@ -36,6 +68,7 @@ const ID = {
   bookmark: "bbbbbbbb-bbbb-4bbb-abbb-bbbbbbbbbbbb",
   case1: "cccccccc-cccc-4ccc-accc-cccccccccccc",
   query: "dddddddd-dddd-4ddd-addd-dddddddddddd",
+  statute: "ffffffff-ffff-4fff-afff-ffffffffffff",
 };
 
 // ---------------------------------------------------------------------------
@@ -190,6 +223,10 @@ function setupCLSearch(hits: unknown[], totalCount = hits.length) {
 
 beforeEach(() => {
   MockCL.mockReset();
+  mockStatuteGetOrFetch.mockReset();
+  mockStatuteUpsertMetadataOnly.mockReset();
+  mockInngestSend.mockReset();
+  mockInngestSend.mockResolvedValue(undefined as never);
 });
 
 // ---------------------------------------------------------------------------
@@ -560,5 +597,118 @@ describe("research.bookmarks.delete", () => {
     await expect(
       caller(ctx).bookmarks.delete({ bookmarkId: ID.bookmark }),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// research.statutes.get
+// ---------------------------------------------------------------------------
+describe("research.statutes.get", () => {
+  it("returns the row from getOrFetch when called with internalId", async () => {
+    const { db } = makeMockDb();
+    const ctx: Ctx = { db, user: { id: ID.user, orgId: ID.org, role: "owner" } };
+    setupCLSearch([]);
+
+    const statuteRow = {
+      id: ID.statute,
+      source: "usc",
+      title: "42",
+      section: "1983",
+      citationBluebook: "42 U.S.C. § 1983",
+    };
+    mockStatuteGetOrFetch.mockResolvedValue(statuteRow);
+
+    const res = await caller(ctx).statutes.get({ internalId: ID.statute });
+
+    expect(mockStatuteGetOrFetch).toHaveBeenCalledWith(ID.statute);
+    expect(res).toEqual(statuteRow);
+    expect(mockStatuteUpsertMetadataOnly).not.toHaveBeenCalled();
+  });
+
+  it("parses citationSlug → upsertMetadataOnly → getOrFetch", async () => {
+    const { db } = makeMockDb();
+    const ctx: Ctx = { db, user: { id: ID.user, orgId: ID.org, role: "owner" } };
+    setupCLSearch([]);
+
+    const upsertedRow = { id: ID.statute };
+    const finalRow = {
+      id: ID.statute,
+      source: "usc",
+      title: "42",
+      section: "1983",
+    };
+    mockStatuteUpsertMetadataOnly.mockResolvedValue(upsertedRow);
+    mockStatuteGetOrFetch.mockResolvedValue(finalRow);
+
+    const res = await caller(ctx).statutes.get({ citationSlug: "42-usc-1983" });
+
+    expect(mockStatuteUpsertMetadataOnly).toHaveBeenCalledWith({
+      source: "usc",
+      title: 42,
+      section: "1983",
+      citationBluebook: "42 U.S.C. § 1983",
+    });
+    expect(mockStatuteGetOrFetch).toHaveBeenCalledWith(ID.statute);
+    expect(res).toEqual(finalRow);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// research.statutes.lookup
+// ---------------------------------------------------------------------------
+describe("research.statutes.lookup", () => {
+  it("parses a citation and returns internalId from upsertMetadataOnly", async () => {
+    const { db } = makeMockDb();
+    const ctx: Ctx = { db, user: { id: ID.user, orgId: ID.org, role: "owner" } };
+    setupCLSearch([]);
+
+    mockStatuteUpsertMetadataOnly.mockResolvedValue({ id: ID.statute });
+
+    const res = await caller(ctx).statutes.lookup({ citation: "42 U.S.C. § 1983" });
+
+    expect(mockStatuteUpsertMetadataOnly).toHaveBeenCalledWith({
+      source: "usc",
+      title: 42,
+      section: "1983",
+      citationBluebook: "42 U.S.C. § 1983",
+    });
+    expect(res).toEqual({ internalId: ID.statute });
+  });
+
+  it("throws BAD_REQUEST for unparseable citations", async () => {
+    const { db } = makeMockDb();
+    const ctx: Ctx = { db, user: { id: ID.user, orgId: ID.org, role: "owner" } };
+    setupCLSearch([]);
+
+    await expect(
+      caller(ctx).statutes.lookup({ citation: "not a citation" }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(mockStatuteUpsertMetadataOnly).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// research.askDeep input schema (statute variant)
+// ---------------------------------------------------------------------------
+describe("research.askDeep input schema", () => {
+  it("accepts the statuteInternalId variant via zod validation", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const procedure: any = (researchRouter as any)._def.procedures.askDeep;
+    const inputParser = procedure?._def?.inputs?.[0];
+    expect(inputParser).toBeDefined();
+
+    const parsed = inputParser.safeParse({
+      sessionId: ID.session,
+      statuteInternalId: ID.statute,
+      question: "What does this statute require?",
+    });
+    expect(parsed.success).toBe(true);
+
+    const parsedOpinion = inputParser.safeParse({
+      sessionId: ID.session,
+      opinionInternalId: ID.opinion,
+      question: "Hold?",
+    });
+    expect(parsedOpinion.success).toBe(true);
   });
 });

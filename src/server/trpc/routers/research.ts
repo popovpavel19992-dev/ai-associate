@@ -19,6 +19,10 @@ import { ResearchSessionService } from "@/server/services/research/session-servi
 import { BookmarkService } from "@/server/services/research/bookmark-service";
 import { LegalRagService, type StreamChunk } from "@/server/services/research/legal-rag";
 import { UsageGuard, UsageLimitExceededError } from "@/server/services/research/usage-guard";
+import { StatuteCacheService } from "@/server/services/research/statute-cache";
+import { GovInfoClient } from "@/server/services/govinfo/client";
+import { EcfrClient } from "@/server/services/ecfr/client";
+import { parseCitations, type ParsedCitation } from "@/server/services/research/citation-parser";
 import { researchSessions } from "@/server/db/schema/research-sessions";
 import { researchQueries } from "@/server/db/schema/research-queries";
 import { cachedOpinions } from "@/server/db/schema/cached-opinions";
@@ -42,6 +46,43 @@ const FiltersSchema = z.object({
 // ---------------------------------------------------------------------------
 function makeCourtListener() {
   return new CourtListenerClient({ apiToken: getEnv().COURTLISTENER_API_TOKEN });
+}
+
+function makeStatuteCache(ctx: { db: typeof realDb }): StatuteCacheService {
+  return new StatuteCacheService({
+    db: ctx.db,
+    govinfo: new GovInfoClient({ apiKey: getEnv().GOVINFO_API_KEY }),
+    ecfr: new EcfrClient(),
+  });
+}
+
+const SLUG_RE = /^(\d+)-(usc|cfr)-(.+)$/;
+function parseSlug(
+  slug: string,
+): { source: "usc" | "cfr"; title: number; section: string } | null {
+  const m = slug.match(SLUG_RE);
+  if (!m) return null;
+  return {
+    title: Number(m[1]),
+    source: m[2] as "usc" | "cfr",
+    section: decodeURIComponent(m[3]!),
+  };
+}
+
+function isStatuteCitation(
+  c: ParsedCitation,
+): c is Extract<ParsedCitation, { source: "usc" | "cfr" }> {
+  return c.source === "usc" || c.source === "cfr";
+}
+
+function buildStatuteCitation(
+  source: "usc" | "cfr",
+  title: number,
+  section: string,
+): string {
+  return source === "usc"
+    ? `${title} U.S.C. § ${section}`
+    : `${title} C.F.R. § ${section}`;
 }
 
 function mapUserPlanToResearchPlan(
@@ -125,7 +166,9 @@ export async function* runAskBroad(
 
 export async function* runAskDeep(
   ctx: AskCtx,
-  input: { sessionId: string; opinionInternalId: string; question: string },
+  input:
+    | { sessionId: string; opinionInternalId: string; question: string }
+    | { sessionId: string; statuteInternalId: string; question: string },
   deps?: AskDeps,
 ): AsyncGenerator<StreamChunk> {
   const plan = mapUserPlanToResearchPlan(ctx.user.plan);
@@ -147,12 +190,21 @@ export async function* runAskDeep(
   const rag = makeRag(ctx, deps);
 
   try {
-    const stream = rag.askDeep({
-      sessionId: input.sessionId,
-      userId: ctx.user.id,
-      opinionInternalId: input.opinionInternalId,
-      question: input.question,
-    });
+    const stream = rag.askDeep(
+      "opinionInternalId" in input
+        ? {
+            sessionId: input.sessionId,
+            userId: ctx.user.id,
+            opinionInternalId: input.opinionInternalId,
+            question: input.question,
+          }
+        : {
+            sessionId: input.sessionId,
+            userId: ctx.user.id,
+            statuteInternalId: input.statuteInternalId,
+            question: input.question,
+          },
+    );
     for await (const chunk of stream) {
       yield chunk;
       if (chunk.type === "error") {
@@ -309,6 +361,94 @@ const bookmarksRouter = router({
 });
 
 // ---------------------------------------------------------------------------
+// statutes sub-router
+// ---------------------------------------------------------------------------
+const StatutesGetInputSchema = z.union([
+  z.object({ internalId: z.string().uuid() }),
+  z.object({ citationSlug: z.string().trim().min(3).max(200) }),
+  z.object({
+    source: z.enum(["usc", "cfr"]),
+    title: z.number().int().positive(),
+    section: z.string().min(1).max(200),
+  }),
+]);
+
+const statutesRouter = router({
+  get: protectedProcedure
+    .input(StatutesGetInputSchema)
+    .query(async ({ ctx, input }) => {
+      const cache = makeStatuteCache(ctx);
+
+      if ("internalId" in input) {
+        return cache.getOrFetch(input.internalId);
+      }
+
+      let resolved: { source: "usc" | "cfr"; title: number; section: string };
+      if ("citationSlug" in input) {
+        const parsed = parseSlug(input.citationSlug);
+        if (!parsed) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid citation slug",
+          });
+        }
+        resolved = parsed;
+      } else {
+        resolved = {
+          source: input.source,
+          title: input.title,
+          section: input.section,
+        };
+      }
+
+      const citation = buildStatuteCitation(
+        resolved.source,
+        resolved.title,
+        resolved.section,
+      );
+      const row = await cache.upsertMetadataOnly({
+        source: resolved.source,
+        title: resolved.title,
+        section: resolved.section,
+        citationBluebook: citation,
+      });
+      const full = await cache.getOrFetch(row.id);
+
+      // Fire-and-forget enrichment (handler registered in Task 11).
+      try {
+        void inngest.send({
+          name: "research/statute.enrich.requested",
+          data: { statuteInternalId: full.id },
+        });
+      } catch {
+        // swallow — best-effort
+      }
+
+      return full;
+    }),
+
+  lookup: protectedProcedure
+    .input(z.object({ citation: z.string().trim().min(3).max(200) }))
+    .mutation(async ({ ctx, input }) => {
+      const parsed = parseCitations(input.citation).find(isStatuteCitation);
+      if (!parsed) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Unparseable citation",
+        });
+      }
+      const cache = makeStatuteCache(ctx);
+      const row = await cache.upsertMetadataOnly({
+        source: parsed.source,
+        title: parsed.title,
+        section: parsed.section,
+        citationBluebook: parsed.citation,
+      });
+      return { internalId: row.id };
+    }),
+});
+
+// ---------------------------------------------------------------------------
 // root research router
 // ---------------------------------------------------------------------------
 export const researchRouter = router({
@@ -428,11 +568,18 @@ export const researchRouter = router({
 
   askDeep: protectedProcedure
     .input(
-      z.object({
-        sessionId: z.string().uuid(),
-        opinionInternalId: z.string().uuid(),
-        question: z.string().trim().min(1).max(2000),
-      }),
+      z.union([
+        z.object({
+          sessionId: z.string().uuid(),
+          opinionInternalId: z.string().uuid(),
+          question: z.string().trim().min(1).max(2000),
+        }),
+        z.object({
+          sessionId: z.string().uuid(),
+          statuteInternalId: z.string().uuid(),
+          question: z.string().trim().min(1).max(2000),
+        }),
+      ]),
     )
     .subscription(async function* ({ ctx, input }) {
       yield* runAskDeep(ctx, input);
@@ -446,4 +593,5 @@ export const researchRouter = router({
 
   sessions: sessionsRouter,
   bookmarks: bookmarksRouter,
+  statutes: statutesRouter,
 });
