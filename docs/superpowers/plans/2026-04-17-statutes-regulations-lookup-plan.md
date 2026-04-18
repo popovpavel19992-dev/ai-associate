@@ -4,7 +4,7 @@
 
 **Goal:** Add federal USC + CFR retrieval to the `/research` hub using AI-first discovery, reusing all 2.2.1 infrastructure (chat panel, UsageGuard, UPL filter, citation validator).
 
-**Architecture:** Two new API clients (Congress.gov for USC, eCFR for CFR) feed a new `StatuteCacheService` that mirrors `OpinionCacheService`. `LegalRagService` extended to do parallel opinion + statute retrieval with unified context assembly. Hub UI unchanged; new statute viewer route `/research/statutes/[citationSlug]`.
+**Architecture:** Two new API clients (GovInfo for USC, eCFR for CFR) feed a new `StatuteCacheService` that mirrors `OpinionCacheService`. `LegalRagService` extended to do parallel opinion + statute retrieval with unified context assembly. Hub UI unchanged; new statute viewer route `/research/statutes/[citationSlug]`.
 
 **Tech Stack:** TypeScript, Next.js App Router, tRPC v11, Drizzle ORM (PostgreSQL/Supabase), Anthropic SDK (`claude-sonnet-4-6` streaming), Vitest, Playwright.
 
@@ -26,7 +26,7 @@
 
 ## Chunk 1: Schema + external clients
 
-### Task 1: Add CONGRESS_GOV_API_KEY env var
+### Task 1: Add GOVINFO_API_KEY env var
 
 **Files:**
 - Modify: `src/lib/env.ts`
@@ -35,22 +35,22 @@
 
 - [ ] **Step 1: Add to env schema**
 
-In `src/lib/env.ts`, add `CONGRESS_GOV_API_KEY: z.string().min(1)` to the zod object. Place near `COURTLISTENER_API_TOKEN` for discoverability.
+In `src/lib/env.ts`, add `GOVINFO_API_KEY: z.string().min(1)` to the zod object. Place near `COURTLISTENER_API_TOKEN` for discoverability.
 
 - [ ] **Step 2: Document in template**
 
 In `.env.local.example`, add:
 ```
-# Congress.gov API key (free tier, 5000 req/hour).
-# Sign up at https://api.congress.gov/sign-up/
-CONGRESS_GOV_API_KEY=
+# GovInfo (GPO) API key for U.S. Code lookup/search via api.govinfo.gov.
+# Free api.data.gov key; sign up at https://api.data.gov/signup/ (36000 req/hr).
+GOVINFO_API_KEY=
 ```
 
 - [ ] **Step 3: Add test stub**
 
 In `tests/setup.ts`, append:
 ```ts
-process.env.CONGRESS_GOV_API_KEY = "test-congress-key";
+process.env.GOVINFO_API_KEY = "test-govinfo-key";
 ```
 
 - [ ] **Step 4: Verify typecheck passes**
@@ -62,7 +62,7 @@ Expected: clean.
 
 ```bash
 git add src/lib/env.ts .env.local.example tests/setup.ts
-git commit -m "feat: add CONGRESS_GOV_API_KEY env var for Phase 2.2.2"
+git commit -m "feat: add GOVINFO_API_KEY env var for Phase 2.2.2"
 ```
 
 ---
@@ -164,60 +164,64 @@ git commit -m "feat: add cached_statutes schema and statute_context_ids column"
 
 ---
 
-### Task 3: CongressGovClient
+### Task 3: GovInfoClient (USC data source)
+
+**Pivot note (2026-04-18):** Initial plan used api.congress.gov, but Step 0 verification proved Congress.gov publishes NO USC endpoint. Pivoted to api.govinfo.gov (GPO's official API) — free api.data.gov auth, 36k req/hr, USC via the `USCODE` collection, public-domain data.
 
 **Files:**
-- Create: `src/server/services/uscode/client.ts`
-- Create: `src/server/services/uscode/types.ts`
-- Create: `tests/unit/uscode-client.test.ts`
+- Create: `src/server/services/govinfo/client.ts`
+- Create: `src/server/services/govinfo/types.ts`
+- Create: `tests/unit/govinfo-client.test.ts`
 
-- [ ] **Step 0: Verify Congress.gov USC endpoints via WebFetch (separate commit)**
+- [ ] **Step 0: Verify GovInfo USC endpoints via WebFetch (separate commit)**
 
-Before writing any client code, WebFetch the current Congress.gov USC API docs at `https://api.congress.gov/#/uscode` (or equivalent under `https://github.com/LibraryOfCongress/api.congress.gov/`). Capture findings as a 5-line ADR block at the top of (to-be-created) `src/server/services/uscode/client.ts` — add the file with ONLY the ADR comment block and commit:
+WebFetch `https://api.govinfo.gov/docs/` AND `https://www.govinfo.gov/features/search-service-overview` (or the latest equivalent). Capture findings as a 10-line ADR block at the top of a newly-created `src/server/services/govinfo/client.ts` — file contains ONLY the ADR comment block. Commit with:
 
 ```
-docs: record Congress.gov USC endpoint verification
+docs: record GovInfo USC endpoint verification
 ```
 
-The ADR must specify the confirmed endpoint paths + key response field names; subsequent steps reference them. If the live API has moved since the spec was written, update the endpoint shape here.
+ADR must specify: verification date, docs URL(s) consulted, confirmed endpoints (`POST /search`, `GET /packages/{pkgId}/granules/{granuleId}/summary`, `GET /packages/{pkgId}/granules/{granuleId}/htm`), response field names used downstream, and the USC granule-ID regex (`USCODE-\d+-title(\d+)-.*-sec([\w.-]+)`). If any field names differ from the sketch below, ADR overrides — adjust Step 5 accordingly.
 
 - [ ] **Step 1: Write types**
 
-Create `src/server/services/uscode/types.ts`:
+Create `src/server/services/govinfo/types.ts`:
 
 ```ts
 export interface UscSectionResult {
-  source: "usc";           // discriminator for downstream type narrowing (set by client)
+  source: "usc";             // discriminator — set by client on every result
   title: number;
   section: string;
   heading: string;
-  bodyText: string;
-  effectiveDate?: string; // ISO
-  citationBluebook: string; // e.g. "42 U.S.C. § 1983"
+  bodyText: string;          // "" when only metadata resolved; fill via fetchBody()
+  effectiveDate?: string;    // ISO; from granule lastModified or dateIssued
+  citationBluebook: string;  // e.g. "42 U.S.C. § 1983"
+  granuleId: string;         // stable GovInfo ID — cache key
+  packageId: string;         // e.g. "USCODE-2023-title42"
   metadata?: {
     url?: string;
     parentTitleHeading?: string;
   };
 }
 
-export class CongressGovError extends Error {
+export class GovInfoError extends Error {
   constructor(message: string, public readonly status?: number) {
     super(message);
-    this.name = "CongressGovError";
+    this.name = "GovInfoError";
   }
 }
 ```
 
-The `source: "usc"` discriminator must be set in every normalized result returned by the client (both `lookupUscSection` and `searchUsc`). This lets downstream code avoid heuristics when mixing USC and CFR hits.
+`source: "usc"` must be set by the client on every normalized result. `granuleId` + `packageId` are carried so callers can lazy-fetch full body.
 
 - [ ] **Step 2: Write failing tests**
 
-Create `tests/unit/uscode-client.test.ts` with minimum 6 tests (lookup ok, not-found, search ok, retry on 5xx, rate-limit 429, retry-exhaustion throws `CongressGovError`). Follow the pattern from `tests/unit/courtlistener-client.test.ts`.
+Create `tests/unit/govinfo-client.test.ts` with minimum 6 tests. Follow the pattern from `tests/unit/courtlistener-client.test.ts`.
 
-Key shape:
+Skeleton:
 ```ts
 import { describe, it, expect, vi } from "vitest";
-import { CongressGovClient, CongressGovError } from "@/server/services/uscode/client";
+import { GovInfoClient, GovInfoError } from "@/server/services/govinfo/client";
 
 function makeFetch(responses: Array<{ status: number; json?: unknown; text?: string }>) {
   const queue = [...responses];
@@ -227,133 +231,144 @@ function makeFetch(responses: Array<{ status: number; json?: unknown; text?: str
     return new Response(r.json ? JSON.stringify(r.json) : r.text ?? "", { status: r.status });
   });
 }
-
-// Test cases enumerated in Step 3 below.
 ```
 
 - [ ] **Step 3: Test cases (minimum 6)**
 
-1. `lookupUscSection(42, "1983")` — stub fetch with 200 + sample Congress.gov response; assert returns `{ title: 42, section: "1983", heading, bodyText, citationBluebook: "42 U.S.C. § 1983" }`. Assert fetch URL contains `?api_key=test-congress-key`.
-2. `lookupUscSection(42, "9999")` — stub fetch with 404; assert returns `null` (not throw).
-3. `searchUsc("civil rights", 5)` — stub fetch with list response; assert returns normalized array.
-4. Retry on 500: fetch returns 500 twice then 200; assert total fetch calls === 3; assert final result normalized.
-5. Retry on 429: fetch returns 429 twice then 200; same assertion.
-6. Retry exhaustion: fetch returns 500 three times; assert throws `CongressGovError` with `.status === 500` and name `"CongressGovError"`.
+1. `lookupUscSection(42, "1983")` — stub `POST /search` with one hit `granuleId: "USCODE-2023-title42-chap21-subchapI-sec1983"`; assert result has `source: "usc"`, `title: 42`, `section: "1983"`, `citationBluebook: "42 U.S.C. § 1983"`, `granuleId` + `packageId` populated. Assert fetched URL contains `api_key=test-govinfo-key`.
+2. `lookupUscSection(42, "9999")` — stub `POST /search` → empty results; assert returns `null` (not throw).
+3. `searchUsc("civil rights", 5)` — stub `POST /search` → multiple USCODE hits; assert array, all items `source: "usc"`, granule regex extracts title/section correctly for each.
+4. `fetchBody(granuleId, packageId)` — stub `GET /htm` → HTML body; assert returns decoded string.
+5. Retry on 500: 500, 500, 200 → fetch called 3×, final result normalized.
+6. Retry exhaustion: 500 × 3 → throws `GovInfoError` with `.status === 500` and `name === "GovInfoError"`.
 
-- [ ] **Step 4: Run tests, expect fail**
+Optional 7th test: 429 behaves same as 500 for retry.
 
-Run: `npx vitest run tests/unit/uscode-client.test.ts`
-Expected: FAIL (module not found).
+- [ ] **Step 4: Run tests, expect FAIL (module not found)**
+
+Run: `npx vitest run tests/unit/govinfo-client.test.ts`
 
 - [ ] **Step 5: Implement the client**
 
-Create `src/server/services/uscode/client.ts`. Base URL `https://api.congress.gov/v3`. Key fields of implementation:
+Create `src/server/services/govinfo/client.ts` (replacing Step 0's ADR-only stub — keep the ADR block at the top). Base URL `https://api.govinfo.gov`. Reference implementation:
 
 ```ts
-const BASE_URL = "https://api.congress.gov/v3";
+import type { UscSectionResult } from "./types";
+export { GovInfoError } from "./types";
+
+const BASE_URL = "https://api.govinfo.gov";
 const DEFAULT_RETRIES = 3;
 
-export class CongressGovClient {
+// Matches USCODE granule IDs, e.g.:
+//   USCODE-2023-title42-chap21-subchapI-sec1983   -> title=42, section="1983"
+//   USCODE-2023-title26-subtitleF-chap79-sec7701  -> title=26, section="7701"
+const GRANULE_RE = /^USCODE-\d+-title(\d+)-.*-sec([\w.-]+)$/;
+
+export class GovInfoClient {
   constructor(private readonly deps: { apiKey: string; fetchImpl?: typeof fetch }) {}
 
   async lookupUscSection(title: number, section: string): Promise<UscSectionResult | null> {
-    // Use uscode/title-<n>/section-<s> or equivalent; Congress.gov's actual USC endpoint
-    // is: /uscode/search?query=<title>%20USC%20<section> — see their docs.
-    // Implementation note: Congress.gov API has moved toward /uscode-title/{n}/usc-section/{s}
-    // pattern; VERIFY the current endpoint by WebFetch before finalizing this code.
-    const url = new URL(`${BASE_URL}/uscode/title-${title}/section-${section}`);
-    url.searchParams.set("api_key", this.deps.apiKey);
-    url.searchParams.set("format", "json");
-    const res = await this.fetchWithRetry(url.toString());
-    if (res.status === 404) return null;
-    if (!res.ok) throw new CongressGovError(`USC lookup failed: ${res.status}`, res.status);
-    const raw = await res.json();
-    return this.normalizeSection(title, section, raw);
+    // Resolve via search: filter USCODE collection + title + section token.
+    const query = `collection:USCODE AND uscodetitlenumber:${title} AND ${section}`;
+    const hits = await this.search(query, 1);
+    return hits[0] ?? null;
   }
 
   async searchUsc(query: string, limit = 5): Promise<UscSectionResult[]> {
-    const url = new URL(`${BASE_URL}/uscode/search`);
-    url.searchParams.set("api_key", this.deps.apiKey);
-    url.searchParams.set("query", query);
-    url.searchParams.set("limit", String(limit));
-    url.searchParams.set("format", "json");
-    const res = await this.fetchWithRetry(url.toString());
-    if (!res.ok) throw new CongressGovError(`USC search failed: ${res.status}`, res.status);
-    const raw = await res.json() as { results?: unknown[] };
-    return (raw.results ?? []).map((r) => this.normalizeSearchHit(r));
+    return this.search(`collection:USCODE AND (${query})`, limit);
   }
 
-  private async fetchWithRetry(url: string): Promise<Response> {
+  async fetchBody(granuleId: string, packageId: string): Promise<string> {
+    const url = new URL(`${BASE_URL}/packages/${packageId}/granules/${granuleId}/htm`);
+    url.searchParams.set("api_key", this.deps.apiKey);
+    const res = await this.fetchWithRetry(url.toString());
+    if (!res.ok) throw new GovInfoError(`USC body fetch failed: ${res.status}`, res.status);
+    return await res.text();
+  }
+
+  private async search(query: string, pageSize: number): Promise<UscSectionResult[]> {
+    const url = new URL(`${BASE_URL}/search`);
+    url.searchParams.set("api_key", this.deps.apiKey);
+    const res = await this.fetchWithRetry(url.toString(), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        query,
+        pageSize,
+        sorts: [{ field: "relevancy", sortOrder: "DESC" }],
+      }),
+    });
+    if (!res.ok) throw new GovInfoError(`USC search failed: ${res.status}`, res.status);
+    const raw = await res.json() as { results?: unknown[] };
+    return (raw.results ?? []).flatMap((r) => {
+      const hit = this.normalizeSearchHit(r);
+      return hit ? [hit] : []; // drop rows whose granuleId doesn't match USC regex
+    });
+  }
+
+  private normalizeSearchHit(raw: unknown): UscSectionResult | null {
+    const r = raw as Record<string, unknown>;
+    const granuleId = String(r.granuleId ?? "");
+    const packageId = String(r.packageId ?? "");
+    const m = GRANULE_RE.exec(granuleId);
+    if (!m) return null;
+    const title = Number(m[1]);
+    const section = m[2];
+    return {
+      source: "usc",
+      title,
+      section,
+      heading: String(r.title ?? ""),
+      bodyText: "", // fetched lazily via fetchBody()
+      effectiveDate: r.lastModified ? String(r.lastModified) : undefined,
+      citationBluebook: `${title} U.S.C. § ${section}`,
+      granuleId,
+      packageId,
+      metadata: { url: r.resultLink ? String(r.resultLink) : undefined },
+    };
+  }
+
+  private async fetchWithRetry(url: string, init?: RequestInit): Promise<Response> {
     const fetchImpl = this.deps.fetchImpl ?? fetch;
     let lastError: Error | null = null;
     for (let attempt = 0; attempt < DEFAULT_RETRIES; attempt++) {
       try {
-        const res = await fetchImpl(url);
+        const res = await fetchImpl(url, init);
         if (res.status >= 500 || res.status === 429) {
-          lastError = new CongressGovError(`retryable: ${res.status}`, res.status);
-          await this.sleep(100 * Math.pow(2, attempt));
+          lastError = new GovInfoError(`retryable: ${res.status}`, res.status);
+          if (attempt < DEFAULT_RETRIES - 1) await this.sleep(100 * Math.pow(2, attempt));
           continue;
         }
         return res;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
-        await this.sleep(100 * Math.pow(2, attempt));
+        if (attempt < DEFAULT_RETRIES - 1) await this.sleep(100 * Math.pow(2, attempt));
       }
     }
-    throw lastError ?? new CongressGovError("retry exhausted");
+    throw lastError ?? new GovInfoError("retry exhausted");
   }
 
   private sleep(ms: number): Promise<void> {
     return new Promise((r) => setTimeout(r, ms));
   }
-
-  private normalizeSection(title: number, section: string, raw: unknown): UscSectionResult {
-    // Map Congress.gov response fields to UscSectionResult.
-    // Actual field names depend on API shape — verify via WebFetch.
-    const r = raw as Record<string, unknown>;
-    return {
-      title,
-      section,
-      heading: String(r.heading ?? r.title ?? ""),
-      bodyText: String(r.text ?? r.content ?? ""),
-      effectiveDate: r.effectiveDate ? String(r.effectiveDate) : undefined,
-      citationBluebook: `${title} U.S.C. § ${section}`,
-      metadata: { url: r.url ? String(r.url) : undefined },
-    };
-  }
-
-  private normalizeSearchHit(raw: unknown): UscSectionResult {
-    const r = raw as Record<string, unknown>;
-    const title = Number(r.title ?? 0);
-    const section = String(r.section ?? "");
-    return {
-      title,
-      section,
-      heading: String(r.heading ?? ""),
-      bodyText: String(r.snippet ?? ""),
-      citationBluebook: `${title} U.S.C. § ${section}`,
-    };
-  }
 }
 ```
 
-**IMPORTANT:** Before committing, WebFetch `https://api.congress.gov/#/uscode` (or the current docs URL) and confirm the real endpoint paths + field shapes. Update `lookupUscSection` / `searchUsc` URLs and `normalizeSection` / `normalizeSearchHit` accordingly. Add an ADR comment at the top of the file with the verification date and the doc URL consulted.
+If Step 0 ADR recorded different field names (e.g. `dateIssued` instead of `lastModified`, `detailsLink` instead of `resultLink`), update `normalizeSearchHit` to match.
 
-- [ ] **Step 6: Run tests, expect pass**
+- [ ] **Step 6: Run tests, expect PASS**
 
-Run: `npx vitest run tests/unit/uscode-client.test.ts`
-Expected: all tests pass.
+Run: `npx vitest run tests/unit/govinfo-client.test.ts`
 
 - [ ] **Step 7: Typecheck**
 
-Run: `npx tsc --noEmit`
-Expected: clean.
+Run: `npx tsc --noEmit` — expected clean.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/server/services/uscode/ tests/unit/uscode-client.test.ts
-git commit -m "feat: add Congress.gov client with retry and normalization"
+git add src/server/services/govinfo/ tests/unit/govinfo-client.test.ts
+git commit -m "feat: add GovInfo client for USC lookup and search"
 ```
 
 ---
@@ -421,7 +436,7 @@ The `source: "cfr"` discriminator must be set in every normalized result returne
 
 - [ ] **Step 3: Write failing tests**
 
-Create `tests/unit/ecfr-client.test.ts`. Mirror `uscode-client.test.ts` test cases: lookup ok, not-found, search ok, retry on 5xx, rate-limit 429, retry-exhaustion throws `EcfrError`.
+Create `tests/unit/ecfr-client.test.ts`. Mirror `govinfo-client.test.ts` test cases: lookup ok, not-found, search ok, retry on 5xx, rate-limit 429, retry-exhaustion throws `EcfrError`.
 
 - [ ] **Step 4: Run tests, expect fail**
 
@@ -430,7 +445,7 @@ Expected: FAIL (module not found).
 
 - [ ] **Step 5: Implement the client**
 
-Create `src/server/services/ecfr/client.ts` mirroring `CongressGovClient` shape. No API key header. Public base `https://www.ecfr.gov/api`. If section lookup returns XML, parse with `DOMParser` (available via `jsdom` if needed — but MVP can use a minimal regex-based extraction for `<SECTION>` node).
+Create `src/server/services/ecfr/client.ts` mirroring `GovInfoClient` shape. No API key header. Public base `https://www.ecfr.gov/api`. If section lookup returns XML, parse with `DOMParser` (available via `jsdom` if needed — but MVP can use a minimal regex-based extraction for `<SECTION>` node).
 
 ```ts
 const BASE_URL = "https://www.ecfr.gov/api";
@@ -460,7 +475,7 @@ export class EcfrClient {
     return (raw.results ?? []).map((r) => this.normalizeSearchHit(r)).slice(0, limit);
   }
 
-  private async fetchWithRetry(url: string): Promise<Response> { /* same pattern as CongressGovClient */ }
+  private async fetchWithRetry(url: string): Promise<Response> { /* same pattern as GovInfoClient */ }
   private sleep(ms: number): Promise<void> { return new Promise((r) => setTimeout(r, ms)); }
   private extractSection(title: number, section: string, raw: unknown): CfrSectionResult | null { /* traverse structure JSON */ return null; }
   private normalizeSearchHit(raw: unknown): CfrSectionResult { /* map eCFR search hit fields */ return {} as CfrSectionResult; }
@@ -642,9 +657,9 @@ Create `tests/integration/statute-cache.test.ts`. Use the mock-DB pattern from `
 3. **Conflict path preserves real heading** — seed a cached row with a real heading; call `upsertSearchHit` with a minimal-metadata hit (empty heading); assert the DB update's `set` clause does NOT overwrite heading with empty string (only `lastAccessedAt` updated; fields like heading updated only when the new hit carries a non-empty value).
 4. `upsertMetadataOnly({ source, title, section, citationBluebook })` inserts a skeleton row with heading null, bodyText null; used by router `statutes.get`/`statutes.lookup` procedures.
 5. `getOrFetch(internalId)` — row exists with bodyText → bumps lastAccessedAt, returns existing.
-6. `getOrFetch` — row exists but bodyText null, `row.source === "usc"` → calls `CongressGovClient.lookupUscSection(title, section)`, upserts body.
+6. `getOrFetch` — row exists but bodyText null, `row.source === "usc"` → calls `GovInfoClient.lookupUscSection(title, section)`, upserts body.
 7. `getOrFetch` — `row.source === "cfr"` branch → calls `EcfrClient.lookupCfrSection`.
-8. `getOrFetch` — client throws `CongressGovError` → upserts metadata with `enrichmentStatus: "failed"` and returns the row (does NOT throw).
+8. `getOrFetch` — client throws `GovInfoError` → upserts metadata with `enrichmentStatus: "failed"` and returns the row (does NOT throw).
 9. `getByInternalIds([])` — empty short-circuit, no DB call; `getByInternalIds([a, b])` — returns queued rows.
 
 **Note on mock DB + `sql` tags:** the conflict path uses a drizzle `sql` tagged template (for COALESCE-style preservation of existing heading). The existing chainable mock in `tests/integration/opinion-cache.test.ts` records `.set()` payloads but does NOT evaluate `sql` tag contents. Test 3 should assert on the SHAPE of the set-object (e.g. that `set.heading` is a drizzle `SQL` object or absent when the hit has no heading) rather than on post-execution DB state. Real upsert semantics verified by E2E in a later phase.
@@ -662,27 +677,27 @@ Create `src/server/services/research/statute-cache.ts`. Mirror `opinion-cache.ts
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db as defaultDb } from "@/server/db";
 import { cachedStatutes, type CachedStatute } from "@/server/db/schema/cached-statutes";
-import { CongressGovClient, CongressGovError } from "@/server/services/uscode/client";
+import { GovInfoClient, GovInfoError } from "@/server/services/govinfo/client";
 import { EcfrClient, EcfrError } from "@/server/services/ecfr/client";
-import type { UscSectionResult } from "@/server/services/uscode/types";
+import type { UscSectionResult } from "@/server/services/govinfo/types";
 import type { CfrSectionResult } from "@/server/services/ecfr/types";
 
 type StatuteSource = "usc" | "cfr";
 
 export interface StatuteCacheDeps {
   db?: typeof defaultDb;
-  congressGov: CongressGovClient;
+  govinfo: GovInfoClient;
   ecfr: EcfrClient;
 }
 
 export class StatuteCacheService {
   private readonly db: typeof defaultDb;
-  private readonly usc: CongressGovClient;
+  private readonly usc: GovInfoClient;
   private readonly cfr: EcfrClient;
 
   constructor(deps: StatuteCacheDeps) {
     this.db = deps.db ?? defaultDb;
-    this.usc = deps.congressGov;
+    this.usc = deps.govinfo;
     this.cfr = deps.ecfr;
   }
 
@@ -769,6 +784,11 @@ export class StatuteCacheService {
       if (!detail) {
         return this.markFailed(existing.id);
       }
+      // USC path (GovInfo): search returns metadata only; body fetched in a second call.
+      let bodyText = detail.bodyText;
+      if (existing.source === "usc" && bodyText === "" && "granuleId" in detail) {
+        bodyText = await this.usc.fetchBody(detail.granuleId, detail.packageId);
+      }
       const metadataPatch = {
         ...(existing.metadata ?? {}),
         ...(detail.metadata ?? {}),
@@ -776,7 +796,7 @@ export class StatuteCacheService {
       };
       const [row] = await this.db.update(cachedStatutes)
         .set({
-          bodyText: detail.bodyText,
+          bodyText,
           heading: detail.heading,
           effectiveDate: detail.effectiveDate ?? null,
           metadata: metadataPatch,
@@ -786,7 +806,7 @@ export class StatuteCacheService {
         .returning();
       return row;
     } catch (err) {
-      if (err instanceof CongressGovError || err instanceof EcfrError) {
+      if (err instanceof GovInfoError || err instanceof EcfrError) {
         return this.markFailed(existing.id);
       }
       throw err;
@@ -835,8 +855,8 @@ git commit -m "feat: add StatuteCacheService with graceful error fallback"
 
 In `tests/integration/legal-rag.test.ts`, add:
 
-1. **Explicit USC citation triggers lookup** — question `"interpret 42 U.S.C. § 1983"`; stub `congressGov.lookupUscSection` to return a fake section; assert the section appears in the context passed to `anthropic.messages.stream` AND is included in the persisted `statuteContextIds`.
-2. **Statute-oriented question without citation triggers search** — question `"what regulations govern § 504?"`; stub `ecfr.searchCfr` + `congressGov.searchUsc`; assert at least one client was called; assert hits included in context.
+1. **Explicit USC citation triggers lookup** — question `"interpret 42 U.S.C. § 1983"`; stub `govinfo.lookupUscSection` to return a fake section; assert the section appears in the context passed to `anthropic.messages.stream` AND is included in the persisted `statuteContextIds`.
+2. **Statute-oriented question without citation triggers search** — question `"what regulations govern § 504?"`; stub `ecfr.searchCfr` + `govinfo.searchUsc`; assert at least one client was called; assert hits included in context.
 3. **Pure case-law question skips statute retrieval** — question `"what's the standard for summary judgment?"` (no `§`, no `statute`/`regulation`, no USC/CFR pattern); assert neither statute client method was called.
 4. **False-positive guard** — question `"section 3 of our engagement letter"`; assert no statute client method was called (locks in the tightened heuristic).
 5. **Unverified USC citation flagged** — Claude output cites `"99 U.S.C. § 9999"` not in context; assert `flags.unverifiedCitations` contains it; re-prompt fires at ≥2 unverified.
@@ -1043,7 +1063,7 @@ export const researchRouter = router({
       .query(async ({ ctx, input }) => {
         const cache = new StatuteCacheService({
           db: ctx.db,
-          congressGov: new CongressGovClient({ apiKey: getEnv().CONGRESS_GOV_API_KEY }),
+          govinfo: new GovInfoClient({ apiKey: getEnv().GOVINFO_API_KEY }),
           ecfr: new EcfrClient(),
         });
 
@@ -1498,7 +1518,7 @@ gh pr create --title "feat: 2.2.2 Statutes & Regulations Lookup" --body "$(cat <
 
 Implements Phase 2.2.2 per spec `docs/superpowers/specs/2026-04-17-statutes-regulations-lookup-design.md`.
 
-**Backend:** CongressGovClient + EcfrClient + StatuteCacheService + citation-parser; LegalRagService extended for mixed opinion/statute retrieval; research router gains `statutes.get` + `statutes.lookup` procedures and `askDeep` statute variant; Inngest `research-enrich-statute` stub registered.
+**Backend:** GovInfoClient + EcfrClient + StatuteCacheService + citation-parser; LegalRagService extended for mixed opinion/statute retrieval; research router gains `statutes.get` + `statutes.lookup` procedures and `askDeep` statute variant; Inngest `research-enrich-statute` stub registered.
 
 **Frontend:** New `/research/statutes/[citationSlug]` route + statute-viewer + statute-header; CitationChip detects USC/CFR and links to viewer.
 
@@ -1509,7 +1529,7 @@ Implements Phase 2.2.2 per spec `docs/superpowers/specs/2026-04-17-statutes-regu
 - [x] Build succeeds
 - [x] E2E smoke passes for statute routes
 - [ ] Manual UAT: 5 statute queries from UPL audit
-- [ ] Verify eCFR + Congress.gov endpoints against live API (ADR comments record verification date)
+- [ ] Verify eCFR + GovInfo endpoints against live API (ADR comments record verification date)
 
 ## Known limitations
 
@@ -1519,7 +1539,7 @@ Implements Phase 2.2.2 per spec `docs/superpowers/specs/2026-04-17-statutes-regu
 
 ## Environment
 
-- New env var: `CONGRESS_GOV_API_KEY` (free tier, 5000 req/hour)
+- New env var: `GOVINFO_API_KEY` (api.data.gov free tier, 36000 req/hour)
 - eCFR requires no key
 EOF
 )"
@@ -1537,13 +1557,13 @@ Update `/Users/fedorkaspirovich/.claude/projects/-Users-fedorkaspirovich-ClearTe
 
 - **6 chunks, 17 tasks, ~60+ new test cases.**
 - Mostly backend; frontend minimal thanks to 2.2.1 component reuse.
-- Key verification step: Task 4 Step 1 WebFetches eCFR docs; Task 3 Step 5 note WebFetches Congress.gov docs. Both record ADR comments in their respective client files.
+- Key verification step: Task 4 Step 1 WebFetches eCFR docs; Task 3 Step 0 WebFetches GovInfo docs. Both record ADR comments in their respective client files (separate commits).
 - Estimated 2–3 sessions of focused work (vs 2.2.1's ~4 sessions).
 - Chunk 3 (RAG retrieval) is the highest-complexity chunk; plan allows for refactoring if integration tests surface fragile heuristics.
 
 ## Risks (carried from spec)
 
-- Congress.gov USC search is TOC-oriented; mitigation = document known limitation, UI suggests explicit citations.
+- GovInfo USC search relevance depends on `pageSize` + query phrasing; mitigation = explicit citation lookup path + UI suggests Bluebook citations for best results.
 - eCFR search ranking opaque; mitigation = top-5 is good enough for RAG.
 - LegalRagService file growth; mitigation = keep retrieval helpers as private methods.
 - Citation parser false positives; mitigation = tight regex + test coverage.
