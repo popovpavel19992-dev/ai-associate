@@ -882,3 +882,73 @@ describe("LegalRagService.askBroad — statute retrieval", () => {
     expect((assistantRow.statuteContextIds as string[]).length).toBeGreaterThan(0);
   });
 });
+
+describe("LegalRagService.askDeep — statute variant", () => {
+  it("loads a single statute and persists with statuteContextIds set", async () => {
+    const { db, enqueueSelect, insertCalls } = makeMockDb();
+    const cache = makeMockCache([]);
+    const statuteCache = makeMockStatuteCache();
+    const statute = mockStatute({ id: "abc" });
+    (statuteCache.getByInternalIds as ReturnType<typeof vi.fn>).mockResolvedValueOnce([statute]);
+
+    enqueueSelect([]); // history only
+
+    streamMock.mockReturnValueOnce(
+      makeStream(["deep"], "Per 42 U.S.C. § 1983 the claim lies."),
+    );
+
+    const svc = new LegalRagService({ db, opinionCache: cache, statuteCache });
+    const chunks = await collect(
+      svc.askDeep({
+        sessionId: ID.session,
+        userId: ID.user,
+        statuteInternalId: "abc",
+        question: "What does this statute cover?",
+      }),
+    );
+
+    const done = chunks.find((c) => c.type === "done");
+    expect(done).toBeDefined();
+
+    // Statute body should appear in Claude context
+    const streamArgs = streamMock.mock.calls[0]![0] as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    const userContent = streamArgs.messages[streamArgs.messages.length - 1]!.content;
+    expect(userContent).toContain("42 U.S.C. § 1983");
+    expect(userContent).toContain("Every person who, under color");
+
+    expect(insertCalls).toHaveLength(2);
+    const assistantRow = insertCalls[1]!.values as Record<string, unknown>;
+    expect(assistantRow.role).toBe("assistant");
+    expect(assistantRow.mode).toBe("deep");
+    expect(assistantRow.statuteContextIds).toEqual(["abc"]);
+    expect(assistantRow.opinionContextIds).toEqual([]);
+  });
+
+  it("emits an error chunk when the statute is not found", async () => {
+    const { db, enqueueSelect, insertCalls } = makeMockDb();
+    const cache = makeMockCache([]);
+    const statuteCache = makeMockStatuteCache();
+    (statuteCache.getByInternalIds as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+
+    enqueueSelect([]); // history
+
+    const svc = new LegalRagService({ db, opinionCache: cache, statuteCache });
+    const chunks = await collect(
+      svc.askDeep({
+        sessionId: ID.session,
+        userId: ID.user,
+        statuteInternalId: "missing",
+        question: "Q?",
+      }),
+    );
+
+    const last = chunks[chunks.length - 1];
+    expect(last.type).toBe("error");
+    expect(last.error).toMatch(/not.?found|missing|found/i);
+    // Only the user message should have been persisted; NO assistant row.
+    expect(insertCalls).toHaveLength(1);
+    expect((insertCalls[0]!.values as Record<string, unknown>).role).toBe("user");
+  });
+});

@@ -38,12 +38,9 @@ export interface AskBroadInput {
   topN?: number;
 }
 
-export interface AskDeepInput {
-  sessionId: string;
-  userId: string;
-  opinionInternalId: string;
-  question: string;
-}
+export type AskDeepInput =
+  | { sessionId: string; userId: string; opinionInternalId: string; question: string }
+  | { sessionId: string; userId: string; statuteInternalId: string; question: string };
 
 export interface LegalRagServiceDeps {
   db?: typeof defaultDb;
@@ -107,6 +104,10 @@ function assembleDeep(o: CachedOpinion, question: string): string {
   return `<opinion>\n## ${o.caseName} — ${o.citationBluebook}\n${trim(o.fullText ?? o.snippet ?? "")}\n</opinion>\n\n${question}`;
 }
 
+function assembleDeepStatute(s: CachedStatute, question: string): string {
+  return `<statute>\n## ${s.citationBluebook}\n${trim(s.bodyText ?? "")}\n</statute>\n\n${question}`;
+}
+
 function finalText(final: { content: Array<{ type: string; text?: string }> }): string {
   return final.content
     .filter((b): b is { type: "text"; text: string } => b.type === "text" && typeof b.text === "string")
@@ -163,28 +164,66 @@ export class LegalRagService {
 
   async *askDeep(input: AskDeepInput): AsyncGenerator<StreamChunk> {
     const history = await this.loadHistory(input.sessionId);
-    let opinion: CachedOpinion;
-    try {
-      const found = await this.cache.getByInternalIds([input.opinionInternalId]);
-      if (found.length === 0) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Opinion not found" });
+
+    if ("opinionInternalId" in input) {
+      let opinion: CachedOpinion;
+      try {
+        const found = await this.cache.getByInternalIds([input.opinionInternalId]);
+        if (found.length === 0) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Opinion not found" });
+        }
+        opinion = found[0]!;
+        if (!opinion.fullText) opinion = await this.cache.getOrFetch(opinion.courtlistenerId);
+      } catch (err) {
+        yield { type: "error", error: err instanceof Error ? err.message : "Failed to load opinion" };
+        return;
       }
-      opinion = found[0]!;
-      if (!opinion.fullText) opinion = await this.cache.getOrFetch(opinion.courtlistenerId);
-    } catch (err) {
-      yield { type: "error", error: err instanceof Error ? err.message : "Failed to load opinion" };
+      yield* this.runTurn({
+        sessionId: input.sessionId,
+        question: input.question,
+        history,
+        userContent: assembleDeep(opinion, input.question),
+        contextCitations: [opinion.citationBluebook],
+        opinionContextIds: [opinion.id],
+        statuteContextIds: [],
+        mode: "deep",
+        opinionId: opinion.id,
+      });
+      return;
+    }
+
+    // Statute variant
+    if (!this.statuteCache) {
+      yield { type: "error", error: "Statute not found" };
+      return;
+    }
+    const [statute] = await this.statuteCache.getByInternalIds([input.statuteInternalId]);
+    if (!statute) {
+      // Mirror task spec: persist user message only, then yield error.
+      await this.db.insert(researchChatMessages).values({
+        sessionId: input.sessionId,
+        role: "user",
+        content: input.question,
+        mode: "deep",
+        opinionId: null,
+        opinionContextIds: [],
+        statuteContextIds: [],
+        tokensUsed: 0,
+        flags: {},
+      });
+      yield { type: "error", error: "Statute not found" };
       return;
     }
     yield* this.runTurn({
       sessionId: input.sessionId,
       question: input.question,
       history,
-      userContent: assembleDeep(opinion, input.question),
-      contextCitations: [opinion.citationBluebook],
-      opinionContextIds: [opinion.id],
-      statuteContextIds: [],
+      userContent: assembleDeepStatute(statute, input.question),
+      contextCitations: [statute.citationBluebook],
+      opinionContextIds: [],
+      statuteContextIds: [statute.id],
       mode: "deep",
-      opinionId: opinion.id,
+      opinionId: null,
     });
   }
 
