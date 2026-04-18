@@ -39,9 +39,13 @@ export class GovInfoClient {
     if (!/^[\w.-]+$/.test(section)) {
       throw new RangeError(`Invalid USC section: ${section}`);
     }
-    const query = `collection:USCODE AND uscodetitlenumber:${title} AND ${section}`;
-    const hits = await this.search(query, 1);
-    return hits[0] ?? null;
+    // Live API rejects `uscodetitlenumber:N` filter with 500. Bare-token search
+    // returns matches across titles; filter to exact (title, section) client-side
+    // via the granule-ID regex populated by normalizeSearchHit. Request a small
+    // page to keep latency low; pick the first matching hit.
+    const query = `collection:USCODE AND ${section}`;
+    const hits = await this.search(query, 10);
+    return hits.find((h) => h.title === title && h.section === section) ?? null;
   }
 
   async searchUsc(query: string, limit = 5): Promise<UscSectionResult[]> {
@@ -65,6 +69,7 @@ export class GovInfoClient {
       body: JSON.stringify({
         query,
         pageSize,
+        offsetMark: "*", // required by live API on the first page
         sorts: [{ field: "relevancy", sortOrder: "DESC" }],
       }),
     });
