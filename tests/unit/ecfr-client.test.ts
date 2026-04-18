@@ -14,6 +14,15 @@ function makeFetch(
   });
 }
 
+// /titles.json response — client fetches this once to resolve the publication
+// date for each title, then hits /structure/{date}/title-{n}.json. Tests that
+// call lookupCfrSection must stub this BEFORE the structure response.
+const TITLES_RESPONSE = {
+  titles: [
+    { number: 28, up_to_date_as_of: "2026-04-14", latest_issue_date: "2026-04-14" },
+  ],
+};
+
 // Sample eCFR structure JSON: title 28 → chapter I → part 35 → section 35.104
 const SAMPLE_STRUCTURE = {
   type: "title",
@@ -67,7 +76,10 @@ describe("EcfrClient", () => {
   });
 
   it("lookupCfrSection resolves a matching section and sets source/citation", async () => {
-    fetchMock = makeFetch([{ status: 200, json: SAMPLE_STRUCTURE }]);
+    fetchMock = makeFetch([
+      { status: 200, json: TITLES_RESPONSE },
+      { status: 200, json: SAMPLE_STRUCTURE },
+    ]);
     client = makeClient(fetchMock);
 
     const res = await client.lookupCfrSection(28, "35.104");
@@ -78,21 +90,36 @@ describe("EcfrClient", () => {
     expect(res!.citationBluebook).toBe("28 C.F.R. § 35.104");
     expect(res!.heading).toContain("Definitions");
 
-    const [url] = fetchMock.mock.calls[0];
-    expect(String(url)).toContain("/api/versioner/v1/structure/");
-    expect(String(url)).toContain("/title-28.json");
+    const [titlesUrl] = fetchMock.mock.calls[0];
+    expect(String(titlesUrl)).toContain("/api/versioner/v1/titles.json");
+    const [structUrl] = fetchMock.mock.calls[1];
+    expect(String(structUrl)).toContain("/api/versioner/v1/structure/2026-04-14/title-28.json");
   });
 
   it("lookupCfrSection returns null when section not found in structure", async () => {
-    fetchMock = makeFetch([{ status: 200, json: SAMPLE_STRUCTURE }]);
+    fetchMock = makeFetch([
+      { status: 200, json: TITLES_RESPONSE },
+      { status: 200, json: SAMPLE_STRUCTURE },
+    ]);
     client = makeClient(fetchMock);
 
     const res = await client.lookupCfrSection(28, "99.99");
     expect(res).toBeNull();
   });
 
+  it("lookupCfrSection returns null when title not in titles.json", async () => {
+    fetchMock = makeFetch([{ status: 200, json: { titles: [] } }]);
+    client = makeClient(fetchMock);
+
+    const res = await client.lookupCfrSection(28, "35.104");
+    expect(res).toBeNull();
+  });
+
   it("lookupCfrSection returns null on 404", async () => {
-    fetchMock = makeFetch([{ status: 404, text: "" }]);
+    fetchMock = makeFetch([
+      { status: 200, json: TITLES_RESPONSE },
+      { status: 404, text: "" },
+    ]);
     client = makeClient(fetchMock);
 
     const res = await client.lookupCfrSection(28, "35.104");
@@ -158,6 +185,7 @@ describe("EcfrClient", () => {
 
   it("retries on 500 and succeeds on third attempt", async () => {
     fetchMock = makeFetch([
+      { status: 200, json: TITLES_RESPONSE },
       { status: 500, text: "" },
       { status: 500, text: "" },
       { status: 200, json: SAMPLE_STRUCTURE },
@@ -165,12 +193,13 @@ describe("EcfrClient", () => {
     client = makeClient(fetchMock);
 
     const res = await client.lookupCfrSection(28, "35.104");
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(4); // titles + 3 structure retries
     expect(res!.section).toBe("35.104");
   });
 
   it("retries on 429 same as 500", async () => {
     fetchMock = makeFetch([
+      { status: 200, json: TITLES_RESPONSE },
       { status: 429, text: "" },
       { status: 429, text: "" },
       { status: 200, json: SAMPLE_STRUCTURE },
@@ -178,12 +207,13 @@ describe("EcfrClient", () => {
     client = makeClient(fetchMock);
 
     const res = await client.lookupCfrSection(28, "35.104");
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
     expect(res!.section).toBe("35.104");
   });
 
   it("throws EcfrError with status=500 after 3 failed attempts", async () => {
     fetchMock = makeFetch([
+      { status: 200, json: TITLES_RESPONSE },
       { status: 500, text: "" },
       { status: 500, text: "" },
       { status: 500, text: "" },
@@ -194,7 +224,7 @@ describe("EcfrClient", () => {
     expect(err).toBeInstanceOf(EcfrError);
     expect((err as EcfrError).status).toBe(500);
     expect((err as Error).name).toBe("EcfrError");
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
   it("searchCfr skips non-section result types (chapter/part/title)", async () => {

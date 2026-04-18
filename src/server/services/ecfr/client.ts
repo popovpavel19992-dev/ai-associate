@@ -31,8 +31,16 @@
  *   - Section input guarded with /^[\w.-]+$/ (same guard as GovInfoClient) — CFR sections
  *     look like "35.104" or "170.215"; the guard rejects injection attempts.
  *
- * Deviations from plan sketch: none material. Confirmed search path `/api/search/v1/results`
- * and structure path `/api/versioner/v1/structure/{date}/title-{n}.json` exactly as planned.
+ * Live-smoke fix (2026-04-18, post-initial-ship):
+ *   - eCFR publishes with a 2-3 day lag and only on business days — "today" 404s.
+ *     lookupCfrSection now calls GET /api/versioner/v1/titles.json first to resolve
+ *     each title's `up_to_date_as_of` date, caches the map per client instance,
+ *     and uses that date for the structure endpoint. One extra request per client
+ *     lifetime (cached); eliminates the silent-null bug where any caller would see
+ *     "section not found" for every section late in the day.
+ *
+ * Deviations from plan sketch: the date-resolution flow above. Plan assumed "today"
+ * worked; live API disproved it. Search path unchanged.
  */
 
 import type { CfrSectionResult } from "./types";
@@ -53,6 +61,11 @@ interface StructureNode {
 }
 
 export class EcfrClient {
+  // Cached per-title publication dates from /titles.json. eCFR publishes with a
+  // 2-3 day lag and only on business days; "today" almost always 404s. We must
+  // resolve the correct date per title before hitting the structure endpoint.
+  private titleDatesPromise: Promise<Map<number, string>> | null = null;
+
   constructor(private readonly deps?: { fetchImpl?: typeof fetch }) {}
 
   async lookupCfrSection(
@@ -62,15 +75,48 @@ export class EcfrClient {
     if (!/^[\w.-]+$/.test(section)) {
       throw new RangeError(`Invalid CFR section: ${section}`);
     }
-    // Use local date (not UTC) so a user at e.g. 23:00 ET doesn't request tomorrow's not-yet-published date.
-    const today = new Date().toLocaleDateString("en-CA"); // "YYYY-MM-DD" in local TZ
-    const url = `${BASE_URL}/versioner/v1/structure/${today}/title-${title}.json`;
+    const date = await this.resolveTitleDate(title);
+    if (!date) return null;
+    const url = `${BASE_URL}/versioner/v1/structure/${date}/title-${title}.json`;
     const res = await this.fetchWithRetry(url);
     if (res.status === 404) return null;
     if (!res.ok)
       throw new EcfrError(`CFR lookup failed: ${res.status}`, res.status);
     const raw = (await res.json()) as StructureNode;
     return this.extractSection(title, section, raw);
+  }
+
+  private async resolveTitleDate(title: number): Promise<string | null> {
+    if (!this.titleDatesPromise) {
+      this.titleDatesPromise = (async () => {
+        const url = `${BASE_URL}/versioner/v1/titles.json`;
+        const res = await this.fetchWithRetry(url);
+        if (!res.ok) {
+          // Reset so a later call can retry
+          this.titleDatesPromise = null;
+          throw new EcfrError(
+            `CFR titles lookup failed: ${res.status}`,
+            res.status,
+          );
+        }
+        const raw = (await res.json()) as {
+          titles?: Array<{
+            number?: number;
+            up_to_date_as_of?: string;
+            latest_issue_date?: string;
+          }>;
+        };
+        const map = new Map<number, string>();
+        for (const t of raw.titles ?? []) {
+          if (typeof t.number !== "number") continue;
+          const date = t.up_to_date_as_of ?? t.latest_issue_date;
+          if (date) map.set(t.number, date);
+        }
+        return map;
+      })();
+    }
+    const map = await this.titleDatesPromise;
+    return map.get(title) ?? null;
   }
 
   async searchCfr(query: string, limit = 5): Promise<CfrSectionResult[]> {
