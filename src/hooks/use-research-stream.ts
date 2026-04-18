@@ -29,6 +29,7 @@ export interface UseResearchStreamOptions {
   sessionId: string;
   mode: "broad" | "deep";
   opinionInternalId?: string;
+  statuteInternalId?: string;
 }
 
 interface StreamChunk {
@@ -61,12 +62,20 @@ export function useResearchStream(
       ? { sessionId: opts.sessionId, question: activeQuestion, topN }
       : undefined;
   const deepInput =
-    opts.mode === "deep" && activeQuestion && opts.opinionInternalId
-      ? {
-          sessionId: opts.sessionId,
-          opinionInternalId: opts.opinionInternalId,
-          question: activeQuestion,
-        }
+    opts.mode === "deep" && activeQuestion
+      ? opts.statuteInternalId
+        ? {
+            sessionId: opts.sessionId,
+            statuteInternalId: opts.statuteInternalId,
+            question: activeQuestion,
+          }
+        : opts.opinionInternalId
+          ? {
+              sessionId: opts.sessionId,
+              opinionInternalId: opts.opinionInternalId,
+              question: activeQuestion,
+            }
+          : undefined
       : undefined;
 
   function onStarted() {

@@ -12,6 +12,7 @@ interface ChatPanelProps {
   sessionId: string;
   mode: "broad" | "deep";
   opinionInternalId?: string;
+  statuteInternalId?: string;
   className?: string;
 }
 
@@ -19,12 +20,14 @@ export function ChatPanel({
   sessionId,
   mode,
   opinionInternalId,
+  statuteInternalId,
   className,
 }: ChatPanelProps) {
   const { messages, streaming, error, send } = useResearchStream({
     sessionId,
     mode,
     opinionInternalId,
+    statuteInternalId,
   });
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
