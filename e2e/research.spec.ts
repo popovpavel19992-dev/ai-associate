@@ -47,4 +47,14 @@ test.describe("Research — smoke tests", () => {
     const res = await page.goto(`/cases/${FAKE_UUID}`);
     expect(res?.status()).toBeLessThan(500);
   });
+
+  test("/research/statutes/<slug> loads without 500", async ({ page }) => {
+    const res = await page.goto("/research/statutes/42-usc-1983");
+    expect(res?.status()).toBeLessThan(500);
+  });
+
+  test("/research/statutes malformed slug does not crash", async ({ page }) => {
+    const res = await page.goto("/research/statutes/not-a-valid-slug");
+    expect(res?.status()).toBeLessThan(500);
+  });
 });
