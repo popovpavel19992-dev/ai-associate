@@ -179,6 +179,21 @@ async function dispatchEmail(
       });
       break;
     }
+    case "case_message_received": {
+      const recipientType = (m?.recipientType as string) ?? "lawyer";
+      if (recipientType === "portal") break; // portal handles its own notifications
+      const caseName = (m?.caseName as string) ?? "";
+      const authorName = (m?.authorName as string) ?? "";
+      const bodyPreview = (m?.bodyPreview as string) ?? "";
+      const caseId = event.caseId ?? "";
+      const url = `/cases/${caseId}?tab=messages`;
+      await sendEmail({
+        to: userEmail,
+        subject: `New message in ${caseName}`,
+        html: `<p>${authorName.replace(/[<>&]/g, "")} sent a new message in ${caseName.replace(/[<>&]/g, "")}:</p><blockquote>${bodyPreview.replace(/[<>&]/g, "")}</blockquote><p><a href="${url}">Open conversation</a></p>`,
+      });
+      break;
+    }
     default:
       console.warn("[handle-notification] No email template for type:", type);
   }

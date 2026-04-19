@@ -17,5 +17,6 @@ import { handlePortalNotification } from "./functions/handle-portal-notification
 import { researchEnrichOpinion } from "./functions/research-enrich-opinion";
 import { researchEnrichStatute } from "./functions/research-enrich-statute";
 import { researchMemoGenerate } from "./functions/research-memo-generate";
+import { caseMessageBroadcast } from "./functions/case-message-broadcast";
 
-export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup, handleNotification, notificationReminders, notificationOverdueCheck, handlePortalNotification, researchEnrichOpinion, researchEnrichStatute, researchMemoGenerate];
+export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup, handleNotification, notificationReminders, notificationOverdueCheck, handlePortalNotification, researchEnrichOpinion, researchEnrichStatute, researchMemoGenerate, caseMessageBroadcast];
