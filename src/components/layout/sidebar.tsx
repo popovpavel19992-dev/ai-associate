@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
+import { Badge } from "@/components/ui/badge";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { TimerIndicator } from "@/components/time-billing/timer-indicator";
 
@@ -46,6 +47,11 @@ function NavContent() {
   const pathname = usePathname();
   const { data: profile } = trpc.users.getProfile.useQuery();
   const isTeamAdmin = profile?.role === "owner" || profile?.role === "admin";
+  const { data: unreadData } = trpc.caseMessages.unreadByCase.useQuery(undefined, {
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+  });
+  const unreadCases = unreadData?.count ?? 0;
 
   return (
     <div className="flex h-full flex-col">
@@ -66,6 +72,7 @@ function NavContent() {
           const isActive = item.href === "/settings"
             ? pathname === "/settings"
             : pathname === item.href || pathname.startsWith(item.href + "/");
+          const isCases = item.href === "/cases";
           return (
             <Link
               key={item.label}
@@ -79,6 +86,11 @@ function NavContent() {
             >
               <item.icon className="h-4 w-4" />
               {item.label}
+              {isCases && unreadCases > 0 && (
+                <Badge variant="destructive" className="ml-auto text-xs">
+                  {unreadCases > 9 ? "9+" : unreadCases}
+                </Badge>
+              )}
             </Link>
           );
         })}
