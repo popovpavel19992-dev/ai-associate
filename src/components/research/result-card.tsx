@@ -5,6 +5,7 @@ import { Star } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { AddToCollectionMenu } from "@/components/research/add-to-collection-menu";
 
 export interface ResultCardHit {
   internalId: string;
@@ -53,24 +54,27 @@ export function ResultCard({
         <h3 className="font-heading text-base font-medium leading-snug">
           {hit.caseName}
         </h3>
-        <button
-          type="button"
-          aria-label={bookmarked ? "Remove bookmark" : "Add bookmark"}
-          aria-pressed={bookmarked}
-          onClick={handleBookmark}
-          className={cn(
-            "shrink-0 rounded-md p-1 text-muted-foreground transition",
-            "hover:bg-muted hover:text-foreground",
-            "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            bookmarked && "text-yellow-500 hover:text-yellow-600",
-          )}
-        >
-          <Star
-            className="h-4 w-4"
-            fill={bookmarked ? "currentColor" : "none"}
-            strokeWidth={2}
-          />
-        </button>
+        <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <AddToCollectionMenu itemType="opinion" itemId={hit.internalId} size="sm" />
+          <button
+            type="button"
+            aria-label={bookmarked ? "Remove bookmark" : "Add bookmark"}
+            aria-pressed={bookmarked}
+            onClick={handleBookmark}
+            className={cn(
+              "rounded-md p-1 text-muted-foreground transition",
+              "hover:bg-muted hover:text-foreground",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              bookmarked && "text-yellow-500 hover:text-yellow-600",
+            )}
+          >
+            <Star
+              className="h-4 w-4"
+              fill={bookmarked ? "currentColor" : "none"}
+              strokeWidth={2}
+            />
+          </button>
+        </div>
       </div>
 
       <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">

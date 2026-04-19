@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { trpc } from "@/lib/trpc";
+import { AddToCollectionMenu } from "@/components/research/add-to-collection-menu";
 
 interface OpinionHeaderProps {
   opinion: {
@@ -68,6 +69,7 @@ export function OpinionHeader({ opinion }: OpinionHeaderProps) {
       <div className="flex items-start justify-between gap-4">
         <h1 className="text-xl font-semibold">{opinion.caseName}</h1>
         <div className="flex items-center gap-2">
+          <AddToCollectionMenu itemType="opinion" itemId={opinion.id} size="sm" />
           <Button
             variant="outline"
             size="sm"
