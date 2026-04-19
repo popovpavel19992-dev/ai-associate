@@ -100,6 +100,65 @@ describe("CourtListenerClient", () => {
     expect(op.judges).toEqual(["Smith", "Jones", "Doe"]);
   });
 
+  it("buckets unmapped state-court hits into 'other' / 'state_other'", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        count: 2,
+        results: [
+          {
+            cluster_id: 555,
+            caseName: "Doe v. Arizona",
+            court: "Arizona Court of Appeals",
+            court_id: "arizctapp",
+            dateFiled: "2022-01-10",
+            citation: ["250 Ariz. 1"],
+            snippet: "...",
+          },
+          {
+            cluster_id: 777,
+            caseName: "State v. Roe",
+            court: "Some Brand-New Court",
+            court_id: "brandnewct", // not in COURT_MAP and not in STATE_OTHER_COURTS
+            dateFiled: "2023-06-01",
+            citation: ["1 Brand 1"],
+            snippet: "...",
+          },
+        ],
+      }),
+    });
+
+    const resp = await client.search({ query: "x" });
+    expect(resp.hits).toHaveLength(2);
+    for (const hit of resp.hits) {
+      expect(hit.jurisdiction).toBe("other");
+      expect(hit.courtLevel).toBe("state_other");
+    }
+  });
+
+  it("drops hits with empty court slug", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        count: 1,
+        results: [
+          {
+            cluster_id: 999,
+            caseName: "Mystery v. Unknown",
+            court_id: "",
+            dateFiled: "2020-01-01",
+            citation: [""],
+            snippet: "",
+          },
+        ],
+      }),
+    });
+    const resp = await client.search({ query: "x" });
+    expect(resp.hits).toHaveLength(0);
+  });
+
   it("throws CourtListenerError after 3 failed 5xx attempts", async () => {
     fetchMock.mockResolvedValue({ ok: false, status: 503, json: async () => ({}) });
     await expect(client.search({ query: "x" })).rejects.toThrow(/503/);

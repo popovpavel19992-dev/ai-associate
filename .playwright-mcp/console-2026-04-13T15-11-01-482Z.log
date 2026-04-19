@@ -1,0 +1,73 @@
+[     359ms] [LOG] %c[Vercel Speed Insights]%c [vitals] color: rgb(120, 120, 120) color: inherit {speed: 4g, metrics: Array(3), scriptVersion: 0.1.3, sdkName: @vercel/speed-insights/next, sdkVersion: 2.0.0} /_vercel/speed-insights/vitals @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[     360ms] [LOG] %c[Vercel Speed Insights]%c [vitals] color: rgb(120, 120, 120) color: inherit {speed: 4g, metrics: Array(1), scriptVersion: 0.1.3, sdkName: @vercel/speed-insights/next, sdkVersion: 2.0.0} /_vercel/speed-insights/vitals @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[     427ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[     448ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[     553ms] [LOG] %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[     553ms] [LOG] %c[Vercel Web Analytics]%c [view] http://localhost:3000/clients color: rgb(120, 120, 120) color: inherit {o: http://localhost:3000/clients, sv: 0.1.3, sdkn: @vercel/analytics/react, sdkv: 2.0.1, ts: 1776093062035} /_vercel/insights/view @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[     554ms] [LOG] %c[Vercel Speed Insights]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[     615ms] [WARNING] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   21168ms] [LOG] %c[Vercel Speed Insights]%c [vitals] color: rgb(120, 120, 120) color: inherit {speed: 4g, metrics: Array(4), scriptVersion: 0.1.3, sdkName: @vercel/speed-insights/next, sdkVersion: 2.0.0} /_vercel/speed-insights/vitals @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   21182ms] [LOG] %c[Vercel Web Analytics]%c [view] http://localhost:3000/clients/new color: rgb(120, 120, 120) color: inherit {o: http://localhost:3000/clients/new, sv: 0.1.3, sdkn: @vercel/analytics/react, sdkv: 2.0.1, ts: 1776093082649} /_vercel/insights/view @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   63025ms] [LOG] %c[Vercel Web Analytics]%c [view] http://localhost:3000/clients/f943cff4-ca8c-4089-828f-150b1bed24a5 color: rgb(120, 120, 120) color: inherit {o: http://localhost:3000/clients/f943cff4-ca8c-4089-828f-150b1bed24a5, sv: 0.1.3, sdkn: @vercel/analytics/react, sdkv: 2.0.1, ts: 1776093124499} /_vercel/insights/view @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   63187ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[   63215ms] [LOG] [Fast Refresh] done in 130ms @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[  100863ms] [ERROR] Access to fetch at 'https://infinite-bear-1.accounts.dev/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard&__clerk_db_jwt=dvb_3BxHKg29UcL4ELnG3Vtc5mX9x4y' (redirected from 'http://localhost:3000/?_rsc=fl5p3') from origin 'http://localhost:3000' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:3000/clients/f943cff4-ca8c-4089-828f-150b1bed24a5:0
+[  100863ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://infinite-bear-1.accounts.dev/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard&__clerk_db_jwt=dvb_3BxHKg29UcL4ELnG3Vtc5mX9x4y:0
+[  100865ms] [ERROR] Failed to fetch RSC payload for http://localhost:3000/. Falling back to browser navigation. TypeError: Failed to fetch
+    at createFetch (http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:8085:21)
+    at fetchServerResponse (http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:7929:27)
+    at navigateToUnknownRoute (http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:10095:90)
+    at navigateImpl (http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:9990:12)
+    at navigate (http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:9954:12)
+    at navigateReducer (http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:10531:37)
+    at clientReducer (http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:11383:61)
+    at Object.action (http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:11632:55)
+    at runAction (http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:11537:38)
+    at dispatchAction (http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:11600:9)
+    at Object.dispatch (http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:11630:40)
+    at http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:964:29
+    at startTransition (http://localhost:3000/_next/static/chunks/0827_next_dist_compiled_react-dom_13aj_5e._.js:5470:31)
+    at nextDispatch (http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:963:13)
+    at dispatchAppRouterAction (http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:923:5)
+    at dispatchNavigateAction (http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:11689:49)
+    at http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:11783:13
+    at startTransition (http://localhost:3000/_next/static/chunks/0827_next_dist_compiled_0ku.apd._.js:1280:31)
+    at Object.push (http://localhost:3000/_next/static/chunks/0827_next_dist_client_03yyh8.._.js:11782:36)
+    at http://localhost:3000/_next/static/chunks/06rd_%40clerk_nextjs_dist_esm_02l7y0v._.js:763:25
+    at startTransition (http://localhost:3000/_next/static/chunks/0827_next_dist_compiled_react-dom_13aj_5e._.js:5470:31)
+    at http://localhost:3000/_next/static/chunks/06rd_%40clerk_nextjs_dist_esm_02l7y0v._.js:758:17
+    at new Promise (<anonymous>)
+    at Object.<anonymous> (http://localhost:3000/_next/static/chunks/06rd_%40clerk_nextjs_dist_esm_02l7y0v._.js:754:20)
+    at useInternalNavFun.useCallback (http://localhost:3000/_next/static/chunks/06rd_%40clerk_nextjs_dist_esm_02l7y0v._.js:793:51)
+    at navigate (https://infinite-bear-1.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js:18:184241)
+    at L (https://infinite-bear-1.clerk.accounts.dev/npm/@clerk/ui@1.5.0/dist/ui-common_ui_d8ecb5_1.5.0.js:14:207808)
+    at navigate (https://infinite-bear-1.clerk.accounts.dev/npm/@clerk/ui@1.5.0/dist/ui-common_ui_d8ecb5_1.5.0.js:14:209836)
+    at navigateAfterSignOut (https://infinite-bear-1.clerk.accounts.dev/npm/@clerk/ui@1.5.0/dist/444_ui_d8ecb5_1.5.0.js:1:9334)
+    at https://infinite-bear-1.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js:18:164060
+    at Object.track (https://infinite-bear-1.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js:16:12563)
+    at o (https://infinite-bear-1.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js:18:164036)
+    at signOut (https://infinite-bear-1.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js:18:164319)
+    at async _ (https://infinite-bear-1.clerk.accounts.dev/npm/@clerk/ui@1.5.0/dist/ui-common_ui_d8ecb5_1.5.0.js:5:68065) @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:3273
+[  101501ms] [ERROR]  Note that 'script-src' was not explicitly set, so 'default-src' is used as a fallback. @ https://infinite-bear-1.accounts.dev/_next/static/chunks/pages/_app-13003940b2d2c99f.js:18
+[  101715ms] [WARNING] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview @ https://infinite-bear-1.accounts.dev/_next/static/chunks/pages/_app-13003940b2d2c99f.js:14
+[  102116ms] [WARNING] Clerk: Structural CSS detected that may break on updates.
+
+Found:
+  - CSS "body.cl-component"
+  - CSS ".cl-component .button:focus-visible"
+
+These selectors depend on the internal DOM structure of Clerk's components, which may change when Clerk deploys component updates.
+To prevent breaking changes, install @clerk/ui and pass it to ClerkProvider:
+
+  import { ui } from '@clerk/ui'
+  <ClerkProvider ui={ui}>
+
+Learn more: https://clerk.com/docs/reference/components/versioning
+(code=structural_css_pin_clerk_ui) @ https://infinite-bear-1.accounts.dev/_next/static/chunks/pages/_app-13003940b2d2c99f.js:14
+[  102185ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://infinite-bear-1.accounts.dev/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard:0
+[  114973ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[  115018ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[  115090ms] [LOG] %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[  115090ms] [LOG] %c[Vercel Web Analytics]%c [view] http://localhost:3000/dashboard color: rgb(120, 120, 120) color: inherit {o: http://localhost:3000/dashboard, sv: 0.1.3, sdkn: @vercel/analytics/react, sdkv: 2.0.1, ts: 1776093176572} /_vercel/insights/view @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[  115090ms] [LOG] %c[Vercel Speed Insights]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432
+[  115247ms] [WARNING] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview @ http://localhost:3000/_next/static/chunks/0827_next_dist_0l18y0t._.js:2432

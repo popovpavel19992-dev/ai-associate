@@ -1,12 +1,21 @@
 import { pgTable, uuid, text, bigint, jsonb, timestamp, date, pgEnum, index, uniqueIndex } from "drizzle-orm/pg-core";
 
-export const jurisdictionEnum = pgEnum("research_jurisdiction", ["federal", "ca", "ny", "tx", "fl", "il"]);
+export const jurisdictionEnum = pgEnum("research_jurisdiction", [
+  "federal",
+  "ca",
+  "ny",
+  "tx",
+  "fl",
+  "il",
+  "other",
+]);
 export const courtLevelEnum = pgEnum("research_court_level", [
   "scotus",
   "circuit",
   "district",
   "state_supreme",
   "state_appellate",
+  "state_other",
 ]);
 
 export const cachedOpinions = pgTable(

@@ -3,13 +3,14 @@
 // Shared types and display labels for the research filters UI.
 // Mirrors the shape of FiltersSchema in src/server/trpc/routers/research.ts.
 
-export type Jurisdiction = "federal" | "ca" | "ny" | "tx" | "fl" | "il";
+export type Jurisdiction = "federal" | "ca" | "ny" | "tx" | "fl" | "il" | "other";
 export type CourtLevel =
   | "scotus"
   | "circuit"
   | "district"
   | "state_supreme"
-  | "state_appellate";
+  | "state_appellate"
+  | "state_other";
 
 export interface ResearchFilters {
   jurisdictions?: Jurisdiction[];
@@ -26,6 +27,7 @@ export const JURISDICTION_LABELS: Record<Jurisdiction, string> = {
   tx: "Texas",
   fl: "Florida",
   il: "Illinois",
+  other: "Other states",
 };
 
 export const COURT_LEVEL_LABELS: Record<CourtLevel, string> = {
@@ -34,6 +36,7 @@ export const COURT_LEVEL_LABELS: Record<CourtLevel, string> = {
   district: "District",
   state_supreme: "State Supreme",
   state_appellate: "State Appellate",
+  state_other: "Other state court",
 };
 
 export const ALL_JURISDICTIONS: Jurisdiction[] = [
@@ -43,6 +46,7 @@ export const ALL_JURISDICTIONS: Jurisdiction[] = [
   "tx",
   "fl",
   "il",
+  "other",
 ];
 
 export const ALL_COURT_LEVELS: CourtLevel[] = [
@@ -51,4 +55,5 @@ export const ALL_COURT_LEVELS: CourtLevel[] = [
   "district",
   "state_supreme",
   "state_appellate",
+  "state_other",
 ];

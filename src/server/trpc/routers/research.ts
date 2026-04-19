@@ -7,7 +7,7 @@
 // deferred to Chunk 7 (see TODO in getOpinion).
 
 import { z } from "zod/v4";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../trpc";
 import { assertCaseAccess } from "../lib/permissions";
@@ -26,15 +26,29 @@ import { parseCitations, type ParsedCitation } from "@/server/services/research/
 import { researchSessions } from "@/server/db/schema/research-sessions";
 import { researchQueries } from "@/server/db/schema/research-queries";
 import { cachedOpinions } from "@/server/db/schema/cached-opinions";
+import { opinionBookmarks } from "@/server/db/schema/opinion-bookmarks";
+import { researchChatMessages } from "@/server/db/schema/research-chat-messages";
 import type { db as realDb } from "@/server/db";
+import { researchMemoRouter } from "./research-memo";
 
 // ---------------------------------------------------------------------------
 // Shared schemas
 // ---------------------------------------------------------------------------
 const FiltersSchema = z.object({
-  jurisdictions: z.array(z.enum(["federal", "ca", "ny", "tx", "fl", "il"])).optional(),
+  jurisdictions: z
+    .array(z.enum(["federal", "ca", "ny", "tx", "fl", "il", "other"]))
+    .optional(),
   courtLevels: z
-    .array(z.enum(["scotus", "circuit", "district", "state_supreme", "state_appellate"]))
+    .array(
+      z.enum([
+        "scotus",
+        "circuit",
+        "district",
+        "state_supreme",
+        "state_appellate",
+        "state_other",
+      ]),
+    )
     .optional(),
   fromYear: z.number().int().min(1900).max(2100).optional(),
   toYear: z.number().int().min(1900).max(2100).optional(),
@@ -295,6 +309,31 @@ const sessionsRouter = router({
         userId: ctx.user.id,
         caseId: input.caseId,
       });
+    }),
+
+  contextStats: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      await assertSessionOwnership(ctx.db, input.sessionId, ctx.user.id);
+      const [{ count: bookmarkCount }] = await ctx.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(opinionBookmarks)
+        .where(eq(opinionBookmarks.userId, ctx.user.id));
+      const [{ count: chatCount }] = await ctx.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(researchChatMessages)
+        .where(eq(researchChatMessages.sessionId, input.sessionId));
+      const statuteRows = await ctx.db
+        .select({ ids: researchChatMessages.statuteContextIds })
+        .from(researchChatMessages)
+        .where(eq(researchChatMessages.sessionId, input.sessionId));
+      const statuteIds = new Set<string>();
+      for (const r of statuteRows) for (const id of (r.ids ?? []) as string[]) statuteIds.add(id);
+      return {
+        bookmarkCount: bookmarkCount ?? 0,
+        chatCount: chatCount ?? 0,
+        statuteCount: statuteIds.size,
+      };
     }),
 });
 
@@ -594,4 +633,5 @@ export const researchRouter = router({
   sessions: sessionsRouter,
   bookmarks: bookmarksRouter,
   statutes: statutesRouter,
+  memo: researchMemoRouter,
 });

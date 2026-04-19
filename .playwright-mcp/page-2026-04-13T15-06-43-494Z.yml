@@ -1,0 +1,43 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e172]:
+    - generic [ref=e173]:
+      - generic [ref=e175]:
+        - heading "Create your account" [level=1] [ref=e176]
+        - paragraph [ref=e177]: Welcome! Please fill in the details to get started.
+      - generic [ref=e178]:
+        - button "Sign in with Google Continue with Google" [ref=e181] [cursor=pointer]:
+          - generic [ref=e182]:
+            - generic "Sign in with Google" [ref=e184]
+            - generic [ref=e185]: Continue with Google
+        - paragraph [ref=e188]: or
+        - generic [ref=e190]:
+          - generic [ref=e191]:
+            - generic [ref=e194]:
+              - generic [ref=e196]: Email address
+              - textbox "Email address" [ref=e197]:
+                - /placeholder: Enter your email address
+                - text: sergeysmola92@gmail.com
+            - generic [ref=e201]:
+              - generic [ref=e203]: Password
+              - generic [ref=e204]:
+                - textbox "Password" [ref=e205]:
+                  - /placeholder: Create a password
+                - button "Show password" [ref=e206] [cursor=pointer]:
+                  - img [ref=e207]
+          - button "Continue" [ref=e213] [cursor=pointer]:
+            - generic [ref=e214]:
+              - text: Continue
+              - img [ref=e215]
+    - generic [ref=e217]:
+      - generic [ref=e218]:
+        - generic [ref=e219]: Already have an account?
+        - link "Sign in" [ref=e220] [cursor=pointer]:
+          - /url: https://infinite-bear-1.accounts.dev/sign-in#/?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard
+      - generic [ref=e222]:
+        - generic [ref=e224]:
+          - paragraph [ref=e225]: Secured by
+          - link "Clerk logo" [ref=e226] [cursor=pointer]:
+            - /url: https://go.clerk.com/components
+            - img [ref=e227]
+        - paragraph [ref=e232]: Development mode
+  - alert [ref=e67]: My account | AI project

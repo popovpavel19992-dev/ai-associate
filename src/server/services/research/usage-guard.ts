@@ -10,13 +10,20 @@ export const TIER_LIMITS: Readonly<Record<ResearchPlan, number>> = Object.freeze
   business: 5000,
 });
 
+export const MEMO_CAPS: Readonly<Record<ResearchPlan, number | null>> = Object.freeze({
+  starter: 10,
+  professional: 50,
+  business: null,
+});
+
 export class UsageLimitExceededError extends Error {
   public readonly name = "UsageLimitExceededError" as const;
   constructor(
     public readonly used: number,
     public readonly limit: number,
+    bucket?: string,
   ) {
-    super(`Q&A usage limit exceeded: ${used}/${limit}`);
+    super(`${bucket ?? "Q&A"} usage limit exceeded: ${used}/${limit}`);
   }
 }
 
@@ -86,6 +93,50 @@ export class UsageGuard {
       .update(researchUsage)
       .set({
         qaCount: sql`greatest(${researchUsage.qaCount} - 1, 0)`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(researchUsage.userId, opts.userId),
+          eq(researchUsage.month, month),
+        ),
+      );
+  }
+
+  async checkAndIncrementMemo(opts: {
+    userId: string;
+    plan: ResearchPlan | string;
+  }): Promise<void> {
+    const cap = (MEMO_CAPS as Record<string, number | null>)[opts.plan] ?? null;
+    const month = this.currentMonth();
+
+    const [usage] = await this.db
+      .insert(researchUsage)
+      .values({ userId: opts.userId, month, memoCount: 1 })
+      .onConflictDoUpdate({
+        target: [researchUsage.userId, researchUsage.month],
+        set: {
+          memoCount: sql`${researchUsage.memoCount} + 1`,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    const row = usage as { memoCount: number } | undefined;
+    const used = row?.memoCount ?? 0;
+
+    if (cap !== null && used > cap) {
+      await this.refundMemo({ userId: opts.userId });
+      throw new UsageLimitExceededError(used - 1, cap, "Memo");
+    }
+  }
+
+  async refundMemo(opts: { userId: string }): Promise<void> {
+    const month = this.currentMonth();
+    await this.db
+      .update(researchUsage)
+      .set({
+        memoCount: sql`greatest(${researchUsage.memoCount} - 1, 0)`,
         updatedAt: new Date(),
       })
       .where(

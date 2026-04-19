@@ -1,0 +1,4 @@
+- generic [ref=e2]:
+  - heading "Something went wrong" [level=1] [ref=e3]
+  - paragraph [ref=e4]: An unexpected error occurred. Our team has been notified.
+  - button "Try Again" [ref=e5] [cursor=pointer]

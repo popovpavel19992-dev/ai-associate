@@ -69,6 +69,7 @@ function makeMockDb() {
         return chain;
       },
       where: () => chain,
+      returning: async () => [{ id: ID.opinion, ...(call.set as object) }],
       then: (resolve: () => void) => {
         resolve();
       },
@@ -217,8 +218,8 @@ describe("OpinionCacheService.getOrFetch", () => {
     expect(row.fullText).toBe("full opinion body goes here");
   });
 
-  it("fetches when row exists but fullText is null, preserving existing snippet", async () => {
-    const { db, enqueueSelect, insertCalls } = makeMockDb();
+  it("UPDATEs in place when row exists but fullText is null, preserving existing court info", async () => {
+    const { db, enqueueSelect, insertCalls, updateCalls } = makeMockDb();
     const getOpinion = vi.fn().mockResolvedValue(makeDetail());
     const cl = makeClMock({ getOpinion });
     const svc = new OpinionCacheService({ db, courtListener: cl });
@@ -228,10 +229,15 @@ describe("OpinionCacheService.getOrFetch", () => {
     await svc.getOrFetch(CL_ID);
 
     expect(getOpinion).toHaveBeenCalledTimes(1);
-    expect(insertCalls).toHaveLength(1);
-    const vals = insertCalls[0]!.values as Record<string, unknown>;
-    expect(vals.snippet).toBe("old-snippet");
-    expect(vals.fullText).toBe("full opinion body goes here");
+    // No INSERT — patch the existing row in place so search-derived court info
+    // (which the v4 opinion detail endpoint cannot supply) is preserved.
+    expect(insertCalls).toHaveLength(0);
+    expect(updateCalls).toHaveLength(1);
+    const set = updateCalls[0]!.set as Record<string, unknown>;
+    expect(set.fullText).toBe("full opinion body goes here");
+    // snippet/jurisdiction/court are intentionally NOT in the UPDATE set.
+    expect(set.snippet).toBeUndefined();
+    expect(set.jurisdiction).toBeUndefined();
   });
 });
 

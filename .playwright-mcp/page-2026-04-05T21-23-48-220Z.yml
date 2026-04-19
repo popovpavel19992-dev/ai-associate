@@ -1,0 +1,200 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link [ref=e220] [cursor=pointer]:
+            - /url: /dashboard
+            - text: ClearTerms
+          - button [ref=e7]:
+            - img
+        - separator [ref=e8]
+        - navigation [ref=e9]:
+          - link [ref=e221] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e11]
+            - text: Dashboard
+          - link [ref=e222] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e17]
+            - text: Contracts
+          - link [ref=e223] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e22]
+            - text: Drafts
+          - link [ref=e224] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e25]
+            - text: Quick Analysis
+          - link [ref=e225] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e28]
+            - text: Cases
+          - link [ref=e226] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e32]
+            - text: Calendar
+          - link [ref=e227] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e35]
+            - text: Templates
+          - link [ref=e228] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e39]
+            - text: Settings
+        - separator [ref=e42]
+        - button [ref=e229] [cursor=pointer]:
+          - img [ref=e230]
+    - main [ref=e45]:
+      - generic [ref=e66]:
+        - generic [ref=e231]:
+          - generic [ref=e232]:
+            - button [ref=e233]:
+              - img
+            - button [ref=e234]: Today
+            - button [ref=e235]:
+              - img
+            - generic [ref=e236]: April 2026
+          - generic [ref=e237]:
+            - generic [ref=e238]:
+              - button [ref=e239]: Month
+              - button [ref=e240]: Week
+              - button [ref=e241]: Agenda
+            - button [ref=e242]:
+              - img
+              - text: Add Event
+        - table [ref=e243]:
+          - row [ref=e244]:
+            - columnheader [ref=e245]: Mon
+            - columnheader [ref=e246]: Tue
+            - columnheader [ref=e247]: Wed
+            - columnheader [ref=e248]: Thu
+            - columnheader [ref=e249]: Fri
+            - columnheader [ref=e250]: Sat
+            - columnheader [ref=e251]: Sun
+          - rowgroup [ref=e95]:
+            - row [ref=e252]:
+              - generic [ref=e105]:
+                - cell [ref=e253]:
+                  - button [ref=e254] [cursor=pointer]: "30"
+                - cell [ref=e255]:
+                  - button [ref=e256] [cursor=pointer]: "31"
+                - cell [ref=e257]:
+                  - button [ref=e258] [cursor=pointer]: "01"
+                - cell [ref=e259]:
+                  - button [ref=e260] [cursor=pointer]: "02"
+                - cell [ref=e261]:
+                  - button [ref=e262] [cursor=pointer]: "03"
+                - cell [ref=e263]:
+                  - button [ref=e264] [cursor=pointer]: "04"
+                - cell [ref=e265]:
+                  - button [ref=e266] [cursor=pointer]: "05"
+          - rowgroup [ref=e120]:
+            - row [ref=e267]:
+              - generic [ref=e130]:
+                - cell [ref=e268]:
+                  - button [ref=e269] [cursor=pointer]: "06"
+                - cell [ref=e270]:
+                  - button [ref=e271] [cursor=pointer]: "07"
+                - cell [ref=e272]:
+                  - button [ref=e273] [cursor=pointer]: "08"
+                - cell [ref=e274]:
+                  - button [ref=e275] [cursor=pointer]: "09"
+                - cell [ref=e276]:
+                  - button [ref=e277] [cursor=pointer]: "10"
+                - cell [ref=e278]:
+                  - button [ref=e279] [cursor=pointer]: "11"
+                - cell [ref=e280]:
+                  - button [ref=e281] [cursor=pointer]: "12"
+          - rowgroup [ref=e145]:
+            - row [ref=e282]:
+              - generic [ref=e155]:
+                - cell [ref=e283]:
+                  - button [ref=e284] [cursor=pointer]: "13"
+                - cell [ref=e285]:
+                  - button [ref=e286] [cursor=pointer]: "14"
+                - cell [ref=e287]:
+                  - button [ref=e288] [cursor=pointer]: "15"
+                - cell [ref=e289]:
+                  - button [ref=e290] [cursor=pointer]: "16"
+                - cell [ref=e291]:
+                  - button [ref=e292] [cursor=pointer]: "17"
+                - cell [ref=e293]:
+                  - button [ref=e294] [cursor=pointer]: "18"
+                - cell [ref=e295]:
+                  - button [ref=e296] [cursor=pointer]: "19"
+          - rowgroup [ref=e170]:
+            - row [ref=e297]:
+              - generic [ref=e180]:
+                - cell [ref=e298]:
+                  - button [ref=e299] [cursor=pointer]: "20"
+                - cell [ref=e300]:
+                  - button [ref=e301] [cursor=pointer]: "21"
+                - cell [ref=e302]:
+                  - button [ref=e303] [cursor=pointer]: "22"
+                - cell [ref=e304]:
+                  - button [ref=e305] [cursor=pointer]: "23"
+                - cell [ref=e306]:
+                  - button [ref=e307] [cursor=pointer]: "24"
+                - cell [ref=e308]:
+                  - button [ref=e309] [cursor=pointer]: "25"
+                - cell [ref=e310]:
+                  - button [ref=e311] [cursor=pointer]: "26"
+          - rowgroup [ref=e195]:
+            - row [ref=e312]:
+              - generic [ref=e205]:
+                - cell [ref=e313]:
+                  - button [ref=e314] [cursor=pointer]: "27"
+                - cell [ref=e315]:
+                  - button [ref=e316] [cursor=pointer]: "28"
+                - cell [ref=e317]:
+                  - button [ref=e318] [cursor=pointer]: "29"
+                - cell [ref=e319]:
+                  - button [ref=e320] [cursor=pointer]: "30"
+                - cell [ref=e321]:
+                  - button [ref=e322] [cursor=pointer]: "01"
+                - cell [ref=e323]:
+                  - button [ref=e324] [cursor=pointer]: "02"
+                - cell [ref=e325]:
+                  - button [ref=e326] [cursor=pointer]: "03"
+  - button "Open Next.js Dev Tools" [ref=e54] [cursor=pointer]:
+    - img [ref=e55]
+  - alert [ref=e58]
+  - dialog "New event" [ref=e330]:
+    - heading "New event" [level=2] [ref=e332]
+    - generic [ref=e333]:
+      - generic [ref=e334]:
+        - generic [ref=e335]: Case
+        - combobox "Case" [active] [ref=e336]:
+          - option "Select a case…" [selected]
+          - option "UAT Calendar Case"
+      - generic [ref=e337]:
+        - generic [ref=e338]: Title
+        - textbox "Title" [ref=e339]
+      - generic [ref=e340]:
+        - generic [ref=e341]: Kind
+        - combobox "Kind" [ref=e342]:
+          - option "Court Date"
+          - option "Filing Deadline"
+          - option "Meeting" [selected]
+          - option "Reminder"
+          - option "Other"
+      - generic [ref=e343]:
+        - generic [ref=e344]:
+          - generic [ref=e345]: Starts
+          - textbox "Starts" [ref=e346]
+        - generic [ref=e347]:
+          - generic [ref=e348]: Ends (optional)
+          - textbox "Ends (optional)" [ref=e349]
+      - generic [ref=e350]:
+        - generic [ref=e351]: Location (optional)
+        - textbox "Location (optional)" [ref=e352]
+      - generic [ref=e353]:
+        - generic [ref=e354]: Description (optional)
+        - textbox "Description (optional)" [ref=e355]
+      - generic [ref=e356]:
+        - button "Cancel" [ref=e357]
+        - button "Create" [ref=e358]
+    - button "Close" [ref=e359]:
+      - img
+      - generic [ref=e360]: Close

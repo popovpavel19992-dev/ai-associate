@@ -1,0 +1,108 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "ClearTerms" [ref=e6] [cursor=pointer]:
+            - /url: /dashboard
+          - button [ref=e8]:
+            - img
+        - separator [ref=e9]
+        - navigation [ref=e10]:
+          - link "Dashboard" [ref=e11] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e12]
+            - text: Dashboard
+          - link "Contracts" [ref=e17] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e18]
+            - text: Contracts
+          - link "Drafts" [ref=e22] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e23]
+            - text: Drafts
+          - link "Quick Analysis" [ref=e25] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e26]
+            - text: Quick Analysis
+          - link "Cases" [ref=e28] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e29]
+            - text: Cases
+          - link "Clients" [ref=e32] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e33]
+            - text: Clients
+          - link "Calendar" [ref=e38] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e39]
+            - text: Calendar
+          - link "Templates" [ref=e41] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e42]
+            - text: Templates
+          - link "Settings" [ref=e45] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e46]
+            - text: Settings
+          - link "Team" [ref=e84] [cursor=pointer]:
+            - /url: /settings/team
+            - img [ref=e85]
+            - text: Team
+          - link "Invoices" [ref=e49] [cursor=pointer]:
+            - /url: /invoices
+            - img [ref=e50]
+            - text: Invoices
+        - separator [ref=e53]
+        - button "Open user menu" [ref=e91] [cursor=pointer]:
+          - img "'s logo" [ref=e94]
+    - main [ref=e56]:
+      - generic [ref=e170]:
+        - generic [ref=e171]:
+          - generic [ref=e172]:
+            - generic [ref=e173]:
+              - heading "INV-0002" [level=1] [ref=e174]
+              - generic [ref=e175]: Sent
+            - link "Acme Corporation" [ref=e176] [cursor=pointer]:
+              - /url: /clients/7f2daf74-e485-4875-874a-54af227cedf5
+            - generic [ref=e177]:
+              - generic [ref=e178]: "Issued: Apr 13, 2026"
+              - generic [ref=e179]: "Due: May 13, 2026"
+          - generic [ref=e180]:
+            - button "Mark Paid" [ref=e211]:
+              - img
+              - text: Mark Paid
+            - button "Void" [ref=e212]:
+              - img
+              - text: Void
+            - button "PDF" [ref=e213]:
+              - img
+              - text: PDF
+        - generic [ref=e185]:
+          - paragraph [ref=e187]: Acme Corp v. Beta LLC — Contract Dispute
+          - table [ref=e188]:
+            - rowgroup [ref=e189]:
+              - row "Description Qty Rate Amount" [ref=e190]:
+                - columnheader "Description" [ref=e191]
+                - columnheader "Qty" [ref=e192]
+                - columnheader "Rate" [ref=e193]
+                - columnheader "Amount" [ref=e194]
+            - rowgroup [ref=e195]:
+              - row "Timer 1 on Acme case 0.02 hr $300.00 $5.00" [ref=e196]:
+                - cell "Timer 1 on Acme case" [ref=e197]
+                - cell "0.02 hr" [ref=e198]
+                - cell "$300.00" [ref=e199]
+                - cell "$5.00" [ref=e200]
+        - generic [ref=e201]:
+          - generic [ref=e202]:
+            - generic [ref=e203]: Subtotal
+            - generic [ref=e204]: $5.00
+          - generic [ref=e205]:
+            - generic [ref=e206]: Tax
+            - generic [ref=e207]: $0.00
+          - generic [ref=e208]:
+            - generic [ref=e209]: Total
+            - generic [ref=e210]: $5.00
+  - button "Open Next.js Dev Tools" [ref=e79] [cursor=pointer]:
+    - img [ref=e80]
+  - alert [ref=e83]

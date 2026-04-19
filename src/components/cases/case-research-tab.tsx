@@ -5,6 +5,7 @@ import { Loader2, Plus } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Separator } from "@/components/ui/separator";
+import { MemoListCard } from "@/components/research/memo-list-card";
 
 interface CaseResearchTabProps {
   caseId: string;
@@ -29,6 +30,7 @@ export function CaseResearchTab({ caseId }: CaseResearchTabProps) {
     trpc.research.sessions.list.useQuery({ caseId });
   const { data: bookmarks = [], isLoading: bookmarksLoading } =
     trpc.research.bookmarks.list.useQuery({ caseId });
+  const memosForCase = trpc.research.memo.list.useQuery({ caseId }).data?.memos ?? [];
 
   return (
     <div className="space-y-8 px-4 py-4">
@@ -115,6 +117,24 @@ export function CaseResearchTab({ caseId }: CaseResearchTabProps) {
           </div>
         )}
       </section>
+
+      {memosForCase.length > 0 && (
+        <>
+          <Separator className="bg-zinc-800" />
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-zinc-100">
+              Memos ({memosForCase.length})
+            </h3>
+            <ul className="mt-2 grid gap-2">
+              {memosForCase.map((m) => (
+                <li key={m.id}>
+                  <MemoListCard memo={m} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        </>
+      )}
     </div>
   );
 }

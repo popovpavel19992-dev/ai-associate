@@ -1,0 +1,29 @@
+- generic [ref=e1]:
+  - generic [ref=e143]:
+    - generic [ref=e144]:
+      - generic [ref=e146]:
+        - heading "Verify your email" [level=1] [ref=e147]
+        - paragraph [ref=e148]: Enter the verification code sent to your email
+        - generic [ref=e149]:
+          - paragraph [ref=e150]: alex76vichkov@gmail.com
+          - button "Edit" [ref=e151] [cursor=pointer]:
+            - img [ref=e152]
+      - generic [ref=e154]:
+        - generic [ref=e155]:
+          - generic [ref=e157]:
+            - generic:
+              - group
+              - textbox "Enter verification code" [active] [ref=e158]
+          - button "Didn't receive a code? Resend (29)" [disabled]
+        - button "Continue" [ref=e161] [cursor=pointer]:
+          - generic [ref=e162]:
+            - text: Continue
+            - img [ref=e163]
+    - generic [ref=e167]:
+      - generic [ref=e169]:
+        - paragraph [ref=e170]: Secured by
+        - link "Clerk logo" [ref=e171] [cursor=pointer]:
+          - /url: https://go.clerk.com/components
+          - img [ref=e172]
+      - paragraph [ref=e177]: Development mode
+  - alert [ref=e4]: My account | AI project

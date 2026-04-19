@@ -8,6 +8,7 @@ import { pushSubscriptions } from "../../db/schema/push-subscriptions";
 import { users } from "../../db/schema/users";
 import { sendPushNotification } from "../../services/push";
 import {
+  sendEmail,
   sendCaseReadyEmail,
   sendDocumentFailedEmail,
   sendCreditsLowEmail,
@@ -144,6 +145,27 @@ async function dispatchEmail(
     case "calendar_sync_failed":
       await sendCalendarSyncFailedEmail(userEmail, (m?.providerName as string) ?? "");
       break;
+    case "research_memo_ready": {
+      const memoId = (m?.memoId as string) ?? "";
+      const title = (m?.title as string) ?? "";
+      await sendEmail({
+        to: userEmail,
+        subject: `Memo ready: ${title}`,
+        html: `<p>Your IRAC memo "${title}" is ready.</p><p><a href="/research/memos/${memoId}">Open memo</a></p>`,
+      });
+      break;
+    }
+    case "research_memo_failed": {
+      const memoId = (m?.memoId as string) ?? "";
+      const title = (m?.title as string) ?? "";
+      const errorMessage = (m?.errorMessage as string) ?? "Unknown error";
+      await sendEmail({
+        to: userEmail,
+        subject: `Memo generation failed: ${title}`,
+        html: `<p>We couldn't generate your IRAC memo "${title}". Credits have been refunded.</p><p>Reason: ${errorMessage.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p><p><a href="/research/memos/${memoId}">View details</a></p>`,
+      });
+      break;
+    }
     default:
       console.warn("[handle-notification] No email template for type:", type);
   }

@@ -1,0 +1,29 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - heading "Welcome to ClearTerms" [level=1] [ref=e5]
+      - paragraph [ref=e6]: Let's set up your profile to personalize your experience.
+    - generic [ref=e7]:
+      - paragraph [ref=e9]: Step 1 of 3
+      - generic [ref=e14]:
+        - heading "What are your practice areas?" [level=2] [ref=e15]
+        - paragraph [ref=e16]: Select all that apply. This helps us customize your analysis templates.
+        - generic [ref=e17]:
+          - button "Personal Injury" [ref=e18]
+          - button "Family Law" [ref=e19]
+          - button "Criminal Defense" [ref=e20]
+          - button "Traffic Defense" [ref=e21]
+          - button "Contract Disputes" [ref=e22]
+          - button "Employment Law" [ref=e23]
+          - button "Real Estate" [ref=e24]
+          - button "Immigration" [ref=e25]
+          - button "Bankruptcy" [ref=e26]
+          - button "Intellectual Property" [ref=e27]
+          - button "Corporate Law" [ref=e28]
+          - button "Other" [ref=e29]
+      - generic [ref=e30]:
+        - button "Back" [disabled]
+        - button "Continue" [disabled]
+  - button "Open Next.js Dev Tools" [ref=e36] [cursor=pointer]:
+    - img [ref=e37]
+  - alert [ref=e40]

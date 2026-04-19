@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import type { inferRouterOutputs } from "@trpc/server";
@@ -42,10 +43,14 @@ function countActiveFilters(f: ResearchFilters): number {
 }
 
 export default function ResearchPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [query, setQuery] = React.useState("");
   const [filters, setFilters] = React.useState<ResearchFilters>({});
   const [page, setPage] = React.useState(1);
-  const [sessionId, setSessionId] = React.useState<string | undefined>(undefined);
+  const [sessionId, setSessionId] = React.useState<string | undefined>(
+    searchParams?.get("session") ?? undefined,
+  );
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [response, setResponse] = React.useState<SearchResponse | null>(null);
   const [bookmarkedIds, setBookmarkedIds] = React.useState<Set<string>>(new Set());
@@ -59,6 +64,11 @@ export default function ResearchPage() {
     onSuccess: (result) => {
       setResponse(result);
       setSessionId(result.sessionId);
+      // Surface session id in the URL so the layout's right-rail can mount the
+      // broad-mode chat panel for it (and the user can deep-link / refresh).
+      if (result.sessionId && searchParams?.get("session") !== result.sessionId) {
+        router.replace(`/research?session=${result.sessionId}`, { scroll: false });
+      }
     },
     // TODO (Chunk 7): also wire quota detection in chat-panel.tsx. The hub
     // `research.search` procedure is not usage-guarded today, but we detect

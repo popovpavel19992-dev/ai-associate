@@ -1,0 +1,34 @@
+- generic [ref=e1]:
+  - generic [ref=e348]:
+    - generic [ref=e349]:
+      - generic [ref=e351]:
+        - heading "Setup your organization" [level=1] [ref=e352]
+        - paragraph [ref=e353]: Enter your organization details to continue
+      - generic [ref=e356]:
+        - generic [ref=e357]:
+          - paragraph [ref=e358]: Logo
+          - generic [ref=e360]:
+            - button "Upload organization logo" [ref=e361] [cursor=pointer]:
+              - img [ref=e362]
+            - generic [ref=e364]:
+              - button "Upload" [ref=e366] [cursor=pointer]
+              - paragraph [ref=e367]: Recommended size 1:1, up to 10MB.
+        - generic [ref=e370]:
+          - generic [ref=e372]: Name
+          - textbox "Name" [active] [ref=e373]:
+            - /placeholder: My Organization
+            - text: Pavel's Organization
+        - button "Continue" [ref=e376] [cursor=pointer]
+    - generic [ref=e377]:
+      - generic [ref=e378]:
+        - generic [ref=e379]: Signed in as popovpavel19992@gmail.com
+        - link "Sign out" [ref=e380] [cursor=pointer]:
+          - /url: https://infinite-bear-1.accounts.dev/sign-in/tasks/choose-organization
+      - generic [ref=e382]:
+        - generic [ref=e384]:
+          - paragraph [ref=e385]: Secured by
+          - link "Clerk logo" [ref=e386] [cursor=pointer]:
+            - /url: https://go.clerk.com/components
+            - img [ref=e387]
+        - paragraph [ref=e392]: Development mode
+  - alert [ref=e67]: My account | AI project

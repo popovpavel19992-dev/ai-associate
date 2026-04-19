@@ -32,6 +32,8 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   portal_document_uploaded: "Portal document uploaded",
   research_bookmark_added: "Research bookmark added",
   research_session_linked: "Research session linked",
+  research_memo_ready: "Memo ready",
+  research_memo_failed: "Memo generation failed",
 };
 
 const CHANNEL_LABELS: Record<NotificationChannel, string> = {

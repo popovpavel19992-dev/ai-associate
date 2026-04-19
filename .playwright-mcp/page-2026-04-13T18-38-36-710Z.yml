@@ -1,0 +1,101 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "ClearTerms" [ref=e6] [cursor=pointer]:
+            - /url: /dashboard
+          - button [ref=e7]:
+            - img
+        - separator [ref=e8]
+        - navigation [ref=e9]:
+          - link "Dashboard" [ref=e10] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e11]
+            - text: Dashboard
+          - link "Contracts" [ref=e16] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e17]
+            - text: Contracts
+          - link "Drafts" [ref=e21] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e22]
+            - text: Drafts
+          - link "Quick Analysis" [ref=e24] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e25]
+            - text: Quick Analysis
+          - link "Cases" [ref=e27] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e28]
+            - text: Cases
+          - link "Clients" [ref=e31] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e32]
+            - text: Clients
+          - link "Calendar" [ref=e37] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e38]
+            - text: Calendar
+          - link "Templates" [ref=e40] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e41]
+            - text: Templates
+          - link "Settings" [ref=e44] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e45]
+            - text: Settings
+        - separator [ref=e48]
+        - button "Open user menu" [ref=e88] [cursor=pointer]:
+          - img "'s logo" [ref=e91]
+    - main [ref=e51]:
+      - generic [ref=e152]:
+        - generic [ref=e153]:
+          - generic [ref=e154]:
+            - heading "Sergei Volkov" [level=1] [ref=e155]
+            - generic [ref=e156]:
+              - generic [ref=e157]:
+                - img [ref=e158]
+                - text: Individual
+              - generic [ref=e161]: Active
+          - button "Archive" [ref=e163]:
+            - img
+            - text: Archive
+        - generic [ref=e164]:
+          - generic [ref=e165]:
+            - generic [ref=e166]:
+              - generic [ref=e167]:
+                - heading "Info" [level=3] [ref=e168]
+                - button [ref=e169]:
+                  - img
+              - generic [ref=e170]:
+                - generic [ref=e171]:
+                  - generic [ref=e172]: First name
+                  - paragraph [ref=e173]: Sergei
+                - generic [ref=e174]:
+                  - generic [ref=e175]: Last name
+                  - paragraph [ref=e176]: Volkov
+            - generic [ref=e177]:
+              - generic [ref=e178]:
+                - heading "Address" [level=3] [ref=e179]
+                - button [ref=e180]:
+                  - img
+              - paragraph [ref=e181]: US
+            - generic [ref=e182]:
+              - generic [ref=e183]:
+                - heading "Contacts" [level=3] [ref=e184]
+                - button "Add" [ref=e185]:
+                  - img
+                  - text: Add
+              - paragraph [ref=e186]: No contacts yet.
+          - complementary [ref=e187]:
+            - generic [ref=e188]:
+              - heading "Cases" [level=3] [ref=e189]
+              - paragraph [ref=e190]: No cases yet.
+            - generic [ref=e191]:
+              - generic [ref=e192]:
+                - heading "Notes" [level=3] [ref=e193]
+                - button [ref=e194]:
+                  - img
+              - paragraph [ref=e195]: —
+  - alert [ref=e86]

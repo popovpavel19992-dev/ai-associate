@@ -1,0 +1,235 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link [ref=e255] [cursor=pointer]:
+            - /url: /dashboard
+            - text: ClearTerms
+          - button [ref=e8]:
+            - img
+        - separator [ref=e9]
+        - navigation [ref=e10]:
+          - link [ref=e256] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e12]
+            - text: Dashboard
+          - link [ref=e257] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e18]
+            - text: Contracts
+          - link [ref=e258] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e23]
+            - text: Drafts
+          - link [ref=e259] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e26]
+            - text: Quick Analysis
+          - link [ref=e260] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e29]
+            - text: Cases
+          - link [ref=e261] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e33]
+            - text: Clients
+          - link [ref=e262] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e39]
+            - text: Calendar
+          - link [ref=e263] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e42]
+            - text: Templates
+          - link [ref=e264] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e46]
+            - text: Settings
+          - link [ref=e265] [cursor=pointer]:
+            - /url: /settings/team
+            - img [ref=e72]
+            - text: Team
+          - link [ref=e266] [cursor=pointer]:
+            - /url: /invoices
+            - img [ref=e50]
+            - text: Invoices
+        - separator [ref=e53]
+        - button [ref=e267] [cursor=pointer]:
+          - img [ref=e268]
+    - main [ref=e56]:
+      - generic [ref=e58]:
+        - generic [ref=e83]:
+          - generic [ref=e84]:
+            - generic [ref=e85]: Intake
+            - generic [ref=e87]: →
+          - generic [ref=e88]:
+            - generic [ref=e89]: Research
+            - generic [ref=e90]: →
+          - generic [ref=e91]:
+            - generic [ref=e92]: Active Work
+            - generic [ref=e93]: →
+          - generic [ref=e94]:
+            - generic [ref=e95]: Resolution
+            - generic [ref=e96]: →
+          - generic [ref=e98]: Closed
+        - generic [ref=e99]:
+          - generic [ref=e100]:
+            - button [ref=e269]: Overview
+            - button [ref=e270]: Tasks
+            - button [ref=e271]: Calendar
+            - button [ref=e272]: Time
+            - button [ref=e273]: Report
+            - button [ref=e274]: Timeline
+            - button [ref=e275]: Contracts
+          - button [ref=e276]:
+            - text: Change Stage
+            - img
+        - generic [ref=e111]:
+          - generic [ref=e171]:
+            - generic [ref=e172]:
+              - generic [ref=e173]:
+                - paragraph [ref=e174]: Total Hours
+                - paragraph [ref=e175]: 1.52 hr
+              - generic [ref=e176]:
+                - paragraph [ref=e177]: Billable Amount
+                - paragraph [ref=e178]: $0.00
+              - generic [ref=e179]:
+                - paragraph [ref=e180]: Expenses
+                - paragraph [ref=e181]: $150.00
+              - generic [ref=e182]:
+                - paragraph [ref=e183]: Uninvoiced
+                - paragraph [ref=e184]: $150.00
+                - paragraph [ref=e185]: Billable + expenses
+            - generic [ref=e186]:
+              - button [ref=e277]:
+                - img
+                - text: Start Timer
+              - button [ref=e278]:
+                - img
+                - text: Add Entry
+              - button [ref=e279]:
+                - img
+                - text: Set Rates
+            - table [ref=e191]:
+              - rowgroup [ref=e192]:
+                - row [ref=e280]:
+                  - columnheader [ref=e281]: Date
+                  - columnheader [ref=e282]: Activity
+                  - columnheader [ref=e283]: Description
+                  - columnheader [ref=e284]: Duration
+                  - columnheader [ref=e285]: Rate
+                  - columnheader [ref=e286]: Amount
+                  - columnheader [ref=e287]: Actions
+              - rowgroup [ref=e201]:
+                - row [ref=e288]:
+                  - cell [ref=e289]: Apr 13, 2026
+                  - cell [ref=e290]:
+                    - generic [ref=e205]: Research
+                  - cell [ref=e291]:
+                    - generic [ref=e207]: Legal research for case strategy
+                  - cell [ref=e292]: 1.50 hr
+                  - cell [ref=e293]: $0.00/hr
+                  - cell [ref=e294]: $0.00
+                  - cell [ref=e295]:
+                    - generic [ref=e212]:
+                      - img [ref=e213]
+                      - text: Invoiced
+                - row [ref=e296]:
+                  - cell [ref=e297]: Apr 13, 2026
+                  - cell [ref=e298]:
+                    - generic [ref=e219]: Other
+                  - cell [ref=e299]:
+                    - generic [ref=e221]: UAT test timer entry
+                  - cell [ref=e300]: 0.02 hr
+                  - cell [ref=e301]: $0.00/hr
+                  - cell [ref=e302]: $0.00
+                  - cell [ref=e303]:
+                    - generic [ref=e226]:
+                      - img [ref=e227]
+                      - text: Invoiced
+            - separator [ref=e230]
+            - generic [ref=e231]:
+              - heading [level=3] [ref=e304]: Expenses
+              - button [ref=e305]:
+                - img
+                - text: Add Expense
+            - table [ref=e235]:
+              - rowgroup [ref=e236]:
+                - row [ref=e306]:
+                  - columnheader [ref=e307]: Date
+                  - columnheader [ref=e308]: Category
+                  - columnheader [ref=e309]: Description
+                  - columnheader [ref=e310]: Amount
+                  - columnheader [ref=e311]: Actions
+              - rowgroup [ref=e243]:
+                - row [ref=e312]:
+                  - cell [ref=e313]: Apr 13, 2026
+                  - cell [ref=e314]:
+                    - generic [ref=e247]: Filing Fee
+                  - cell [ref=e315]:
+                    - generic [ref=e249]: Court filing fee
+                  - cell [ref=e316]: $150.00
+                  - cell [ref=e251]:
+                    - generic [ref=e252]:
+                      - button [ref=e253]:
+                        - img
+                      - button [ref=e254]:
+                        - img
+          - generic [ref=e148]:
+            - generic [ref=e149]:
+              - heading [level=3] [ref=e317]: Client
+              - link [ref=e318] [cursor=pointer]:
+                - /url: /clients/7f2daf74-e485-4875-874a-54af227cedf5
+                - text: Acme Corporation
+              - generic [ref=e152]:
+                - img [ref=e153]
+                - text: Organization
+            - generic [ref=e157]:
+              - generic [ref=e158]:
+                - heading [level=3] [ref=e319]: Case Team
+                - button [ref=e160]:
+                  - img
+              - generic [ref=e163]:
+                - generic [ref=e164]:
+                  - generic [ref=e165]: AV
+                  - generic [ref=e166]:
+                    - generic [ref=e167]: Alex Vichkov
+                    - generic [ref=e168]: Lead
+                - button [ref=e169]:
+                  - img
+  - button "Open Next.js Dev Tools" [ref=e66] [cursor=pointer]:
+    - img [ref=e67]
+  - alert [ref=e70]
+  - dialog "Add Time Entry" [ref=e323]:
+    - heading "Add Time Entry" [level=2] [ref=e325]
+    - generic [ref=e326]:
+      - generic [ref=e327]:
+        - generic [ref=e328]: Date
+        - textbox "Date" [active] [ref=e329]: 2026-04-14
+      - generic [ref=e330]:
+        - generic [ref=e331]: Activity Type
+        - combobox [ref=e332]:
+          - generic [ref=e333]: other
+          - img: ▼
+        - textbox [ref=e334]: other
+      - generic [ref=e335]:
+        - generic [ref=e336]: Description
+        - textbox "Description" [ref=e337]:
+          - /placeholder: What did you work on?
+      - generic [ref=e338]:
+        - generic [ref=e339]: Duration
+        - generic [ref=e340]:
+          - spinbutton [ref=e341]: "0"
+          - generic [ref=e342]: hr
+          - spinbutton [ref=e343]: "30"
+          - generic [ref=e344]: min
+      - generic [ref=e345]:
+        - checkbox "Billable" [checked] [ref=e346]
+        - generic [ref=e347] [cursor=pointer]: Billable
+      - generic [ref=e348]:
+        - button "Cancel" [ref=e349]
+        - button "Add Entry" [ref=e350]
+    - button "Close" [ref=e351]:
+      - img
+      - generic [ref=e352]: Close

@@ -1,0 +1,32 @@
+- generic [ref=e1]:
+  - generic [ref=e308]:
+    - generic [ref=e309]:
+      - generic [ref=e311]:
+        - heading "Check your email" [level=1] [ref=e312]
+        - paragraph [ref=e313]: to continue to AI project
+        - generic [ref=e314]:
+          - paragraph [ref=e315]: popovpavel19992@gmail.com
+          - button "Edit" [ref=e316] [cursor=pointer]:
+            - img [ref=e317]
+      - generic [ref=e319]:
+        - generic [ref=e320]:
+          - generic [ref=e322]:
+            - generic:
+              - group
+              - textbox "Enter verification code" [active] [ref=e323]
+          - button "Didn't receive a code? Resend (23)" [disabled]
+        - generic [ref=e325]:
+          - button "Continue" [ref=e326] [cursor=pointer]:
+            - generic [ref=e327]:
+              - text: Continue
+              - img [ref=e328]
+          - link "Use another method" [ref=e331] [cursor=pointer]:
+            - /url: https://infinite-bear-1.accounts.dev/sign-in/factor-one
+    - generic [ref=e334]:
+      - generic [ref=e336]:
+        - paragraph [ref=e337]: Secured by
+        - link "Clerk logo" [ref=e338] [cursor=pointer]:
+          - /url: https://go.clerk.com/components
+          - img [ref=e339]
+      - paragraph [ref=e344]: Development mode
+  - alert [ref=e67]: My account | AI project

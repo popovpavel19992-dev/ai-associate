@@ -64,6 +64,24 @@ export class OpinionCacheService {
     };
     const now = new Date();
 
+    // When the row is already cached from a search hit (the common case in v4,
+    // where the opinion detail endpoint lacks court/jurisdiction/dateFiled),
+    // patch the dynamic fields in place. The court info from the search hit
+    // is authoritative — don't overwrite it with the empty values the detail
+    // endpoint returns. Only fall back to INSERT for genuinely new opinions.
+    if (existing) {
+      const [row] = await this.db
+        .update(cachedOpinions)
+        .set({
+          fullText: detail.fullText,
+          metadata: sql`${cachedOpinions.metadata} || ${JSON.stringify(metadataPatch)}::jsonb`,
+          lastAccessedAt: now,
+        })
+        .where(eq(cachedOpinions.id, existing.id))
+        .returning();
+      return row as CachedOpinion;
+    }
+
     const [row] = await this.db
       .insert(cachedOpinions)
       .values({
@@ -75,7 +93,7 @@ export class OpinionCacheService {
         decisionDate: detail.decisionDate,
         citationBluebook: detail.citationBluebook,
         fullText: detail.fullText,
-        snippet: existing?.snippet ?? "",
+        snippet: "",
         metadata: metadataPatch,
       })
       .onConflictDoUpdate({

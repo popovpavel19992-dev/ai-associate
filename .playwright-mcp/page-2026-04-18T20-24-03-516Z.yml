@@ -1,0 +1,395 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "ClearTerms" [ref=e6] [cursor=pointer]:
+            - /url: /dashboard
+          - button [ref=e8]:
+            - img
+        - separator [ref=e9]
+        - navigation [ref=e10]:
+          - link "Dashboard" [ref=e11] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e12]
+            - text: Dashboard
+          - link "Contracts" [ref=e17] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e18]
+            - text: Contracts
+          - link "Drafts" [ref=e22] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e23]
+            - text: Drafts
+          - link "Quick Analysis" [ref=e25] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e26]
+            - text: Quick Analysis
+          - link "Cases" [ref=e28] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e29]
+            - text: Cases
+          - link "Research" [ref=e32] [cursor=pointer]:
+            - /url: /research
+            - img [ref=e33]
+            - text: Research
+          - link "Clients" [ref=e36] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e37]
+            - text: Clients
+          - link "Calendar" [ref=e42] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e43]
+            - text: Calendar
+          - link "Notifications" [ref=e45] [cursor=pointer]:
+            - /url: /notifications
+            - img [ref=e46]
+            - text: Notifications
+          - link "Templates" [ref=e49] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e50]
+            - text: Templates
+          - link "Settings" [ref=e53] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e54]
+            - text: Settings
+          - link "Team" [ref=e113] [cursor=pointer]:
+            - /url: /settings/team
+            - img [ref=e114]
+            - text: Team
+          - link "Invoices" [ref=e57] [cursor=pointer]:
+            - /url: /invoices
+            - img [ref=e58]
+            - text: Invoices
+        - separator [ref=e61]
+        - button "Open user menu" [ref=e120] [cursor=pointer]:
+          - img "'s logo" [ref=e123]
+    - main [ref=e64]:
+      - generic [ref=e65]:
+        - complementary [ref=e66]:
+          - complementary [ref=e67]:
+            - heading "My Research" [level=2] [ref=e68]
+            - link "New research" [ref=e69] [cursor=pointer]:
+              - /url: /research
+              - img
+              - text: New research
+            - separator [ref=e70]
+            - paragraph [ref=e125]: No research sessions yet. Start a new search above.
+        - generic [ref=e74]:
+          - generic [ref=e75]:
+            - generic [ref=e76]:
+              - heading "Legal Research" [level=1] [ref=e77]
+              - paragraph [ref=e78]: Search U.S. federal and state case law, then ask AI for grounded analysis.
+            - generic [ref=e126]:
+              - progressbar [ref=e127]: x
+              - generic [ref=e129]:
+                - generic [ref=e130]: 0 / 50
+                - text: Q&A used this month
+          - generic [ref=e80]: ClearTerms Research provides case-law analysis, not legal advice.
+          - generic [ref=e81]:
+            - search [ref=e82]:
+              - generic [ref=e83]:
+                - img
+                - searchbox "Search case law" [ref=e84]: arbitration clause unconscionability
+              - button "Search" [ref=e131]:
+                - generic [ref=e132]: Search
+            - button "Filters" [ref=e85]:
+              - img
+              - text: Filters
+          - generic [ref=e133]:
+            - generic [ref=e134]:
+              - paragraph [ref=e135]: Showing 1–20 of 5758
+              - button "Ask AI about results" [ref=e136]:
+                - img
+                - text: Ask AI about results
+            - list [ref=e137]:
+              - listitem [ref=e138]:
+                - link "Grimm v. Professional Dental Alliance, L.L.C. Add bookmark ohioctapp 2024 2024 Ohio 637" [ref=e139] [cursor=pointer]:
+                  - /url: /research/opinions/b3a45c2e-68c9-4704-ba30-a650556868a3
+                  - generic [ref=e140]:
+                    - heading "Grimm v. Professional Dental Alliance, L.L.C." [level=3] [ref=e141]
+                    - button "Add bookmark" [ref=e142]:
+                      - img [ref=e143]
+                  - generic [ref=e145]:
+                    - generic [ref=e146]: ohioctapp
+                    - generic [ref=e147]: ·
+                    - generic [ref=e148]: "2024"
+                  - paragraph [ref=e149]: 2024 Ohio 637
+                  - paragraph
+              - listitem [ref=e150]:
+                - link "Mascher v. Basement Care, Inc. Add bookmark ohioctapp 2020 2020 Ohio 3582" [ref=e151] [cursor=pointer]:
+                  - /url: /research/opinions/c3d5ea4a-fe9c-4752-b879-dfd27c90755a
+                  - generic [ref=e152]:
+                    - heading "Mascher v. Basement Care, Inc." [level=3] [ref=e153]
+                    - button "Add bookmark" [ref=e154]:
+                      - img [ref=e155]
+                  - generic [ref=e157]:
+                    - generic [ref=e158]: ohioctapp
+                    - generic [ref=e159]: ·
+                    - generic [ref=e160]: "2020"
+                  - paragraph [ref=e161]: 2020 Ohio 3582
+                  - paragraph
+              - listitem [ref=e162]:
+                - link "Hurley v. Betfair Interactive Add bookmark ohioctapp 2024 2024 Ohio 5488" [ref=e163] [cursor=pointer]:
+                  - /url: /research/opinions/79455648-3b0f-4708-90a6-4ce6e2082a1c
+                  - generic [ref=e164]:
+                    - heading "Hurley v. Betfair Interactive" [level=3] [ref=e165]
+                    - button "Add bookmark" [ref=e166]:
+                      - img [ref=e167]
+                  - generic [ref=e169]:
+                    - generic [ref=e170]: ohioctapp
+                    - generic [ref=e171]: ·
+                    - generic [ref=e172]: "2024"
+                  - paragraph [ref=e173]: 2024 Ohio 5488
+                  - paragraph
+              - listitem [ref=e174]:
+                - link "Cook v. Richard T. Kiko Agency, Inc. Add bookmark ohioctapp 2023 209 N.E.3d 148" [ref=e175] [cursor=pointer]:
+                  - /url: /research/opinions/a6554805-d519-4cb7-885e-91bdd4a2aa41
+                  - generic [ref=e176]:
+                    - heading "Cook v. Richard T. Kiko Agency, Inc." [level=3] [ref=e177]
+                    - button "Add bookmark" [ref=e178]:
+                      - img [ref=e179]
+                  - generic [ref=e181]:
+                    - generic [ref=e182]: ohioctapp
+                    - generic [ref=e183]: ·
+                    - generic [ref=e184]: "2023"
+                  - paragraph [ref=e185]: 209 N.E.3d 148
+                  - paragraph
+              - listitem [ref=e186]:
+                - link "Zubek v. Dearborn Add bookmark ohioctapp 2019 2019 Ohio 3765" [ref=e187] [cursor=pointer]:
+                  - /url: /research/opinions/25ec4383-3181-4868-bae9-d4b6dbcf8fff
+                  - generic [ref=e188]:
+                    - heading "Zubek v. Dearborn" [level=3] [ref=e189]
+                    - button "Add bookmark" [ref=e190]:
+                      - img [ref=e191]
+                  - generic [ref=e193]:
+                    - generic [ref=e194]: ohioctapp
+                    - generic [ref=e195]: ·
+                    - generic [ref=e196]: "2019"
+                  - paragraph [ref=e197]: 2019 Ohio 3765
+                  - paragraph
+              - listitem [ref=e198]:
+                - link "Klonowski v. Merrill Lynch Add bookmark ohioctapp 2020 2020 Ohio 4567" [ref=e199] [cursor=pointer]:
+                  - /url: /research/opinions/20cc6b08-d30d-4e4b-aad9-6c00adc5a1d5
+                  - generic [ref=e200]:
+                    - heading "Klonowski v. Merrill Lynch" [level=3] [ref=e201]
+                    - button "Add bookmark" [ref=e202]:
+                      - img [ref=e203]
+                  - generic [ref=e205]:
+                    - generic [ref=e206]: ohioctapp
+                    - generic [ref=e207]: ·
+                    - generic [ref=e208]: "2020"
+                  - paragraph [ref=e209]: 2020 Ohio 4567
+                  - paragraph
+              - listitem [ref=e210]:
+                - link "Dozier v. Credit Acceptance Corp. Add bookmark ohioctapp 2019 2019 Ohio 4354" [ref=e211] [cursor=pointer]:
+                  - /url: /research/opinions/64ddc113-7f04-483b-a84e-b73e3494de53
+                  - generic [ref=e212]:
+                    - heading "Dozier v. Credit Acceptance Corp." [level=3] [ref=e213]
+                    - button "Add bookmark" [ref=e214]:
+                      - img [ref=e215]
+                  - generic [ref=e217]:
+                    - generic [ref=e218]: ohioctapp
+                    - generic [ref=e219]: ·
+                    - generic [ref=e220]: "2019"
+                  - paragraph [ref=e221]: 2019 Ohio 4354
+                  - paragraph
+              - listitem [ref=e222]:
+                - link "Verandah Properties, Inc. v. Ullman Oil Co., Inc. Add bookmark ohioctapp 2020 2020 Ohio 1559" [ref=e223] [cursor=pointer]:
+                  - /url: /research/opinions/a5b026ee-fd08-47d4-8eb3-ce8f9cad07e4
+                  - generic [ref=e224]:
+                    - heading "Verandah Properties, Inc. v. Ullman Oil Co., Inc." [level=3] [ref=e225]
+                    - button "Add bookmark" [ref=e226]:
+                      - img [ref=e227]
+                  - generic [ref=e229]:
+                    - generic [ref=e230]: ohioctapp
+                    - generic [ref=e231]: ·
+                    - generic [ref=e232]: "2020"
+                  - paragraph [ref=e233]: 2020 Ohio 1559
+                  - paragraph
+              - listitem [ref=e234]:
+                - link "Sebold v. Latina Design Build Group, L.L.C. Add bookmark ohioctapp 2021 166 N.E.3d 688" [ref=e235] [cursor=pointer]:
+                  - /url: /research/opinions/4d9ebefe-4952-486d-9ed4-2b767bd05868
+                  - generic [ref=e236]:
+                    - heading "Sebold v. Latina Design Build Group, L.L.C." [level=3] [ref=e237]
+                    - button "Add bookmark" [ref=e238]:
+                      - img [ref=e239]
+                  - generic [ref=e241]:
+                    - generic [ref=e242]: ohioctapp
+                    - generic [ref=e243]: ·
+                    - generic [ref=e244]: "2021"
+                  - paragraph [ref=e245]: 166 N.E.3d 688
+                  - paragraph
+              - listitem [ref=e246]:
+                - link "Smith v. Nationwide Mut. Ins. Co. Add bookmark ohioctapp 2018 2018 Ohio 3758" [ref=e247] [cursor=pointer]:
+                  - /url: /research/opinions/7fa995ad-ff81-44f9-b717-08a10f2827d3
+                  - generic [ref=e248]:
+                    - heading "Smith v. Nationwide Mut. Ins. Co." [level=3] [ref=e249]
+                    - button "Add bookmark" [ref=e250]:
+                      - img [ref=e251]
+                  - generic [ref=e253]:
+                    - generic [ref=e254]: ohioctapp
+                    - generic [ref=e255]: ·
+                    - generic [ref=e256]: "2018"
+                  - paragraph [ref=e257]: 2018 Ohio 3758
+                  - paragraph
+              - listitem [ref=e258]:
+                - link "Neel v. A. Perrino Constr., Inc. Add bookmark ohioctapp 2018 2018 Ohio 1826" [ref=e259] [cursor=pointer]:
+                  - /url: /research/opinions/26cb7f7b-e3b5-4377-b9d7-fea06cd0c93f
+                  - generic [ref=e260]:
+                    - heading "Neel v. A. Perrino Constr., Inc." [level=3] [ref=e261]
+                    - button "Add bookmark" [ref=e262]:
+                      - img [ref=e263]
+                  - generic [ref=e265]:
+                    - generic [ref=e266]: ohioctapp
+                    - generic [ref=e267]: ·
+                    - generic [ref=e268]: "2018"
+                  - paragraph [ref=e269]: 2018 Ohio 1826
+                  - paragraph
+              - listitem [ref=e270]:
+                - link "AJZ's Hauling, L.L.C. v. TruNorth Warranty Program of N. Am. Add bookmark ohioctapp 2021 2021 Ohio 1190" [ref=e271] [cursor=pointer]:
+                  - /url: /research/opinions/fb0d4429-5b66-4a65-8eee-18d5aee2f776
+                  - generic [ref=e272]:
+                    - heading "AJZ's Hauling, L.L.C. v. TruNorth Warranty Program of N. Am." [level=3] [ref=e273]
+                    - button "Add bookmark" [ref=e274]:
+                      - img [ref=e275]
+                  - generic [ref=e277]:
+                    - generic [ref=e278]: ohioctapp
+                    - generic [ref=e279]: ·
+                    - generic [ref=e280]: "2021"
+                  - paragraph [ref=e281]: 2021 Ohio 1190
+                  - paragraph
+              - listitem [ref=e282]:
+                - 'link "West Alabama Bank and Trust v. Perry County Board of Education (Appeal from Perry Circuit Court: CV-24-900004). Add bookmark alacivapp 2025" [ref=e283] [cursor=pointer]':
+                  - /url: /research/opinions/1062759e-cea4-47cf-beb2-f5a96e6cc280
+                  - generic [ref=e284]:
+                    - 'heading "West Alabama Bank and Trust v. Perry County Board of Education (Appeal from Perry Circuit Court: CV-24-900004)." [level=3] [ref=e285]'
+                    - button "Add bookmark" [ref=e286]:
+                      - img [ref=e287]
+                  - generic [ref=e289]:
+                    - generic [ref=e290]: alacivapp
+                    - generic [ref=e291]: ·
+                    - generic [ref=e292]: "2025"
+                  - paragraph
+                  - paragraph
+              - listitem [ref=e293]:
+                - link "Larobina v. Altice Media Solutions, LLC Add bookmark connappct 2024 229 Conn. App. 791" [ref=e294] [cursor=pointer]:
+                  - /url: /research/opinions/6c38c3e2-b9bc-47bf-9b56-0817f5ac4841
+                  - generic [ref=e295]:
+                    - heading "Larobina v. Altice Media Solutions, LLC" [level=3] [ref=e296]
+                    - button "Add bookmark" [ref=e297]:
+                      - img [ref=e298]
+                  - generic [ref=e300]:
+                    - generic [ref=e301]: connappct
+                    - generic [ref=e302]: ·
+                    - generic [ref=e303]: "2024"
+                  - paragraph [ref=e304]: 229 Conn. App. 791
+                  - paragraph
+              - listitem [ref=e305]:
+                - link "Martin v. ManorCare Health Servs., L.L.C. Add bookmark ohioctapp 2024 246 N.E.3d 598" [ref=e306] [cursor=pointer]:
+                  - /url: /research/opinions/300cbc71-53de-4dee-911b-ea68be2757ff
+                  - generic [ref=e307]:
+                    - heading "Martin v. ManorCare Health Servs., L.L.C." [level=3] [ref=e308]
+                    - button "Add bookmark" [ref=e309]:
+                      - img [ref=e310]
+                  - generic [ref=e312]:
+                    - generic [ref=e313]: ohioctapp
+                    - generic [ref=e314]: ·
+                    - generic [ref=e315]: "2024"
+                  - paragraph [ref=e316]: 246 N.E.3d 598
+                  - paragraph
+              - listitem [ref=e317]:
+                - link "In re the Arbitration between Conifer Realty LLC & Envirotech Services, Inc. Add bookmark nyappdiv 2013 106 A.D.3d 1251" [ref=e318] [cursor=pointer]:
+                  - /url: /research/opinions/a0fa299a-2846-4cc2-b263-01f4c5a97da5
+                  - generic [ref=e319]:
+                    - heading "In re the Arbitration between Conifer Realty LLC & Envirotech Services, Inc." [level=3] [ref=e320]
+                    - button "Add bookmark" [ref=e321]:
+                      - img [ref=e322]
+                  - generic [ref=e324]:
+                    - generic [ref=e325]: nyappdiv
+                    - generic [ref=e326]: ·
+                    - generic [ref=e327]: "2013"
+                  - paragraph [ref=e328]: 106 A.D.3d 1251
+                  - paragraph
+              - listitem [ref=e329]:
+                - link "In re the Arbitration between Conifer Realty LLC & Envirotech Services, Inc. Add bookmark nyappdiv 2013 106 A.D.3d 1251" [ref=e330] [cursor=pointer]:
+                  - /url: /research/opinions/eddcb2e0-3430-4908-8bc8-8369c5512d1c
+                  - generic [ref=e331]:
+                    - heading "In re the Arbitration between Conifer Realty LLC & Envirotech Services, Inc." [level=3] [ref=e332]
+                    - button "Add bookmark" [ref=e333]:
+                      - img [ref=e334]
+                  - generic [ref=e336]:
+                    - generic [ref=e337]: nyappdiv
+                    - generic [ref=e338]: ·
+                    - generic [ref=e339]: "2013"
+                  - paragraph [ref=e340]: 106 A.D.3d 1251
+                  - paragraph
+              - listitem [ref=e341]:
+                - link "LeafFilter N., L.L.C. v. Dunphy Add bookmark ohioctapp 2025 2025 Ohio 3260" [ref=e342] [cursor=pointer]:
+                  - /url: /research/opinions/08cfe39e-88de-468c-8d4b-903204cbcbaf
+                  - generic [ref=e343]:
+                    - heading "LeafFilter N., L.L.C. v. Dunphy" [level=3] [ref=e344]
+                    - button "Add bookmark" [ref=e345]:
+                      - img [ref=e346]
+                  - generic [ref=e348]:
+                    - generic [ref=e349]: ohioctapp
+                    - generic [ref=e350]: ·
+                    - generic [ref=e351]: "2025"
+                  - paragraph [ref=e352]: 2025 Ohio 3260
+                  - paragraph
+              - listitem [ref=e353]:
+                - link "Connie A. Nagrampa v. Mailcoups Inc. The American Arbitration Association Add bookmark ca9 2005 401 F.3d 1024" [ref=e354] [cursor=pointer]:
+                  - /url: /research/opinions/3707c7c1-0be0-47bf-ba11-3f8a82f920a8
+                  - generic [ref=e355]:
+                    - heading "Connie A. Nagrampa v. Mailcoups Inc. The American Arbitration Association" [level=3] [ref=e356]
+                    - button "Add bookmark" [ref=e357]:
+                      - img [ref=e358]
+                  - generic [ref=e360]:
+                    - generic [ref=e361]: ca9
+                    - generic [ref=e362]: ·
+                    - generic [ref=e363]: "2005"
+                  - paragraph [ref=e364]: 401 F.3d 1024
+                  - paragraph
+              - listitem [ref=e365]:
+                - link "Grimm v. Professional Dental Alliance, L.L.C. Add bookmark ohioctapp 2025 2025 Ohio 2185" [ref=e366] [cursor=pointer]:
+                  - /url: /research/opinions/ae2cf3c1-a709-4bea-987d-e13ae8b3d2d2
+                  - generic [ref=e367]:
+                    - heading "Grimm v. Professional Dental Alliance, L.L.C." [level=3] [ref=e368]
+                    - button "Add bookmark" [ref=e369]:
+                      - img [ref=e370]
+                  - generic [ref=e372]:
+                    - generic [ref=e373]: ohioctapp
+                    - generic [ref=e374]: ·
+                    - generic [ref=e375]: "2025"
+                  - paragraph [ref=e376]: 2025 Ohio 2185
+                  - paragraph
+            - generic [ref=e377]:
+              - button "Prev" [disabled]:
+                - img
+                - text: Prev
+              - generic [ref=e378]: Page 1 of 288
+              - button "Next" [ref=e379]:
+                - text: Next
+                - img
+        - complementary [ref=e89]:
+          - generic [ref=e90]:
+            - heading "AI Assistant" [level=2] [ref=e91]
+            - paragraph [ref=e380]: Ask questions about your search results.
+          - generic [ref=e381]:
+            - generic [ref=e383]: Ask a question about your search results.
+            - generic [ref=e385]:
+              - textbox "Ask about your search results..." [ref=e386]
+              - button "Send message" [disabled]:
+                - img
+  - generic [ref=e98] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e99]:
+      - img [ref=e100]
+    - generic [ref=e103]:
+      - button "Open issues overlay" [ref=e104]:
+        - generic [ref=e105]:
+          - generic [ref=e106]: "0"
+          - generic [ref=e107]: "1"
+        - generic [ref=e108]: Issue
+      - button "Collapse issues badge" [ref=e109]:
+        - img [ref=e110]
+  - alert [ref=e112]

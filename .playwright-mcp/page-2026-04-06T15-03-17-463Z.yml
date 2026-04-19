@@ -1,0 +1,32 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - progressbar [ref=e6]
+    - main [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e17]:
+          - img [ref=e19]
+          - generic [ref=e24]: Sign in with Google
+        - 'heading "Access blocked: Authorization Error" [level=1] [ref=e26]'
+      - generic [ref=e34]:
+        - generic [ref=e35]: The OAuth client was not found.
+        - generic [ref=e36]:
+          - text: If you are a developer of this app, see
+          - button "error details" [ref=e37] [cursor=pointer]
+          - text: .
+        - generic [ref=e38]: "Error 401: invalid_client"
+  - contentinfo [ref=e43]:
+    - combobox "Change language English (United States)" [ref=e47] [cursor=pointer]:
+      - generic:
+        - generic: English (United States)
+      - generic:
+        - img
+    - list [ref=e49]:
+      - listitem [ref=e50]:
+        - link "Help" [ref=e51] [cursor=pointer]:
+          - /url: https://support.google.com/accounts?hl=en-US&p=account_iph
+      - listitem [ref=e52]:
+        - link "Privacy" [ref=e53] [cursor=pointer]:
+          - /url: https://accounts.google.com/TOS?loc=US&hl=en-US&privacy=true
+      - listitem [ref=e54]:
+        - link "Terms" [ref=e55] [cursor=pointer]:
+          - /url: https://accounts.google.com/TOS?loc=US&hl=en-US

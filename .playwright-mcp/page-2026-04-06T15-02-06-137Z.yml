@@ -1,0 +1,51 @@
+- generic [ref=e1]:
+  - generic [active]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - navigation [ref=e7]:
+            - button "previous" [disabled] [ref=e8]:
+              - img "previous" [ref=e9]
+            - generic [ref=e11]:
+              - generic [ref=e12]: 1/
+              - text: "1"
+            - button "next" [disabled] [ref=e13]:
+              - img "next" [ref=e14]
+          - img
+        - generic [ref=e16]:
+          - generic [ref=e17]:
+            - img [ref=e18]
+            - generic "Latest available version is detected (16.2.2)." [ref=e20]: Next.js 16.2.2
+            - generic [ref=e21]: Turbopack
+          - img
+      - dialog "Runtime Error" [ref=e23]:
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e29]:
+              - generic [ref=e30]: Runtime Error
+              - generic [ref=e31]: Server
+            - generic [ref=e32]:
+              - button "Copy Error Info" [ref=e33] [cursor=pointer]:
+                - img [ref=e34]
+              - button "No related documentation found" [disabled] [ref=e36]:
+                - img [ref=e37]
+              - button "Attach Node.js inspector" [ref=e39] [cursor=pointer]:
+                - img [ref=e40]
+          - generic [ref=e49]: Attempted to call buttonVariants() from the server but buttonVariants is on the client. It's not possible to invoke a client function from the server, it can only be rendered as a Component or passed to props of a Client Component.
+        - generic [ref=e50]: "1"
+        - generic [ref=e51]: "2"
+    - generic [ref=e56] [cursor=pointer]:
+      - button "Open Next.js Dev Tools" [ref=e57]:
+        - img [ref=e58]
+      - generic [ref=e61]:
+        - button "Open issues overlay" [ref=e62]:
+          - generic [ref=e63]:
+            - generic [ref=e64]: "0"
+            - generic [ref=e65]: "1"
+          - generic [ref=e66]: Issue
+        - button "Collapse issues badge" [ref=e67]:
+          - img [ref=e68]
+  - generic [ref=e70]:
+    - heading "Something went wrong" [level=1] [ref=e71]
+    - paragraph [ref=e72]: An unexpected error occurred. Our team has been notified.
+    - button "Try Again" [ref=e73] [cursor=pointer]

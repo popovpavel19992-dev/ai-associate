@@ -1,0 +1,25 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - heading "Welcome to ClearTerms" [level=1] [ref=e5]
+      - paragraph [ref=e6]: Let's set up your profile to personalize your experience.
+    - generic [ref=e7]:
+      - paragraph [ref=e9]: Step 2 of 3
+      - generic [ref=e42]:
+        - heading "Where do you practice?" [level=2] [ref=e43]
+        - paragraph [ref=e44]: This helps us apply the right legal framework to your analyses.
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - generic [ref=e47]: State
+            - combobox "State" [ref=e48]:
+              - generic [ref=e49]: Select a state
+              - img: ▼
+            - textbox [ref=e50]
+          - generic [ref=e51]:
+            - generic [ref=e52]: Jurisdiction / Court
+            - textbox "Jurisdiction / Court" [ref=e53]:
+              - /placeholder: e.g., Southern District of New York
+      - generic [ref=e30]:
+        - button "Back" [ref=e54]
+        - button "Continue" [disabled]
+  - alert [ref=e40]

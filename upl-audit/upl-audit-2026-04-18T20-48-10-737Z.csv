@@ -1,0 +1,26 @@
+idx,query,mode,ok,error,response_chars,banned_word_hits,banned_word_count,upl_violations_from_filter,unverified_citations_count,unverified_citations_list,disclaimer_present,semantic_grade,response_excerpt
+1,What constitutes unconscionability in arbitration clauses?,broad,true,,0,,0,,0,,false,,hits=20 total=747 ny:2 other:14 federal:3 tx:1
+2,When is a non-compete clause enforceable in California?,broad,true,,0,,0,,0,,false,,hits=20 total=12050 other:15 ca:3 federal:2
+3,What are the elements of promissory estoppel?,broad,true,,0,,0,,0,,false,,hits=20 total=7120 ca:1 other:14 il:2 federal:1 ny:1 fl:1
+4,How do courts treat liquidated damages clauses?,broad,true,,0,,0,,0,,false,,hits=20 total=1100 other:15 federal:4 tx:1
+5,What makes a contract void for public policy?,broad,true,,0,,0,,0,,false,,hits=20 total=30648 other:18 ca:2
+6,What is the standard for negligent infliction of emotional distress?,broad,true,,0,,0,,0,,false,,hits=20 total=12953 other:16 federal:2 fl:1 ca:1
+7,When does a duty to rescue arise?,broad,true,,0,,0,,0,,false,,hits=20 total=1570 other:18 tx:1 ca:1
+8,What is the foreseeability test in proximate cause?,broad,true,,0,,0,,0,,false,,hits=20 total=8378 other:17 fl:3
+9,How is comparative fault calculated?,broad,true,,0,,0,,0,,false,,hits=20 total=1546 other:15 fl:5
+10,What constitutes intentional interference with contract?,broad,true,,0,,0,,0,,false,,hits=20 total=48103 other:15 federal:5
+11,What is the McDonnell Douglas burden-shifting framework?,broad,true,,0,,0,,0,,false,,hits=20 total=5565 other:10 federal:10
+12,When is at-will employment limited by public policy?,broad,true,,0,,0,,0,,false,,hits=20 total=77681 other:9 ca:5 il:2 ny:4
+13,What constitutes hostile work environment harassment?,broad,true,,0,,0,,0,,false,,hits=20 total=7413 other:20
+14,How are FMLA retaliation claims proved?,broad,true,,0,,0,,0,,false,,hits=20 total=33 other:13 federal:7
+15,What is the cat's paw theory of liability?,broad,true,,0,,0,,0,,false,,hits=20 total=392 other:9 ca:1 il:1 federal:7 ny:1 fl:1
+16,What is the Miranda custody test?,broad,true,,0,,0,,0,,false,,hits=20 total=10819 other:14 fl:1 federal:4 ny:1
+17,When does Brady require disclosure?,broad,true,,0,,0,,0,,false,,hits=20 total=4308 other:17 federal:3
+18,What is the standard for ineffective assistance of counsel under Strickland?,broad,true,,0,,0,,0,,false,,hits=20 total=25426 other:14 federal:6
+19,How is reasonable suspicion under Terry assessed?,broad,true,,0,,0,,0,,false,,hits=20 total=164 other:9 fl:1 federal:8 tx:1 ca:1
+20,What is the exclusionary rule's good-faith exception?,broad,true,,0,,0,,0,,false,,hits=20 total=3481 other:20
+21,What is the Twombly/Iqbal pleading standard?,broad,false,search failed: CourtListener 500,0,,0,,0,,false,,
+22,When is personal jurisdiction satisfied under Daimler?,broad,true,,0,,0,,0,,false,,hits=20 total=401 other:18 fl:1 federal:1
+23,What are the factors for Rule 23 class certification?,broad,true,,0,,0,,0,,false,,hits=20 total=11313 federal:5 other:13 il:1 ca:1
+24,When is summary judgment appropriate under Celotex?,broad,true,,0,,0,,0,,false,,hits=20 total=14899 other:20
+25,What is the standard for granting a preliminary injunction?,broad,true,,0,,0,,0,,false,,hits=20 total=32106 other:10 ca:5 federal:5
