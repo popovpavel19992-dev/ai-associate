@@ -166,6 +166,19 @@ async function dispatchEmail(
       });
       break;
     }
+    case "research_collection_shared": {
+      const collectionId = (m?.collectionId as string) ?? "";
+      const name = (m?.name as string) ?? "";
+      const sharerName = (m?.sharerName as string) ?? "";
+      const safeName = name.replace(/[<>&]/g, "");
+      const safeSharerName = sharerName.replace(/[<>&]/g, "");
+      await sendEmail({
+        to: userEmail,
+        subject: `${sharerName} shared a collection: ${name}`,
+        html: `<p>${safeSharerName} shared the collection "${safeName}" with you.</p><p><a href="/research/collections/${collectionId}">Open collection</a></p>`,
+      });
+      break;
+    }
     default:
       console.warn("[handle-notification] No email template for type:", type);
   }
