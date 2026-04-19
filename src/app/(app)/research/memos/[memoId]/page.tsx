@@ -86,6 +86,19 @@ export default function MemoEditorPage() {
         />
       </aside>
       <main className="flex-1 overflow-y-auto p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-lg font-semibold leading-tight">{memo.title}</h1>
+          <div className="flex items-center gap-2">
+            <a
+              className="inline-flex items-center rounded border px-2 py-1 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-900"
+              href={`/api/research/memos/${memo.id}/export?format=pdf`}
+            >Download PDF</a>
+            <a
+              className="inline-flex items-center rounded border px-2 py-1 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-900"
+              href={`/api/research/memos/${memo.id}/export?format=docx`}
+            >Download DOCX</a>
+          </div>
+        </div>
         {active ? (
           <MemoSectionEditor
             memoId={memo.id}
