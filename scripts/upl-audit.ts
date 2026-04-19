@@ -22,10 +22,17 @@ loadEnv({ path: ".env.local", override: true });
 
 import { db } from "@/server/db";
 import { users } from "@/server/db/schema/users";
+import { opinionBookmarks } from "@/server/db/schema/opinion-bookmarks";
+import { researchMemos } from "@/server/db/schema/research-memos";
 import { CourtListenerClient } from "@/server/services/courtlistener/client";
 import { OpinionCacheService } from "@/server/services/research/opinion-cache";
 import { LegalRagService, type StreamChunk } from "@/server/services/research/legal-rag";
 import { ResearchSessionService } from "@/server/services/research/session-service";
+import { StatuteCacheService } from "@/server/services/research/statute-cache";
+import { MemoGenerationService } from "@/server/services/research/memo-generation";
+import { GovInfoClient } from "@/server/services/govinfo/client";
+import { EcfrClient } from "@/server/services/ecfr/client";
+import { getEnv } from "@/lib/env";
 import { BANNED_WORDS } from "@/lib/constants";
 
 const QUERIES: readonly string[] = [
@@ -129,6 +136,7 @@ async function main() {
   const limit = limitArg ? Number(limitArg.split("=")[1]) : QUERIES.length;
   const modeArg = args.find((a) => a.startsWith("--mode="))?.split("=")[1] ?? "both";
   const searchOnly = modeArg === "search";
+  const memoMode = modeArg === "memo";
 
   // First user in dev DB owns the audit sessions. ResearchSessionService
   // requires a real userId because of the FK on research_sessions.user_id.
@@ -141,6 +149,8 @@ async function main() {
   const cache = new OpinionCacheService({ db, courtListener: cl });
   const sessions = new ResearchSessionService({ db });
   const rag = new LegalRagService({ db, opinionCache: cache });
+  const govinfo = new GovInfoClient({ apiKey: getEnv().GOVINFO_API_KEY });
+  const ecfr = new EcfrClient();
 
   const rows: AuditRow[] = [];
   const queriesToRun = QUERIES.slice(0, limit);
@@ -199,6 +209,60 @@ async function main() {
           Object.entries(searchStats.jurisdictions).map(([j, n]) => `${j}:${n}`).join(" ")
         }`,
       });
+      continue;
+    }
+
+    if (memoMode) {
+      // For each query: search → cache hits → create session → bookmark first hit → generate memo →
+      // run mechanical checks per section.
+      if (!firstOpinionInternalId) {
+        rows.push(emptyRow(idx, query, "broad", "no opinions to seed memo"));
+        continue;
+      }
+      // Bookmark the first opinion so the memo has session context.
+      await db.insert(opinionBookmarks).values({
+        userId,
+        opinionId: firstOpinionInternalId,
+        caseId: null,
+        notes: null,
+      }).onConflictDoNothing();
+      // Insert memo row directly (bypass tRPC/UsageGuard for the audit — mechanical checks only).
+      const [memo] = await db.insert(researchMemos).values({
+        userId,
+        sessionId: sessionId!,
+        title: query.slice(0, 200),
+        status: "generating",
+        memoQuestion: query,
+        contextOpinionIds: [firstOpinionInternalId],
+        contextStatuteIds: [],
+        creditsCharged: 0,
+      }).returning();
+      const statuteCache = new StatuteCacheService({ db, govinfo, ecfr });
+      const memoSvc = new MemoGenerationService({ db, opinionCache: cache, statuteCache });
+      try {
+        const result = await memoSvc.generateAll({ memoId: memo.id });
+        for (const s of result.sections) {
+          const banned = scanBannedWords(s.content);
+          rows.push({
+            idx,
+            query,
+            mode: ("memo:" + s.section_type) as unknown as "broad" | "deep",
+            ok: true,
+            error: "",
+            responseChars: s.content.length,
+            bannedWordHits: banned.hits.join("; "),
+            bannedWordCount: banned.total,
+            uplViolationsFromFilter: s.uplViolations.join("; "),
+            unverifiedCitationsCount: s.unverifiedCitations.length,
+            unverifiedCitationsList: s.unverifiedCitations.join("; "),
+            disclaimerPresent: false,
+            semanticGrade: "",
+            responseExcerpt: s.content.slice(0, 400).replace(/\s+/g, " "),
+          });
+        }
+      } catch (err) {
+        rows.push(emptyRow(idx, query, "broad", `memo gen failed: ${err instanceof Error ? err.message : err}`));
+      }
       continue;
     }
 
