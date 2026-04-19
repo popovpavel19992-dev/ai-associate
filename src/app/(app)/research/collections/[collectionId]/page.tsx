@@ -58,9 +58,7 @@ export default function CollectionDetailPage() {
 
   if (isLoading || !data) return <div className="p-6">Loading…</div>;
 
-  // viewerIsOwner is added in Task 12; for Task 11 commit we use a temporary true shortcut.
-  // Server enforces all mutations regardless. Task 12 replaces this with data.viewerIsOwner.
-  const isOwner = true;
+  const isOwner = data.viewerIsOwner ?? false;
 
   const visibleItems = data.items.filter((i: any) => {
     if (selectedTags.size === 0) return true;

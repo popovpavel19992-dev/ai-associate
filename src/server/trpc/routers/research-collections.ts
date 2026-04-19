@@ -121,7 +121,12 @@ export const researchCollectionsRouter = router({
         (tagsByItem[t.collectionItemId] ??= []).push(t.tag);
       }
       const itemsWithTags = items.map((i: any) => ({ ...i, tags: tagsByItem[i.id] ?? [] }));
-      return { collection, items: itemsWithTags, itemCount: items.length };
+      return {
+        collection,
+        items: itemsWithTags,
+        itemCount: items.length,
+        viewerIsOwner: collection.userId === ctx.user.id,
+      };
     }),
 
   create: protectedProcedure
