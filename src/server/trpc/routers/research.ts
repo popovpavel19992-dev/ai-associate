@@ -30,6 +30,7 @@ import { opinionBookmarks } from "@/server/db/schema/opinion-bookmarks";
 import { researchChatMessages } from "@/server/db/schema/research-chat-messages";
 import type { db as realDb } from "@/server/db";
 import { researchMemoRouter } from "./research-memo";
+import { researchCollectionsRouter } from "./research-collections";
 
 // ---------------------------------------------------------------------------
 // Shared schemas
@@ -634,4 +635,5 @@ export const researchRouter = router({
   bookmarks: bookmarksRouter,
   statutes: statutesRouter,
   memo: researchMemoRouter,
+  collections: researchCollectionsRouter,
 });

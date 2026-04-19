@@ -17,6 +17,7 @@ import {
   Receipt,
   Bell,
   ScrollText,
+  Library,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -33,6 +34,7 @@ const navItems = [
   { href: "/quick-analysis", label: "Quick Analysis", icon: Zap },
   { href: "/cases", label: "Cases", icon: Briefcase },
   { href: "/research", label: "Research", icon: ScrollText },
+  { href: "/research/collections", label: "Collections", icon: Library },
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/calendar", label: "Calendar", icon: CalendarIcon },
   { href: "/notifications", label: "Notifications", icon: Bell },

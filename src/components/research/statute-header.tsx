@@ -10,6 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AddToCollectionMenu } from "@/components/research/add-to-collection-menu";
 
 interface StatuteHeaderProps {
   statute: {
@@ -53,6 +54,7 @@ export function StatuteHeader({ statute }: StatuteHeaderProps) {
       <div className="flex items-start justify-between gap-4">
         <h1 className="text-xl font-semibold">{statute.citationBluebook}</h1>
         <div className="flex items-center gap-2">
+          <AddToCollectionMenu itemType="statute" itemId={statute.id} size="sm" />
           <Button
             variant="outline"
             size="sm"

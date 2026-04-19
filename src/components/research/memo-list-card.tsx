@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { AddToCollectionMenu } from "@/components/research/add-to-collection-menu";
 
 interface MemoListCardProps {
   memo: {
@@ -40,6 +41,9 @@ export function MemoListCard({ memo }: MemoListCardProps) {
               ⚠ {flagCount}
             </span>
           )}
+          <div onClick={(e) => e.stopPropagation()}>
+            <AddToCollectionMenu itemType="memo" itemId={memo.id} size="sm" />
+          </div>
         </div>
       </div>
     </Link>

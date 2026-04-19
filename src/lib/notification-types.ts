@@ -23,6 +23,7 @@ export const NOTIFICATION_TYPES = [
   "research_session_linked",
   "research_memo_ready",
   "research_memo_failed",
+  "research_collection_shared",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -36,7 +37,7 @@ export const NOTIFICATION_CATEGORIES = {
   team: ["team_member_invited", "team_member_joined", "added_to_case"],
   calendar: ["event_reminder", "calendar_sync_failed"],
   portal: ["portal_message_received", "portal_document_uploaded"],
-  research: ["research_bookmark_added", "research_session_linked", "research_memo_ready", "research_memo_failed"],
+  research: ["research_bookmark_added", "research_session_linked", "research_memo_ready", "research_memo_failed", "research_collection_shared"],
 } as const;
 
 export type NotificationCategory = keyof typeof NOTIFICATION_CATEGORIES;
@@ -71,6 +72,13 @@ export type NotificationMetadata = {
   research_session_linked: { caseName: string; sessionTitle: string; sessionId: string };
   research_memo_ready: { memoId: string; title: string };
   research_memo_failed: { memoId: string; title: string; errorMessage?: string };
+  research_collection_shared: {
+    collectionId: string;
+    name: string;
+    sharerName: string;
+    sharerUserId: string;
+    recipientUserId: string;
+  };
 };
 
 /** Inngest event payload for notification/send */

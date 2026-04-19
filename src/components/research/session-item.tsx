@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { AddToCollectionMenu } from "@/components/research/add-to-collection-menu";
 
 interface SessionItemProps {
   session: {
@@ -131,13 +132,17 @@ export function SessionItem({
         )}
 
         {!editing && (
+          <div className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100 data-[popup-open]:opacity-100">
+            <div onClick={(e) => e.stopPropagation()}>
+              <AddToCollectionMenu itemType="session" itemId={session.id} size="sm" />
+            </div>
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  className="shrink-0 opacity-0 group-hover:opacity-100 data-[popup-open]:opacity-100"
+                  className="shrink-0"
                   aria-label="Session actions"
                 />
               }
@@ -164,6 +169,7 @@ export function SessionItem({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         )}
       </div>
 

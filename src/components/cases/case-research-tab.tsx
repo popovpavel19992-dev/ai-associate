@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Separator } from "@/components/ui/separator";
 import { MemoListCard } from "@/components/research/memo-list-card";
+import { CollectionListCard } from "@/components/research/collection-list-card";
 
 interface CaseResearchTabProps {
   caseId: string;
@@ -31,6 +32,7 @@ export function CaseResearchTab({ caseId }: CaseResearchTabProps) {
   const { data: bookmarks = [], isLoading: bookmarksLoading } =
     trpc.research.bookmarks.list.useQuery({ caseId });
   const memosForCase = trpc.research.memo.list.useQuery({ caseId }).data?.memos ?? [];
+  const collectionsForCase = trpc.research.collections.list.useQuery({ caseId, scope: "mine" }).data?.collections ?? [];
 
   return (
     <div className="space-y-8 px-4 py-4">
@@ -129,6 +131,24 @@ export function CaseResearchTab({ caseId }: CaseResearchTabProps) {
               {memosForCase.map((m) => (
                 <li key={m.id}>
                   <MemoListCard memo={m} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        </>
+      )}
+
+      {collectionsForCase.length > 0 && (
+        <>
+          <Separator className="bg-zinc-800" />
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-zinc-100">
+              Collections ({collectionsForCase.length})
+            </h3>
+            <ul className="mt-2 grid gap-2">
+              {collectionsForCase.map((c) => (
+                <li key={c.id}>
+                  <CollectionListCard collection={c} />
                 </li>
               ))}
             </ul>
