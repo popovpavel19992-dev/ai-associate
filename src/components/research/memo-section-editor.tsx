@@ -63,7 +63,14 @@ export function MemoSectionEditor({ memoId, section, onRequestRewrite }: MemoSec
           </div>
         </div>
       )}
-      <Button type="button" variant="outline" onClick={onRequestRewrite}>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => {
+          onRequestRewrite();
+          window.dispatchEvent(new CustomEvent("memo:focus-rewrite-input"));
+        }}
+      >
         Regenerate section with AI
       </Button>
     </div>

@@ -18,6 +18,13 @@ export function MemoRewriteChat({ memoId, sectionType }: MemoRewriteChatProps) {
   const [activeSteering, setActiveSteering] = React.useState<string | null>(null);
   const [preview, setPreview] = React.useState<string | null>(null);
   const utils = trpc.useUtils();
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  React.useEffect(() => {
+    const onFocus = () => textareaRef.current?.focus();
+    window.addEventListener("memo:focus-rewrite-input", onFocus);
+    return () => window.removeEventListener("memo:focus-rewrite-input", onFocus);
+  }, []);
 
   trpc.research.memo.regenerateSection.useSubscription(
     { memoId, sectionType, steeringMessage: activeSteering ?? undefined },
@@ -75,6 +82,7 @@ export function MemoRewriteChat({ memoId, sectionType }: MemoRewriteChatProps) {
       </div>
       <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
         <Textarea
+          ref={textareaRef}
           value={steering}
           onChange={(e) => setSteering(e.target.value)}
           placeholder="Optional: 'focus on damages calculation'"
