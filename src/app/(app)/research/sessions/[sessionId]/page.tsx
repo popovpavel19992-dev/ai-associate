@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { useState, type KeyboardEvent } from "react";
 import Link from "next/link";
-import { Pencil, Check, X, Loader2, Search } from "lucide-react";
+import { Pencil, Check, X, Loader2, Search, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 import { trpc } from "@/lib/trpc";
@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { MemoGenerationModal } from "@/components/research/memo-generation-modal";
+import { MemoListCard } from "@/components/research/memo-list-card";
 
 const dateFmt = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -33,8 +35,19 @@ export default function SessionDetailPage() {
     { enabled: !!sessionId },
   );
 
+  const stats = trpc.research.sessions.contextStats.useQuery(
+    { sessionId },
+    { enabled: !!sessionId },
+  ).data;
+
+  const memos = trpc.research.memo.list.useQuery(
+    { sessionId },
+    { enabled: !!sessionId },
+  ).data?.memos ?? [];
+
   const [editing, setEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
+  const [memoModalOpen, setMemoModalOpen] = useState(false);
 
   const renameMut = trpc.research.sessions.rename.useMutation({
     onSuccess: () => {
@@ -124,6 +137,10 @@ export default function SessionDetailPage() {
             </Button>
           </div>
         )}
+        <Button size="sm" variant="outline" onClick={() => setMemoModalOpen(true)}>
+          <FileText className="mr-1.5 h-4 w-4" />
+          Generate memo
+        </Button>
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
@@ -202,6 +219,31 @@ export default function SessionDetailPage() {
           </Link>
         </section>
       ) : null}
+
+      {memos.length > 0 && (
+        <section>
+          <h2 className="mt-6 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+            Memos from this session ({memos.length})
+          </h2>
+          <ul className="mt-3 grid gap-2">
+            {memos.map((m) => (
+              <li key={m.id}>
+                <MemoListCard memo={m} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <MemoGenerationModal
+        open={memoModalOpen}
+        onOpenChange={setMemoModalOpen}
+        sessionId={sessionId}
+        defaultQuestion={session.title}
+        bookmarkCount={stats?.bookmarkCount ?? 0}
+        chatCount={stats?.chatCount ?? 0}
+        statuteCount={stats?.statuteCount ?? 0}
+      />
     </div>
   );
 }
