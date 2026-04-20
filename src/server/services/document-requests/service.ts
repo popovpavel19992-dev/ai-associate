@@ -1,9 +1,11 @@
 // src/server/services/document-requests/service.ts
 import { TRPCError } from "@trpc/server";
-import { asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { db as defaultDb } from "@/server/db";
 import { documentRequests } from "@/server/db/schema/document-requests";
 import { documentRequestItems } from "@/server/db/schema/document-request-items";
+import { documentRequestItemFiles } from "@/server/db/schema/document-request-item-files";
+import { documents } from "@/server/db/schema/documents";
 import { inngest as defaultInngest } from "@/server/inngest/client";
 
 export interface DocumentRequestsServiceDeps {
@@ -275,5 +277,91 @@ export class DocumentRequestsService {
       name: "messaging/document_request.submitted",
       data: { requestId },
     });
+  }
+
+  async uploadItemFile(input: {
+    itemId: string;
+    documentId: string;
+    uploadedByPortalUserId?: string;
+    uploadedByUserId?: string;
+  }): Promise<{ joinId: string }> {
+    if (!input.uploadedByPortalUserId === !input.uploadedByUserId) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Exactly one uploader must be specified" });
+    }
+    const [item] = await this.db
+      .select({ id: documentRequestItems.id, requestId: documentRequestItems.requestId, name: documentRequestItems.name })
+      .from(documentRequestItems)
+      .where(eq(documentRequestItems.id, input.itemId))
+      .limit(1);
+    if (!item) throw new TRPCError({ code: "NOT_FOUND", message: "Item not found" });
+
+    const [join] = await this.db
+      .insert(documentRequestItemFiles)
+      .values({
+        itemId: input.itemId,
+        documentId: input.documentId,
+        uploadedByPortalUserId: input.uploadedByPortalUserId ?? null,
+        uploadedByUserId: input.uploadedByUserId ?? null,
+        archived: false,
+      })
+      .returning();
+
+    await this.db
+      .update(documentRequestItems)
+      .set({ status: "uploaded", rejectionNote: null, updatedAt: new Date() })
+      .where(and(eq(documentRequestItems.id, input.itemId), inArray(documentRequestItems.status, ["pending", "rejected"])));
+
+    const transition = await this.recomputeRequestStatus(item.requestId);
+
+    await this.inngest.send({
+      name: "messaging/document_request.item_uploaded",
+      data: {
+        requestId: item.requestId,
+        itemId: input.itemId,
+        itemName: item.name,
+        documentId: input.documentId,
+      },
+    });
+    if (transition.next === "awaiting_review" && transition.prior === "open") {
+      await this.fireSubmittedEvent(item.requestId);
+    }
+    return { joinId: join.id };
+  }
+
+  async replaceItemFile(input: {
+    itemId: string;
+    oldJoinId: string;
+    newDocumentId: string;
+    uploadedByPortalUserId?: string;
+    uploadedByUserId?: string;
+  }): Promise<{ joinId: string }> {
+    await this.db
+      .update(documentRequestItemFiles)
+      .set({ archived: true })
+      .where(eq(documentRequestItemFiles.id, input.oldJoinId));
+    return this.uploadItemFile({
+      itemId: input.itemId,
+      documentId: input.newDocumentId,
+      uploadedByPortalUserId: input.uploadedByPortalUserId,
+      uploadedByUserId: input.uploadedByUserId,
+    });
+  }
+
+  async listItemFiles(input: { itemId: string; includeArchived?: boolean }) {
+    const conds = [eq(documentRequestItemFiles.itemId, input.itemId)];
+    if (!input.includeArchived) conds.push(eq(documentRequestItemFiles.archived, false));
+    return this.db
+      .select({
+        id: documentRequestItemFiles.id,
+        itemId: documentRequestItemFiles.itemId,
+        documentId: documentRequestItemFiles.documentId,
+        filename: documents.filename,
+        archived: documentRequestItemFiles.archived,
+        uploadedAt: documentRequestItemFiles.uploadedAt,
+      })
+      .from(documentRequestItemFiles)
+      .leftJoin(documents, eq(documents.id, documentRequestItemFiles.documentId))
+      .where(and(...conds))
+      .orderBy(desc(documentRequestItemFiles.uploadedAt));
   }
 }
