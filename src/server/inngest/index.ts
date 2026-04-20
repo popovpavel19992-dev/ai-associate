@@ -25,5 +25,12 @@ import {
   documentRequestItemRejectedBroadcast,
   documentRequestCancelledBroadcast,
 } from "./functions/document-request-broadcast";
+import {
+  documentRequestCreatedNotify,
+  documentRequestItemUploadedNotify,
+  documentRequestSubmittedNotify,
+  documentRequestItemRejectedNotify,
+  documentRequestCancelledNotify,
+} from "./functions/document-request-notifications";
 
-export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup, handleNotification, notificationReminders, notificationOverdueCheck, handlePortalNotification, researchEnrichOpinion, researchEnrichStatute, researchMemoGenerate, caseMessageBroadcast, documentRequestCreatedBroadcast, documentRequestItemUploadedBroadcast, documentRequestSubmittedBroadcast, documentRequestItemRejectedBroadcast, documentRequestCancelledBroadcast];
+export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup, handleNotification, notificationReminders, notificationOverdueCheck, handlePortalNotification, researchEnrichOpinion, researchEnrichStatute, researchMemoGenerate, caseMessageBroadcast, documentRequestCreatedBroadcast, documentRequestItemUploadedBroadcast, documentRequestSubmittedBroadcast, documentRequestItemRejectedBroadcast, documentRequestCancelledBroadcast, documentRequestCreatedNotify, documentRequestItemUploadedNotify, documentRequestSubmittedNotify, documentRequestItemRejectedNotify, documentRequestCancelledNotify];

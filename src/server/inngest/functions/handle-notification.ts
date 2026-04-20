@@ -194,6 +194,23 @@ async function dispatchEmail(
       });
       break;
     }
+    case "document_request_item_uploaded":
+      // Matrix: lawyer + in_app + push only — no email by design.
+      break;
+    case "document_request_submitted": {
+      const caseName = (m?.caseName as string) ?? "";
+      const requestTitle = (m?.requestTitle as string) ?? "";
+      const caseId = event.caseId ?? "";
+      const url = `/cases/${caseId}?tab=requests`;
+      const safeCase = caseName.replace(/[<>&]/g, "");
+      const safeTitle = requestTitle.replace(/[<>&]/g, "");
+      await sendEmail({
+        to: userEmail,
+        subject: `Document request ready for review: ${requestTitle}`,
+        html: `<p>The client has finished uploading for "<strong>${safeTitle}</strong>" in ${safeCase}.</p><p><a href="${url}">Review submission</a></p>`,
+      });
+      break;
+    }
     default:
       console.warn("[handle-notification] No email template for type:", type);
   }
