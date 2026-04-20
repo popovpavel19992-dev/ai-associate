@@ -199,4 +199,81 @@ export class DocumentRequestsService {
     }
     return { prior: req.status, next };
   }
+
+  async reviewItem(input: { itemId: string }): Promise<void> {
+    const [item] = await this.db
+      .select({ requestId: documentRequestItems.requestId, status: documentRequestItems.status })
+      .from(documentRequestItems)
+      .where(eq(documentRequestItems.id, input.itemId))
+      .limit(1);
+    if (!item) throw new TRPCError({ code: "NOT_FOUND", message: "Item not found" });
+    if (item.status !== "uploaded") {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Only uploaded items can be reviewed" });
+    }
+    await this.db
+      .update(documentRequestItems)
+      .set({ status: "reviewed", rejectionNote: null, updatedAt: new Date() })
+      .where(eq(documentRequestItems.id, input.itemId));
+    const transition = await this.recomputeRequestStatus(item.requestId);
+    if (transition.next === "awaiting_review" && transition.prior === "open") {
+      await this.fireSubmittedEvent(item.requestId);
+    }
+  }
+
+  async rejectItem(input: { itemId: string; rejectionNote: string }): Promise<void> {
+    if (!input.rejectionNote.trim()) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Rejection note required" });
+    }
+    const [item] = await this.db
+      .select({ requestId: documentRequestItems.requestId, status: documentRequestItems.status, name: documentRequestItems.name })
+      .from(documentRequestItems)
+      .where(eq(documentRequestItems.id, input.itemId))
+      .limit(1);
+    if (!item) throw new TRPCError({ code: "NOT_FOUND", message: "Item not found" });
+    if (item.status !== "uploaded") {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Only uploaded items can be rejected" });
+    }
+    await this.db
+      .update(documentRequestItems)
+      .set({ status: "rejected", rejectionNote: input.rejectionNote, updatedAt: new Date() })
+      .where(eq(documentRequestItems.id, input.itemId));
+    await this.recomputeRequestStatus(item.requestId);
+    await this.inngest.send({
+      name: "messaging/document_request.item_rejected",
+      data: {
+        requestId: item.requestId,
+        itemId: input.itemId,
+        itemName: item.name,
+        rejectionNote: input.rejectionNote,
+      },
+    });
+  }
+
+  async cancelRequest(input: { requestId: string; cancelledBy: string }): Promise<void> {
+    const [existing] = await this.db
+      .select({ status: documentRequests.status })
+      .from(documentRequests)
+      .where(eq(documentRequests.id, input.requestId))
+      .limit(1);
+    if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Request not found" });
+    if (existing.status === "cancelled") return;
+    await this.db
+      .update(documentRequests)
+      .set({ status: "cancelled", cancelledAt: new Date(), updatedAt: new Date() })
+      .where(eq(documentRequests.id, input.requestId));
+    await this.inngest.send({
+      name: "messaging/document_request.cancelled",
+      data: {
+        requestId: input.requestId,
+        cancelledBy: input.cancelledBy,
+      },
+    });
+  }
+
+  private async fireSubmittedEvent(requestId: string): Promise<void> {
+    await this.inngest.send({
+      name: "messaging/document_request.submitted",
+      data: { requestId },
+    });
+  }
 }
