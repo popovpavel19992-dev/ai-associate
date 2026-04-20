@@ -39,6 +39,7 @@ import { caseMessagesRouter } from "./routers/case-messages";
 import { documentRequestsRouter } from "./routers/document-requests";
 import { portalDocumentRequestsRouter } from "./routers/portal-document-requests";
 import { intakeFormsRouter } from "./routers/intake-forms";
+import { portalIntakeFormsRouter } from "./routers/portal-intake-forms";
 
 export const appRouter = router({
   users: usersRouter,
@@ -81,6 +82,7 @@ export const appRouter = router({
   documentRequests: documentRequestsRouter,
   portalDocumentRequests: portalDocumentRequestsRouter,
   intakeForms: intakeFormsRouter,
+  portalIntakeForms: portalIntakeFormsRouter,
 });
 
 export type AppRouter = typeof appRouter;
