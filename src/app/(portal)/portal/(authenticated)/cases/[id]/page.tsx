@@ -8,6 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { CaseDetailTabs } from "@/components/portal/case-detail-tabs";
 import { DocumentRequestsSection } from "@/components/portal/document-requests-section";
 import { IntakeFormsCard } from "@/components/portal/intake-forms-card";
+import { CaseUpdatesTimeline } from "@/components/portal/case-updates-timeline";
 
 export default function PortalCaseDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -35,6 +36,7 @@ export default function PortalCaseDetailPage() {
         </Link>
         <h1 className="text-2xl font-bold">{caseData.name}</h1>
       </div>
+      <CaseUpdatesTimeline caseId={caseData.id} />
       <IntakeFormsCard caseId={caseData.id} />
       <DocumentRequestsSection caseId={caseData.id} />
       <CaseDetailTabs caseData={caseData} />
