@@ -37,6 +37,7 @@ import { portalLawyerRouter } from "./routers/portal-lawyer";
 import { researchRouter } from "./routers/research";
 import { caseMessagesRouter } from "./routers/case-messages";
 import { documentRequestsRouter } from "./routers/document-requests";
+import { portalDocumentRequestsRouter } from "./routers/portal-document-requests";
 
 export const appRouter = router({
   users: usersRouter,
@@ -77,6 +78,7 @@ export const appRouter = router({
   research: researchRouter,
   caseMessages: caseMessagesRouter,
   documentRequests: documentRequestsRouter,
+  portalDocumentRequests: portalDocumentRequestsRouter,
 });
 
 export type AppRouter = typeof appRouter;
