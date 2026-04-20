@@ -109,4 +109,94 @@ export class DocumentRequestsService {
       })),
     };
   }
+
+  async updateMeta(input: {
+    requestId: string;
+    title?: string;
+    note?: string | null;
+    dueAt?: Date | null;
+  }): Promise<void> {
+    const patch: Record<string, unknown> = { updatedAt: new Date() };
+    if (input.title !== undefined) patch.title = input.title;
+    if (input.note !== undefined) patch.note = input.note;
+    if (input.dueAt !== undefined) patch.dueAt = input.dueAt;
+    await this.db.update(documentRequests).set(patch).where(eq(documentRequests.id, input.requestId));
+  }
+
+  async addItem(input: { requestId: string; name: string; description?: string; sortOrder?: number }): Promise<{ itemId: string }> {
+    const sortOrder = input.sortOrder ?? (await this.nextSortOrder(input.requestId));
+    const [row] = await this.db
+      .insert(documentRequestItems)
+      .values({
+        requestId: input.requestId,
+        name: input.name,
+        description: input.description ?? null,
+        sortOrder,
+        status: "pending",
+      })
+      .returning();
+    await this.recomputeRequestStatus(input.requestId);
+    return { itemId: row.id };
+  }
+
+  async updateItem(input: { itemId: string; name?: string; description?: string | null; sortOrder?: number }): Promise<void> {
+    const patch: Record<string, unknown> = { updatedAt: new Date() };
+    if (input.name !== undefined) patch.name = input.name;
+    if (input.description !== undefined) patch.description = input.description;
+    if (input.sortOrder !== undefined) patch.sortOrder = input.sortOrder;
+    await this.db.update(documentRequestItems).set(patch).where(eq(documentRequestItems.id, input.itemId));
+  }
+
+  async removeItem(input: { itemId: string }): Promise<void> {
+    const [item] = await this.db
+      .select({ requestId: documentRequestItems.requestId })
+      .from(documentRequestItems)
+      .where(eq(documentRequestItems.id, input.itemId))
+      .limit(1);
+    if (!item) return;
+    await this.db.delete(documentRequestItems).where(eq(documentRequestItems.id, input.itemId));
+    await this.recomputeRequestStatus(item.requestId);
+  }
+
+  private async nextSortOrder(requestId: string): Promise<number> {
+    const [row] = await this.db
+      .select({ max: sql<number>`coalesce(max(${documentRequestItems.sortOrder}), -1)::int` })
+      .from(documentRequestItems)
+      .where(eq(documentRequestItems.requestId, requestId));
+    return (row?.max ?? -1) + 1;
+  }
+
+  /** Returns { prior, next } so callers know when to fire the "submitted" event. */
+  async recomputeRequestStatus(requestId: string): Promise<{ prior: string; next: string }> {
+    const [req] = await this.db
+      .select({ status: documentRequests.status })
+      .from(documentRequests)
+      .where(eq(documentRequests.id, requestId))
+      .limit(1);
+    if (!req) return { prior: "", next: "" };
+    if (req.status === "cancelled") return { prior: req.status, next: req.status };
+
+    const items = await this.db
+      .select({ status: documentRequestItems.status })
+      .from(documentRequestItems)
+      .where(eq(documentRequestItems.requestId, requestId));
+
+    let next: string;
+    if (items.length === 0) {
+      next = "open";
+    } else if (items.every((i) => i.status === "reviewed")) {
+      next = "completed";
+    } else if (items.some((i) => i.status === "pending" || i.status === "rejected")) {
+      next = "open";
+    } else {
+      next = "awaiting_review";
+    }
+    if (next !== req.status) {
+      await this.db
+        .update(documentRequests)
+        .set({ status: next, updatedAt: new Date() })
+        .where(eq(documentRequests.id, requestId));
+    }
+    return { prior: req.status, next };
+  }
 }
