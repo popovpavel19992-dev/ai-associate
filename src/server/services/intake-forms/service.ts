@@ -290,9 +290,9 @@ export class IntakeFormsService {
       : sql`${cases.userId} = ${input.userId}`;
     const rows = await this.db.execute<{ count: number }>(sql`
       SELECT COUNT(*)::int AS count
-      FROM ${intakeForms} f
-      JOIN ${cases} c ON c.id = f.case_id
-      WHERE ${orgClause} AND f.status = 'submitted'
+      FROM ${intakeForms}
+      JOIN ${cases} ON ${cases.id} = ${intakeForms.caseId}
+      WHERE ${orgClause} AND ${intakeForms.status} = 'submitted'
     `);
     const list = ((rows as any).rows ?? rows) as Array<{ count: number }>;
     return { count: Number(list[0]?.count ?? 0) };
