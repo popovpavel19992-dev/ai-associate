@@ -21,6 +21,7 @@ import { PortalVisibilityPanel } from "@/components/portal/portal-visibility-pan
 import { MessagesTab } from "@/components/cases/messages-tab";
 import { RequestsTab } from "@/components/cases/requests/requests-tab";
 import { IntakeTab } from "@/components/cases/intake/intake-tab";
+import { UpdatesTab } from "@/components/cases/updates/updates-tab";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -35,6 +36,7 @@ const TABS = [
   { key: "messages", label: "Messages" },
   { key: "requests", label: "Requests" },
   { key: "intake", label: "Intake" },
+  { key: "updates", label: "Updates" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -241,6 +243,10 @@ export default function CaseDetailPage({
 
         {activeTab === "intake" && (
           <IntakeTab caseId={caseData.id} />
+        )}
+
+        {activeTab === "updates" && (
+          <UpdatesTab caseId={caseData.id} />
         )}
         </div>
         {(caseData.client || caseData.orgId) && (
