@@ -36,6 +36,11 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   research_memo_failed: "Memo generation failed",
   research_collection_shared: "Collection shared with you",
   case_message_received: "New message in case",
+  document_request_created: "Document request created",
+  document_request_item_uploaded: "Document request item uploaded",
+  document_request_submitted: "Document request submitted",
+  document_request_item_rejected: "Document request item rejected",
+  document_request_cancelled: "Document request cancelled",
 };
 
 const CHANNEL_LABELS: Record<NotificationChannel, string> = {
