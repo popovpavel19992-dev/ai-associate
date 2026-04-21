@@ -7,6 +7,7 @@ import { formatDistanceToNow } from "date-fns";
 const STATUS_STYLES: Record<string, string> = {
   sent: "bg-green-100 text-green-800",
   failed: "bg-red-100 text-red-800",
+  bounced: "bg-red-100 text-red-800",
 };
 
 export function EmailsList({
@@ -37,6 +38,11 @@ export function EmailsList({
             <div className="flex items-center justify-between gap-2">
               <span className="font-medium truncate">{e.subject}</span>
               <Badge className={STATUS_STYLES[e.status] ?? ""}>{e.status}</Badge>
+              {e.replyCount > 0 && (
+                <Badge className={e.hasUnreadReplies ? "bg-blue-600 text-white" : "bg-zinc-200 text-zinc-800"}>
+                  {e.replyCount} {e.replyCount === 1 ? "reply" : "replies"}
+                </Badge>
+              )}
             </div>
             <div className="text-xs text-muted-foreground mt-1 flex items-center justify-between gap-2">
               <span className="truncate">
