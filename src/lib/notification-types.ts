@@ -33,6 +33,8 @@ export const NOTIFICATION_TYPES = [
   "intake_form_sent",
   "intake_form_submitted",
   "intake_form_cancelled",
+  "milestone_published",
+  "milestone_retracted",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -57,6 +59,8 @@ export const NOTIFICATION_CATEGORIES = {
     "intake_form_sent",
     "intake_form_submitted",
     "intake_form_cancelled",
+    "milestone_published",
+    "milestone_retracted",
   ],
   billing: ["invoice_sent", "invoice_paid", "invoice_overdue", "credits_low", "credits_exhausted"],
   team: ["team_member_invited", "team_member_joined", "added_to_case"],
@@ -175,6 +179,22 @@ export type NotificationMetadata = {
     caseName: string;
     formId: string;
     formTitle: string;
+    recipientPortalUserId: string;
+  };
+  milestone_published: {
+    caseId: string;
+    caseName: string;
+    milestoneId: string;
+    title: string;
+    category: string;
+    occurredAt: string;
+    recipientPortalUserId: string;
+  };
+  milestone_retracted: {
+    caseId: string;
+    caseName: string;
+    milestoneId: string;
+    title: string;
     recipientPortalUserId: string;
   };
 };

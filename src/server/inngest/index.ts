@@ -42,5 +42,13 @@ import {
   intakeFormSubmittedNotify,
   intakeFormCancelledNotify,
 } from "./functions/intake-form-notifications";
+import {
+  milestonePublishedBroadcast,
+  milestoneRetractedBroadcast,
+} from "./functions/milestone-broadcast";
+import {
+  milestonePublishedNotify,
+  milestoneRetractedNotify,
+} from "./functions/milestone-notifications";
 
-export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup, handleNotification, notificationReminders, notificationOverdueCheck, handlePortalNotification, researchEnrichOpinion, researchEnrichStatute, researchMemoGenerate, caseMessageBroadcast, documentRequestCreatedBroadcast, documentRequestItemUploadedBroadcast, documentRequestSubmittedBroadcast, documentRequestItemRejectedBroadcast, documentRequestCancelledBroadcast, documentRequestCreatedNotify, documentRequestItemUploadedNotify, documentRequestSubmittedNotify, documentRequestItemRejectedNotify, documentRequestCancelledNotify, intakeFormSentBroadcast, intakeFormSubmittedBroadcast, intakeFormCancelledBroadcast, intakeFormSentNotify, intakeFormSubmittedNotify, intakeFormCancelledNotify];
+export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup, handleNotification, notificationReminders, notificationOverdueCheck, handlePortalNotification, researchEnrichOpinion, researchEnrichStatute, researchMemoGenerate, caseMessageBroadcast, documentRequestCreatedBroadcast, documentRequestItemUploadedBroadcast, documentRequestSubmittedBroadcast, documentRequestItemRejectedBroadcast, documentRequestCancelledBroadcast, documentRequestCreatedNotify, documentRequestItemUploadedNotify, documentRequestSubmittedNotify, documentRequestItemRejectedNotify, documentRequestCancelledNotify, intakeFormSentBroadcast, intakeFormSubmittedBroadcast, intakeFormCancelledBroadcast, intakeFormSentNotify, intakeFormSubmittedNotify, intakeFormCancelledNotify, milestonePublishedBroadcast, milestoneRetractedBroadcast, milestonePublishedNotify, milestoneRetractedNotify];

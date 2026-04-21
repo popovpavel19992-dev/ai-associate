@@ -40,6 +40,8 @@ import { documentRequestsRouter } from "./routers/document-requests";
 import { portalDocumentRequestsRouter } from "./routers/portal-document-requests";
 import { intakeFormsRouter } from "./routers/intake-forms";
 import { portalIntakeFormsRouter } from "./routers/portal-intake-forms";
+import { milestonesRouter } from "./routers/milestones";
+import { portalMilestonesRouter } from "./routers/portal-milestones";
 
 export const appRouter = router({
   users: usersRouter,
@@ -83,6 +85,8 @@ export const appRouter = router({
   portalDocumentRequests: portalDocumentRequestsRouter,
   intakeForms: intakeFormsRouter,
   portalIntakeForms: portalIntakeFormsRouter,
+  milestones: milestonesRouter,
+  portalMilestones: portalMilestonesRouter,
 });
 
 export type AppRouter = typeof appRouter;
