@@ -177,3 +177,13 @@ export async function getObject(
     contentType: response.ContentType,
   };
 }
+
+export async function putObject(key: string, body: Buffer, contentType: string): Promise<void> {
+  const command = new PutObjectCommand({
+    Bucket: process.env.AWS_S3_BUCKET!,
+    Key: key,
+    Body: body,
+    ContentType: contentType,
+  });
+  await getClient().send(command);
+}
