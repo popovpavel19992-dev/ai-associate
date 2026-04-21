@@ -18,6 +18,7 @@ import {
   Bell,
   ScrollText,
   Library,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -40,6 +41,7 @@ const navItems = [
   { href: "/calendar", label: "Calendar", icon: CalendarIcon },
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/settings/templates", label: "Templates", icon: FileText },
+  { href: "/settings/email-templates", label: "Email templates", icon: Mail },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
