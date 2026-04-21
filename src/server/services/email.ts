@@ -4,13 +4,15 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM = "ClearTerms <notifications@clearterms.ai>";
 
-interface SendEmailOptions {
+export interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
+  attachments?: Array<{ filename: string; content: string; contentType?: string }>;
+  replyTo?: string;
 }
 
-export async function sendEmail({ to, subject, html }: SendEmailOptions) {
+export async function sendEmail({ to, subject, html, attachments, replyTo }: SendEmailOptions) {
   if (!process.env.RESEND_API_KEY) {
     console.warn("[email] RESEND_API_KEY not set, skipping email:", subject);
     return;
@@ -21,7 +23,17 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions) {
     to,
     subject,
     html,
-  });
+    ...(attachments && attachments.length > 0
+      ? {
+          attachments: attachments.map((a) => ({
+            filename: a.filename,
+            content: a.content,
+            content_type: a.contentType,
+          })),
+        }
+      : {}),
+    ...(replyTo ? { reply_to: replyTo } : {}),
+  } as Parameters<typeof resend.emails.send>[0]);
 }
 
 export async function sendWelcomeEmail(to: string, name: string) {
