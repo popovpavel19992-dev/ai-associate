@@ -1,4 +1,5 @@
 // src/server/services/email-outreach/service.ts
+import { randomUUID } from "crypto";
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, asc } from "drizzle-orm";
 import { db as defaultDb } from "@/server/db";
@@ -188,8 +189,11 @@ export class EmailOutreachService {
     bodyMarkdown: string;
     documentIds: string[];
     senderId: string;
+    outreachId?: string;
   }): Promise<{ emailId: string; resendId: string | null }> {
     const MAX_BYTES = 35 * 1024 * 1024;
+    const outreachId = input.outreachId ?? randomUUID();
+    const replyDomain = process.env.REPLY_DOMAIN ?? "reply.clearterms.ai";
 
     const recipient = await this.resolveRecipient({ caseId: input.caseId });
     if (!recipient) {
@@ -217,8 +221,8 @@ export class EmailOutreachService {
       throw new TRPCError({ code: "BAD_REQUEST", message: `Attachments exceed 35MB (${Math.round(totalSize / 1024 / 1024)}MB)` });
     }
 
-    const [sender] = await this.db.select({ email: users.email }).from(users).where(eq(users.id, input.senderId)).limit(1);
-    const replyTo = sender?.email ?? undefined;
+    await this.db.select({ email: users.email }).from(users).where(eq(users.id, input.senderId)).limit(1);
+    const replyTo = `case-email-${outreachId}@${replyDomain}`;
 
     try {
       let attachmentsPayload: Array<{ filename: string; content: string; contentType?: string }> = [];
@@ -244,6 +248,7 @@ export class EmailOutreachService {
       const [row] = await this.db
         .insert(caseEmailOutreach)
         .values({
+          id: outreachId,
           caseId: input.caseId,
           templateId: input.templateId ?? null,
           sentBy: input.senderId,
@@ -276,6 +281,7 @@ export class EmailOutreachService {
       await this.db
         .insert(caseEmailOutreach)
         .values({
+          id: outreachId,
           caseId: input.caseId,
           templateId: input.templateId ?? null,
           sentBy: input.senderId,
