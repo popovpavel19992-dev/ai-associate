@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Webhook } from "standardwebhooks";
 import { EmailInboundService, type InboundPayload } from "@/server/services/email-outreach/inbound";
 import { putObject } from "@/server/services/s3";
+import { inngest } from "@/server/inngest/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,7 +67,12 @@ export async function POST(req: NextRequest) {
 
   const svc = new EmailInboundService({
     putObject,
-    // enqueueExternalEmail wired in T13
+    enqueueExternalEmail: async ({ userId, replyId }) => {
+      await inngest.send({
+        name: "messaging/email_reply.received",
+        data: { userId, replyId },
+      });
+    },
   });
 
   try {
