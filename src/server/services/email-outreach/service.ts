@@ -152,4 +152,214 @@ export class EmailOutreachService {
       today: formatToday(),
     };
   }
+
+  async resolveRecipient(input: { caseId: string }): Promise<{ email: string; name: string | null } | null> {
+    const [caseRow] = await this.db
+      .select({ clientId: cases.clientId })
+      .from(cases)
+      .where(eq(cases.id, input.caseId))
+      .limit(1);
+    if (!caseRow || !caseRow.clientId) return null;
+
+    const contacts = await this.db
+      .select({ email: clientContacts.email, name: clientContacts.name, isPrimary: clientContacts.isPrimary })
+      .from(clientContacts)
+      .where(and(eq(clientContacts.clientId, caseRow.clientId)))
+      .orderBy(desc(clientContacts.isPrimary));
+    const firstWithEmail = contacts.find((c) => c.email && c.email.trim().length > 0);
+    if (firstWithEmail) {
+      return { email: firstWithEmail.email!, name: firstWithEmail.name || null };
+    }
+
+    const [pu] = await this.db
+      .select({ email: portalUsers.email, displayName: portalUsers.displayName })
+      .from(portalUsers)
+      .where(eq(portalUsers.clientId, caseRow.clientId))
+      .limit(1);
+    if (pu && pu.email) return { email: pu.email, name: pu.displayName ?? null };
+
+    return null;
+  }
+
+  async send(input: {
+    caseId: string;
+    templateId?: string | null;
+    subject: string;
+    bodyMarkdown: string;
+    documentIds: string[];
+    senderId: string;
+  }): Promise<{ emailId: string; resendId: string | null }> {
+    const MAX_BYTES = 35 * 1024 * 1024;
+
+    const recipient = await this.resolveRecipient({ caseId: input.caseId });
+    if (!recipient) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "No recipient email — add an email contact on the Client page" });
+    }
+
+    const variables = await this.resolveVariables({ caseId: input.caseId, senderId: input.senderId });
+    const rendered = renderEmail({ subject: input.subject, bodyMarkdown: input.bodyMarkdown, variables });
+
+    const docs = input.documentIds.length > 0
+      ? await this.db
+          .select({ id: documents.id, caseId: documents.caseId, filename: documents.filename, s3Key: documents.s3Key, fileType: documents.fileType, fileSize: documents.fileSize })
+          .from(documents)
+          .where(eq(documents.caseId, input.caseId))
+      : [];
+    const docById = new Map(docs.map((d) => [d.id, d]));
+    const attachedDocs = input.documentIds.map((id) => {
+      const d = docById.get(id);
+      if (!d) throw new TRPCError({ code: "BAD_REQUEST", message: `Document ${id} is not on this case` });
+      return d;
+    });
+
+    const totalSize = attachedDocs.reduce((s, d) => s + (d.fileSize ?? 0), 0);
+    if (totalSize > MAX_BYTES) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: `Attachments exceed 35MB (${Math.round(totalSize / 1024 / 1024)}MB)` });
+    }
+
+    const [sender] = await this.db.select({ email: users.email }).from(users).where(eq(users.id, input.senderId)).limit(1);
+    const replyTo = sender?.email ?? undefined;
+
+    try {
+      let attachmentsPayload: Array<{ filename: string; content: string; contentType?: string }> = [];
+      if (attachedDocs.length > 0) {
+        if (!this.fetchObject) throw new Error("fetchObject dependency not injected");
+        const buffers = await Promise.all(attachedDocs.map((d) => this.fetchObject!(d.s3Key)));
+        attachmentsPayload = attachedDocs.map((d, i) => ({
+          filename: d.filename,
+          content: buffers[i].toString("base64"),
+          contentType: contentTypeForFileType(d.fileType, d.filename),
+        }));
+      }
+
+      if (!this.resendSend) throw new Error("resendSend dependency not injected");
+      const resendRes = await this.resendSend({
+        to: recipient.email,
+        subject: rendered.subject,
+        html: rendered.bodyHtml,
+        attachments: attachmentsPayload.length > 0 ? attachmentsPayload : undefined,
+        replyTo,
+      });
+
+      const [row] = await this.db
+        .insert(caseEmailOutreach)
+        .values({
+          caseId: input.caseId,
+          templateId: input.templateId ?? null,
+          sentBy: input.senderId,
+          recipientEmail: recipient.email,
+          recipientName: recipient.name ?? null,
+          subject: rendered.subject,
+          bodyMarkdown: rendered.bodyMarkdown,
+          bodyHtml: rendered.bodyHtml,
+          status: "sent",
+          resendId: resendRes.id ?? null,
+          sentAt: new Date(),
+        })
+        .returning();
+
+      if (attachedDocs.length > 0) {
+        await this.db.insert(caseEmailOutreachAttachments).values(
+          attachedDocs.map((d, i) => ({
+            emailId: row.id,
+            documentId: d.id,
+            filename: d.filename,
+            contentType: attachmentsPayload[i].contentType ?? "application/octet-stream",
+            sizeBytes: d.fileSize ?? 0,
+          })),
+        );
+      }
+
+      return { emailId: row.id, resendId: resendRes.id ?? null };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await this.db
+        .insert(caseEmailOutreach)
+        .values({
+          caseId: input.caseId,
+          templateId: input.templateId ?? null,
+          sentBy: input.senderId,
+          recipientEmail: recipient.email,
+          recipientName: recipient.name ?? null,
+          subject: rendered.subject,
+          bodyMarkdown: rendered.bodyMarkdown,
+          bodyHtml: rendered.bodyHtml,
+          status: "failed",
+          errorMessage: msg.slice(0, 2000),
+        });
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Failed to send: ${msg}` });
+    }
+  }
+
+  async listForCase(input: { caseId: string }) {
+    return this.db
+      .select({
+        id: caseEmailOutreach.id,
+        caseId: caseEmailOutreach.caseId,
+        templateId: caseEmailOutreach.templateId,
+        templateName: emailTemplates.name,
+        sentBy: caseEmailOutreach.sentBy,
+        sentByName: users.name,
+        recipientEmail: caseEmailOutreach.recipientEmail,
+        recipientName: caseEmailOutreach.recipientName,
+        subject: caseEmailOutreach.subject,
+        status: caseEmailOutreach.status,
+        errorMessage: caseEmailOutreach.errorMessage,
+        sentAt: caseEmailOutreach.sentAt,
+        createdAt: caseEmailOutreach.createdAt,
+      })
+      .from(caseEmailOutreach)
+      .leftJoin(emailTemplates, eq(emailTemplates.id, caseEmailOutreach.templateId))
+      .leftJoin(users, eq(users.id, caseEmailOutreach.sentBy))
+      .where(eq(caseEmailOutreach.caseId, input.caseId))
+      .orderBy(desc(caseEmailOutreach.createdAt));
+  }
+
+  async getEmail(input: { emailId: string }) {
+    const [row] = await this.db
+      .select({
+        id: caseEmailOutreach.id,
+        caseId: caseEmailOutreach.caseId,
+        templateId: caseEmailOutreach.templateId,
+        templateName: emailTemplates.name,
+        sentBy: caseEmailOutreach.sentBy,
+        sentByName: users.name,
+        recipientEmail: caseEmailOutreach.recipientEmail,
+        recipientName: caseEmailOutreach.recipientName,
+        subject: caseEmailOutreach.subject,
+        bodyMarkdown: caseEmailOutreach.bodyMarkdown,
+        bodyHtml: caseEmailOutreach.bodyHtml,
+        status: caseEmailOutreach.status,
+        errorMessage: caseEmailOutreach.errorMessage,
+        resendId: caseEmailOutreach.resendId,
+        sentAt: caseEmailOutreach.sentAt,
+        createdAt: caseEmailOutreach.createdAt,
+      })
+      .from(caseEmailOutreach)
+      .leftJoin(emailTemplates, eq(emailTemplates.id, caseEmailOutreach.templateId))
+      .leftJoin(users, eq(users.id, caseEmailOutreach.sentBy))
+      .where(eq(caseEmailOutreach.id, input.emailId))
+      .limit(1);
+    if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Email not found" });
+
+    const attachments = await this.db
+      .select()
+      .from(caseEmailOutreachAttachments)
+      .where(eq(caseEmailOutreachAttachments.emailId, input.emailId));
+
+    return { ...row, attachments };
+  }
+}
+
+function contentTypeForFileType(fileType: string, filename: string): string {
+  if (fileType === "pdf") return "application/pdf";
+  if (fileType === "docx") return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  if (fileType === "image") {
+    const lower = filename.toLowerCase();
+    if (lower.endsWith(".png")) return "image/png";
+    if (lower.endsWith(".gif")) return "image/gif";
+    if (lower.endsWith(".webp")) return "image/webp";
+    return "image/jpeg";
+  }
+  return "application/octet-stream";
 }
