@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { cases } from "./cases";
 import { users } from "./users";
 import { portalUsers } from "./portal-users";
+import { documents } from "./documents";
 
 export const caseMessages = pgTable(
   "case_messages",
@@ -15,6 +16,7 @@ export const caseMessages = pgTable(
     lawyerAuthorId: uuid("lawyer_author_id").references(() => users.id, { onDelete: "set null" }),
     portalAuthorId: uuid("portal_author_id").references(() => portalUsers.id, { onDelete: "set null" }),
     body: text("body").notNull(),
+    documentId: uuid("document_id").references(() => documents.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),

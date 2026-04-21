@@ -24,6 +24,7 @@ export const NOTIFICATION_TYPES = [
   "research_memo_ready",
   "research_memo_failed",
   "research_collection_shared",
+  "case_message_received",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -32,7 +33,7 @@ export const NOTIFICATION_CHANNELS = ["in_app", "email", "push"] as const;
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 
 export const NOTIFICATION_CATEGORIES = {
-  cases: ["case_ready", "document_failed", "stage_changed", "task_assigned", "task_completed", "task_overdue"],
+  cases: ["case_ready", "document_failed", "stage_changed", "task_assigned", "task_completed", "task_overdue", "case_message_received"],
   billing: ["invoice_sent", "invoice_paid", "invoice_overdue", "credits_low", "credits_exhausted"],
   team: ["team_member_invited", "team_member_joined", "added_to_case"],
   calendar: ["event_reminder", "calendar_sync_failed"],
@@ -78,6 +79,16 @@ export type NotificationMetadata = {
     sharerName: string;
     sharerUserId: string;
     recipientUserId: string;
+  };
+  case_message_received: {
+    caseId: string;
+    caseName: string;
+    messageId: string;
+    authorName: string;
+    bodyPreview: string;
+    recipientUserId: string;
+    recipientPortalUserId?: string;
+    recipientType: "lawyer" | "portal";
   };
 };
 

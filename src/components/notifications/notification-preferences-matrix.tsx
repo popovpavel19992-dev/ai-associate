@@ -35,6 +35,7 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   research_memo_ready: "Memo ready",
   research_memo_failed: "Memo generation failed",
   research_collection_shared: "Collection shared with you",
+  case_message_received: "New message in case",
 };
 
 const CHANNEL_LABELS: Record<NotificationChannel, string> = {

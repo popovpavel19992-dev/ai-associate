@@ -114,6 +114,16 @@ export const portalMessagesRouter = router({
         });
       }
 
+      await inngest.send({
+        name: "messaging/case_message.created",
+        data: {
+          messageId: message!.id,
+          caseId: input.caseId,
+          authorType: "client",
+          authorUserId: ctx.portalUser.id,
+        },
+      });
+
       return message;
     }),
 });
