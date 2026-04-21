@@ -42,6 +42,8 @@ import { intakeFormsRouter } from "./routers/intake-forms";
 import { portalIntakeFormsRouter } from "./routers/portal-intake-forms";
 import { milestonesRouter } from "./routers/milestones";
 import { portalMilestonesRouter } from "./routers/portal-milestones";
+import { emailTemplatesRouter } from "./routers/email-templates";
+import { caseEmailsRouter } from "./routers/case-emails";
 
 export const appRouter = router({
   users: usersRouter,
@@ -87,6 +89,8 @@ export const appRouter = router({
   portalIntakeForms: portalIntakeFormsRouter,
   milestones: milestonesRouter,
   portalMilestones: portalMilestonesRouter,
+  emailTemplates: emailTemplatesRouter,
+  caseEmails: caseEmailsRouter,
 });
 
 export type AppRouter = typeof appRouter;
