@@ -18,5 +18,19 @@ import { researchEnrichOpinion } from "./functions/research-enrich-opinion";
 import { researchEnrichStatute } from "./functions/research-enrich-statute";
 import { researchMemoGenerate } from "./functions/research-memo-generate";
 import { caseMessageBroadcast } from "./functions/case-message-broadcast";
+import {
+  documentRequestCreatedBroadcast,
+  documentRequestItemUploadedBroadcast,
+  documentRequestSubmittedBroadcast,
+  documentRequestItemRejectedBroadcast,
+  documentRequestCancelledBroadcast,
+} from "./functions/document-request-broadcast";
+import {
+  documentRequestCreatedNotify,
+  documentRequestItemUploadedNotify,
+  documentRequestSubmittedNotify,
+  documentRequestItemRejectedNotify,
+  documentRequestCancelledNotify,
+} from "./functions/document-request-notifications";
 
-export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup, handleNotification, notificationReminders, notificationOverdueCheck, handlePortalNotification, researchEnrichOpinion, researchEnrichStatute, researchMemoGenerate, caseMessageBroadcast];
+export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup, handleNotification, notificationReminders, notificationOverdueCheck, handlePortalNotification, researchEnrichOpinion, researchEnrichStatute, researchMemoGenerate, caseMessageBroadcast, documentRequestCreatedBroadcast, documentRequestItemUploadedBroadcast, documentRequestSubmittedBroadcast, documentRequestItemRejectedBroadcast, documentRequestCancelledBroadcast, documentRequestCreatedNotify, documentRequestItemUploadedNotify, documentRequestSubmittedNotify, documentRequestItemRejectedNotify, documentRequestCancelledNotify];

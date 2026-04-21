@@ -19,6 +19,7 @@ import { CaseResearchTab } from "@/components/cases/case-research-tab";
 import { CaseMuteButton } from "@/components/notifications/case-mute-button";
 import { PortalVisibilityPanel } from "@/components/portal/portal-visibility-panel";
 import { MessagesTab } from "@/components/cases/messages-tab";
+import { RequestsTab } from "@/components/cases/requests/requests-tab";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -31,6 +32,7 @@ const TABS = [
   { key: "contracts", label: "Contracts" },
   { key: "research", label: "Research" },
   { key: "messages", label: "Messages" },
+  { key: "requests", label: "Requests" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -229,6 +231,10 @@ export default function CaseDetailPage({
           <div className="px-4 py-4">
             <MessagesTab caseId={caseData.id} />
           </div>
+        )}
+
+        {activeTab === "requests" && (
+          <RequestsTab caseId={caseData.id} />
         )}
         </div>
         {(caseData.client || caseData.orgId) && (

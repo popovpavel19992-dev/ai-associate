@@ -51,7 +51,14 @@ function NavContent() {
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
   });
+  const { data: pendingReview } = trpc.documentRequests.pendingReviewCount.useQuery(undefined, {
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+  });
   const unreadCases = unreadData?.count ?? 0;
+  const pendingReviewCount = pendingReview?.count ?? 0;
+  const totalBadge = unreadCases + pendingReviewCount;
+  const badgeTitle = `${unreadCases} unread · ${pendingReviewCount} awaiting review`;
 
   return (
     <div className="flex h-full flex-col">
@@ -86,9 +93,9 @@ function NavContent() {
             >
               <item.icon className="h-4 w-4" />
               {item.label}
-              {isCases && unreadCases > 0 && (
-                <Badge variant="destructive" className="ml-auto text-xs">
-                  {unreadCases > 9 ? "9+" : unreadCases}
+              {isCases && totalBadge > 0 && (
+                <Badge variant="destructive" className="ml-auto text-xs" title={badgeTitle}>
+                  {totalBadge > 9 ? "9+" : totalBadge}
                 </Badge>
               )}
             </Link>

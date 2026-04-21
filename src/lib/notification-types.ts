@@ -25,6 +25,11 @@ export const NOTIFICATION_TYPES = [
   "research_memo_failed",
   "research_collection_shared",
   "case_message_received",
+  "document_request_created",
+  "document_request_item_uploaded",
+  "document_request_submitted",
+  "document_request_item_rejected",
+  "document_request_cancelled",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -33,7 +38,20 @@ export const NOTIFICATION_CHANNELS = ["in_app", "email", "push"] as const;
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 
 export const NOTIFICATION_CATEGORIES = {
-  cases: ["case_ready", "document_failed", "stage_changed", "task_assigned", "task_completed", "task_overdue", "case_message_received"],
+  cases: [
+    "case_ready",
+    "document_failed",
+    "stage_changed",
+    "task_assigned",
+    "task_completed",
+    "task_overdue",
+    "case_message_received",
+    "document_request_created",
+    "document_request_item_uploaded",
+    "document_request_submitted",
+    "document_request_item_rejected",
+    "document_request_cancelled",
+  ],
   billing: ["invoice_sent", "invoice_paid", "invoice_overdue", "credits_low", "credits_exhausted"],
   team: ["team_member_invited", "team_member_joined", "added_to_case"],
   calendar: ["event_reminder", "calendar_sync_failed"],
@@ -89,6 +107,47 @@ export type NotificationMetadata = {
     recipientUserId: string;
     recipientPortalUserId?: string;
     recipientType: "lawyer" | "portal";
+  };
+  document_request_created: {
+    caseId: string;
+    caseName: string;
+    requestId: string;
+    requestTitle: string;
+    itemCount: number;
+    recipientPortalUserId: string;
+  };
+  document_request_item_uploaded: {
+    caseId: string;
+    caseName: string;
+    requestId: string;
+    requestTitle: string;
+    itemId: string;
+    itemName: string;
+    recipientUserId: string;
+  };
+  document_request_submitted: {
+    caseId: string;
+    caseName: string;
+    requestId: string;
+    requestTitle: string;
+    recipientUserId: string;
+  };
+  document_request_item_rejected: {
+    caseId: string;
+    caseName: string;
+    requestId: string;
+    requestTitle: string;
+    itemId: string;
+    itemName: string;
+    rejectionNote: string;
+    recipientPortalUserId: string;
+  };
+  document_request_cancelled: {
+    caseId: string;
+    caseName: string;
+    requestId: string;
+    requestTitle: string;
+    recipientPortalUserId: string;
   };
 };
 
