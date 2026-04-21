@@ -55,10 +55,14 @@ function NavContent() {
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
   });
+  const { data: submittedForms } = trpc.intakeForms.submittedCount.useQuery(undefined, {
+    refetchInterval: 30_000,
+  });
   const unreadCases = unreadData?.count ?? 0;
   const pendingReviewCount = pendingReview?.count ?? 0;
-  const totalBadge = unreadCases + pendingReviewCount;
-  const badgeTitle = `${unreadCases} unread · ${pendingReviewCount} awaiting review`;
+  const submittedFormsCount = submittedForms?.count ?? 0;
+  const totalBadge = unreadCases + pendingReviewCount + submittedFormsCount;
+  const badgeTitle = `${unreadCases} unread · ${pendingReviewCount} awaiting review · ${submittedFormsCount} submitted`;
 
   return (
     <div className="flex h-full flex-col">

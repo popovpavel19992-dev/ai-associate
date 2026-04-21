@@ -136,9 +136,9 @@ export const documentRequestsRouter = router({
       : sql`${cases.userId} = ${ctx.user.id}`;
     const rows = await ctx.db.execute<{ count: number }>(sql`
       SELECT COUNT(*)::int AS count
-      FROM ${documentRequests} dr
-      JOIN ${cases} c ON c.id = dr.case_id
-      WHERE ${orgClause} AND dr.status = 'awaiting_review'
+      FROM ${documentRequests}
+      JOIN ${cases} ON ${cases.id} = ${documentRequests.caseId}
+      WHERE ${orgClause} AND ${documentRequests.status} = 'awaiting_review'
     `);
     const list = ((rows as any).rows ?? rows) as Array<{ count: number }>;
     return { count: Number(list[0]?.count ?? 0) };

@@ -41,6 +41,9 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   document_request_submitted: "Document request submitted",
   document_request_item_rejected: "Document request item rejected",
   document_request_cancelled: "Document request cancelled",
+  intake_form_sent: "Intake form received",
+  intake_form_submitted: "Intake form submitted",
+  intake_form_cancelled: "Intake form cancelled",
 };
 
 const CHANNEL_LABELS: Record<NotificationChannel, string> = {

@@ -30,6 +30,9 @@ export const NOTIFICATION_TYPES = [
   "document_request_submitted",
   "document_request_item_rejected",
   "document_request_cancelled",
+  "intake_form_sent",
+  "intake_form_submitted",
+  "intake_form_cancelled",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -51,6 +54,9 @@ export const NOTIFICATION_CATEGORIES = {
     "document_request_submitted",
     "document_request_item_rejected",
     "document_request_cancelled",
+    "intake_form_sent",
+    "intake_form_submitted",
+    "intake_form_cancelled",
   ],
   billing: ["invoice_sent", "invoice_paid", "invoice_overdue", "credits_low", "credits_exhausted"],
   team: ["team_member_invited", "team_member_joined", "added_to_case"],
@@ -147,6 +153,28 @@ export type NotificationMetadata = {
     caseName: string;
     requestId: string;
     requestTitle: string;
+    recipientPortalUserId: string;
+  };
+  intake_form_sent: {
+    caseId: string;
+    caseName: string;
+    formId: string;
+    formTitle: string;
+    fieldCount: number;
+    recipientPortalUserId: string;
+  };
+  intake_form_submitted: {
+    caseId: string;
+    caseName: string;
+    formId: string;
+    formTitle: string;
+    recipientUserId: string;
+  };
+  intake_form_cancelled: {
+    caseId: string;
+    caseName: string;
+    formId: string;
+    formTitle: string;
     recipientPortalUserId: string;
   };
 };

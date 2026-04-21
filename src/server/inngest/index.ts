@@ -32,5 +32,15 @@ import {
   documentRequestItemRejectedNotify,
   documentRequestCancelledNotify,
 } from "./functions/document-request-notifications";
+import {
+  intakeFormSentBroadcast,
+  intakeFormSubmittedBroadcast,
+  intakeFormCancelledBroadcast,
+} from "./functions/intake-form-broadcast";
+import {
+  intakeFormSentNotify,
+  intakeFormSubmittedNotify,
+  intakeFormCancelledNotify,
+} from "./functions/intake-form-notifications";
 
-export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup, handleNotification, notificationReminders, notificationOverdueCheck, handlePortalNotification, researchEnrichOpinion, researchEnrichStatute, researchMemoGenerate, caseMessageBroadcast, documentRequestCreatedBroadcast, documentRequestItemUploadedBroadcast, documentRequestSubmittedBroadcast, documentRequestItemRejectedBroadcast, documentRequestCancelledBroadcast, documentRequestCreatedNotify, documentRequestItemUploadedNotify, documentRequestSubmittedNotify, documentRequestItemRejectedNotify, documentRequestCancelledNotify];
+export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup, handleNotification, notificationReminders, notificationOverdueCheck, handlePortalNotification, researchEnrichOpinion, researchEnrichStatute, researchMemoGenerate, caseMessageBroadcast, documentRequestCreatedBroadcast, documentRequestItemUploadedBroadcast, documentRequestSubmittedBroadcast, documentRequestItemRejectedBroadcast, documentRequestCancelledBroadcast, documentRequestCreatedNotify, documentRequestItemUploadedNotify, documentRequestSubmittedNotify, documentRequestItemRejectedNotify, documentRequestCancelledNotify, intakeFormSentBroadcast, intakeFormSubmittedBroadcast, intakeFormCancelledBroadcast, intakeFormSentNotify, intakeFormSubmittedNotify, intakeFormCancelledNotify];

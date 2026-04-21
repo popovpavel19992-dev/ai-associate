@@ -211,6 +211,20 @@ async function dispatchEmail(
       });
       break;
     }
+    case "intake_form_submitted": {
+      const caseName = (m?.caseName as string) ?? "";
+      const formTitle = (m?.formTitle as string) ?? "";
+      const caseId = event.caseId ?? "";
+      const url = `/cases/${caseId}?tab=intake`;
+      const safeCase = caseName.replace(/[<>&]/g, "");
+      const safeTitle = formTitle.replace(/[<>&]/g, "");
+      await sendEmail({
+        to: userEmail,
+        subject: `Intake form submitted: ${formTitle}`,
+        html: `<p>The client has submitted the intake form "<strong>${safeTitle}</strong>" in ${safeCase}.</p><p><a href="${url}">Review submission</a></p>`,
+      });
+      break;
+    }
     default:
       console.warn("[handle-notification] No email template for type:", type);
   }
