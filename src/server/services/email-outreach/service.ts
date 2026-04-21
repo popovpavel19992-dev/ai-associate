@@ -1,7 +1,7 @@
 // src/server/services/email-outreach/service.ts
-import { randomUUID } from "crypto";
+import { randomUUID, createHash } from "crypto";
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq, asc } from "drizzle-orm";
+import { and, desc, eq, asc, sql } from "drizzle-orm";
 import { db as defaultDb } from "@/server/db";
 import { emailTemplates } from "@/server/db/schema/email-templates";
 import { caseEmailOutreach } from "@/server/db/schema/case-email-outreach";
@@ -13,6 +13,8 @@ import { organizations } from "@/server/db/schema/organizations";
 import { clientContacts } from "@/server/db/schema/client-contacts";
 import { portalUsers } from "@/server/db/schema/portal-users";
 import { documents } from "@/server/db/schema/documents";
+import { caseEmailReplies } from "@/server/db/schema/case-email-replies";
+import { caseEmailReplyAttachments } from "@/server/db/schema/case-email-reply-attachments";
 import { renderEmail } from "./render";
 
 export interface EmailOutreachServiceDeps {
@@ -298,7 +300,7 @@ export class EmailOutreachService {
   }
 
   async listForCase(input: { caseId: string }) {
-    return this.db
+    const rows = await this.db
       .select({
         id: caseEmailOutreach.id,
         caseId: caseEmailOutreach.caseId,
@@ -311,14 +313,41 @@ export class EmailOutreachService {
         subject: caseEmailOutreach.subject,
         status: caseEmailOutreach.status,
         errorMessage: caseEmailOutreach.errorMessage,
+        bounceReason: caseEmailOutreach.bounceReason,
         sentAt: caseEmailOutreach.sentAt,
         createdAt: caseEmailOutreach.createdAt,
+        lawyerLastSeenRepliesAt: caseEmailOutreach.lawyerLastSeenRepliesAt,
       })
       .from(caseEmailOutreach)
       .leftJoin(emailTemplates, eq(emailTemplates.id, caseEmailOutreach.templateId))
       .leftJoin(users, eq(users.id, caseEmailOutreach.sentBy))
       .where(eq(caseEmailOutreach.caseId, input.caseId))
       .orderBy(desc(caseEmailOutreach.createdAt));
+
+    const outreachIds = rows.map((r) => r.id);
+    if (outreachIds.length === 0) return [];
+
+    const replyCounts = await this.db
+      .select({
+        outreachId: caseEmailReplies.outreachId,
+        total: sql<number>`count(*)::int`.as("total"),
+        latest: sql<Date | null>`max(${caseEmailReplies.receivedAt})`.as("latest"),
+      })
+      .from(caseEmailReplies)
+      .where(sql`${caseEmailReplies.outreachId} = ANY(${outreachIds})`)
+      .groupBy(caseEmailReplies.outreachId);
+
+    const byId = new Map(replyCounts.map((c) => [c.outreachId, c]));
+
+    return rows.map((r) => {
+      const agg = byId.get(r.id);
+      const replyCount = agg?.total ?? 0;
+      const hasUnreadReplies =
+        replyCount > 0 &&
+        agg!.latest instanceof Date &&
+        (!r.lawyerLastSeenRepliesAt || agg!.latest > r.lawyerLastSeenRepliesAt);
+      return { ...r, replyCount, hasUnreadReplies };
+    });
   }
 
   async getEmail(input: { emailId: string }) {
@@ -337,6 +366,8 @@ export class EmailOutreachService {
         bodyHtml: caseEmailOutreach.bodyHtml,
         status: caseEmailOutreach.status,
         errorMessage: caseEmailOutreach.errorMessage,
+        bounceReason: caseEmailOutreach.bounceReason,
+        bouncedAt: caseEmailOutreach.bouncedAt,
         resendId: caseEmailOutreach.resendId,
         sentAt: caseEmailOutreach.sentAt,
         createdAt: caseEmailOutreach.createdAt,
@@ -353,8 +384,111 @@ export class EmailOutreachService {
       .from(caseEmailOutreachAttachments)
       .where(eq(caseEmailOutreachAttachments.emailId, input.emailId));
 
-    return { ...row, attachments };
+    const replyRows = await this.db
+      .select()
+      .from(caseEmailReplies)
+      .where(eq(caseEmailReplies.outreachId, input.emailId))
+      .orderBy(asc(caseEmailReplies.receivedAt));
+
+    const replyIds = replyRows.map((r) => r.id);
+    const replyAttachments = replyIds.length > 0
+      ? await this.db
+          .select()
+          .from(caseEmailReplyAttachments)
+          .where(sql`${caseEmailReplyAttachments.replyId} = ANY(${replyIds})`)
+      : [];
+
+    const attByReply = new Map<string, typeof replyAttachments>();
+    for (const a of replyAttachments) {
+      const list = attByReply.get(a.replyId) ?? [];
+      list.push(a);
+      attByReply.set(a.replyId, list);
+    }
+    const replies = replyRows.map((r) => ({ ...r, attachments: attByReply.get(r.id) ?? [] }));
+
+    return { ...row, attachments, replies };
   }
+
+  async promoteReplyAttachment(input: {
+    replyAttachmentId: string;
+    uploadedBy: string;
+    s3CopyObject: (srcKey: string, dstKey: string, contentType: string) => Promise<void>;
+  }): Promise<{ documentId: string }> {
+    const [att] = await this.db
+      .select({
+        id: caseEmailReplyAttachments.id,
+        replyId: caseEmailReplyAttachments.replyId,
+        s3Key: caseEmailReplyAttachments.s3Key,
+        filename: caseEmailReplyAttachments.filename,
+        contentType: caseEmailReplyAttachments.contentType,
+        sizeBytes: caseEmailReplyAttachments.sizeBytes,
+        promotedDocumentId: caseEmailReplyAttachments.promotedDocumentId,
+      })
+      .from(caseEmailReplyAttachments)
+      .where(eq(caseEmailReplyAttachments.id, input.replyAttachmentId))
+      .limit(1);
+    if (!att) throw new TRPCError({ code: "NOT_FOUND", message: "Reply attachment not found" });
+
+    if (att.promotedDocumentId) return { documentId: att.promotedDocumentId };
+
+    const fileType = mapContentTypeToDocFileType(att.contentType);
+    if (!fileType) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `Cannot save to documents: unsupported file type (${att.contentType}). Only PDF, DOCX, and images are supported.`,
+      });
+    }
+
+    const [reply] = await this.db
+      .select({ caseId: caseEmailReplies.caseId })
+      .from(caseEmailReplies)
+      .where(eq(caseEmailReplies.id, att.replyId))
+      .limit(1);
+    if (!reply) throw new TRPCError({ code: "NOT_FOUND", message: "Parent reply missing" });
+
+    const newDocId = randomUUID();
+    const dstKey = `documents/${newDocId}/${att.filename}`;
+    await input.s3CopyObject(att.s3Key, dstKey, att.contentType);
+
+    // documents.checksumSha256 is NOT NULL; we don't re-download the file here,
+    // so we derive a deterministic surrogate from the source s3Key.
+    const checksumSurrogate = createHash("sha256").update(att.s3Key).digest("hex");
+
+    const [docRow] = await this.db
+      .insert(documents)
+      .values({
+        id: newDocId,
+        caseId: reply.caseId,
+        userId: input.uploadedBy,
+        filename: att.filename,
+        s3Key: dstKey,
+        fileType,
+        fileSize: att.sizeBytes,
+        checksumSha256: checksumSurrogate,
+      })
+      .returning();
+
+    await this.db
+      .update(caseEmailReplyAttachments)
+      .set({ promotedDocumentId: docRow.id })
+      .where(eq(caseEmailReplyAttachments.id, input.replyAttachmentId));
+
+    return { documentId: docRow.id };
+  }
+
+  async markRepliesRead(input: { outreachId: string }): Promise<void> {
+    await this.db
+      .update(caseEmailOutreach)
+      .set({ lawyerLastSeenRepliesAt: new Date() })
+      .where(eq(caseEmailOutreach.id, input.outreachId));
+  }
+}
+
+function mapContentTypeToDocFileType(contentType: string): "pdf" | "docx" | "image" | null {
+  if (contentType === "application/pdf") return "pdf";
+  if (contentType.startsWith("application/vnd.openxmlformats-officedocument.wordprocessingml")) return "docx";
+  if (contentType.startsWith("image/")) return "image";
+  return null;
 }
 
 function contentTypeForFileType(fileType: string, filename: string): string {
