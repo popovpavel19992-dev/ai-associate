@@ -3,6 +3,7 @@
 import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
+import { Eye, MousePointerClick } from "lucide-react";
 
 const STATUS_STYLES: Record<string, string> = {
   sent: "bg-green-100 text-green-800",
@@ -42,6 +43,15 @@ export function EmailsList({
                 <Badge className={e.hasUnreadReplies ? "bg-blue-600 text-white" : "bg-zinc-200 text-zinc-800"}>
                   {e.replyCount} {e.replyCount === 1 ? "reply" : "replies"}
                 </Badge>
+              )}
+              {e.trackingEnabled && (
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Eye className="size-3" /> {e.openCount ?? 0}
+                  <MousePointerClick className="size-3 ml-2" /> {e.clickCount ?? 0}
+                </span>
+              )}
+              {e.complainedAt && (
+                <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-800">spam</span>
               )}
             </div>
             <div className="text-xs text-muted-foreground mt-1 flex items-center justify-between gap-2">
