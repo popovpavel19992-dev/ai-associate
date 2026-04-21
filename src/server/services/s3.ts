@@ -3,6 +3,7 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  CopyObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { MAX_FILE_SIZE } from "@/lib/constants";
@@ -184,6 +185,18 @@ export async function putObject(key: string, body: Buffer, contentType: string):
     Key: key,
     Body: body,
     ContentType: contentType,
+  });
+  await getClient().send(command);
+}
+
+export async function copyObject(srcKey: string, dstKey: string, contentType: string): Promise<void> {
+  const bucket = process.env.AWS_S3_BUCKET!;
+  const command = new CopyObjectCommand({
+    Bucket: bucket,
+    CopySource: `${bucket}/${encodeURIComponent(srcKey)}`,
+    Key: dstKey,
+    ContentType: contentType,
+    MetadataDirective: "REPLACE",
   });
   await getClient().send(command);
 }
