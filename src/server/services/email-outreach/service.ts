@@ -19,7 +19,15 @@ import { renderEmail } from "./render";
 
 export interface EmailOutreachServiceDeps {
   db?: typeof defaultDb;
-  resendSend?: (opts: { to: string; subject: string; html: string; attachments?: any[]; replyTo?: string }) => Promise<{ id?: string }>;
+  resendSend?: (opts: {
+    to: string;
+    subject: string;
+    html: string;
+    attachments?: any[];
+    replyTo?: string;
+    trackOpens?: boolean;
+    trackClicks?: boolean;
+  }) => Promise<{ id?: string }>;
   fetchObject?: (s3Key: string) => Promise<Buffer>;
 }
 
@@ -192,6 +200,7 @@ export class EmailOutreachService {
     documentIds: string[];
     senderId: string;
     outreachId?: string;
+    trackingEnabled?: boolean;
   }): Promise<{ emailId: string; resendId: string | null }> {
     const MAX_BYTES = 35 * 1024 * 1024;
     const outreachId = input.outreachId ?? randomUUID();
@@ -245,6 +254,8 @@ export class EmailOutreachService {
         html: rendered.bodyHtml,
         attachments: attachmentsPayload.length > 0 ? attachmentsPayload : undefined,
         replyTo,
+        trackOpens: input.trackingEnabled ?? false,
+        trackClicks: input.trackingEnabled ?? false,
       });
 
       const [row] = await this.db
@@ -262,6 +273,7 @@ export class EmailOutreachService {
           status: "sent",
           resendId: resendRes.id ?? null,
           sentAt: new Date(),
+          trackingEnabled: input.trackingEnabled ?? false,
         })
         .returning();
 
@@ -294,6 +306,7 @@ export class EmailOutreachService {
           bodyHtml: rendered.bodyHtml,
           status: "failed",
           errorMessage: msg.slice(0, 2000),
+          trackingEnabled: input.trackingEnabled ?? false,
         });
       throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Failed to send: ${msg}` });
     }
@@ -317,6 +330,10 @@ export class EmailOutreachService {
         sentAt: caseEmailOutreach.sentAt,
         createdAt: caseEmailOutreach.createdAt,
         lawyerLastSeenRepliesAt: caseEmailOutreach.lawyerLastSeenRepliesAt,
+        trackingEnabled: caseEmailOutreach.trackingEnabled,
+        openCount: caseEmailOutreach.openCount,
+        clickCount: caseEmailOutreach.clickCount,
+        complainedAt: caseEmailOutreach.complainedAt,
       })
       .from(caseEmailOutreach)
       .leftJoin(emailTemplates, eq(emailTemplates.id, caseEmailOutreach.templateId))
@@ -371,6 +388,15 @@ export class EmailOutreachService {
         resendId: caseEmailOutreach.resendId,
         sentAt: caseEmailOutreach.sentAt,
         createdAt: caseEmailOutreach.createdAt,
+        trackingEnabled: caseEmailOutreach.trackingEnabled,
+        deliveredAt: caseEmailOutreach.deliveredAt,
+        firstOpenedAt: caseEmailOutreach.firstOpenedAt,
+        lastOpenedAt: caseEmailOutreach.lastOpenedAt,
+        openCount: caseEmailOutreach.openCount,
+        firstClickedAt: caseEmailOutreach.firstClickedAt,
+        lastClickedAt: caseEmailOutreach.lastClickedAt,
+        clickCount: caseEmailOutreach.clickCount,
+        complainedAt: caseEmailOutreach.complainedAt,
       })
       .from(caseEmailOutreach)
       .leftJoin(emailTemplates, eq(emailTemplates.id, caseEmailOutreach.templateId))

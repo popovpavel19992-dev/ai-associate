@@ -25,7 +25,15 @@ async function fetchS3ToBuffer(s3Key: string): Promise<Buffer> {
   return Buffer.concat(chunks.map((u) => Buffer.from(u)));
 }
 
-async function resendSendAdapter(opts: { to: string; subject: string; html: string; attachments?: any[]; replyTo?: string }): Promise<{ id?: string }> {
+async function resendSendAdapter(opts: {
+  to: string;
+  subject: string;
+  html: string;
+  attachments?: any[];
+  replyTo?: string;
+  trackOpens?: boolean;
+  trackClicks?: boolean;
+}): Promise<{ id?: string }> {
   // sendEmail does not currently return the Resend id; keep undefined for now.
   await sendEmail({
     to: opts.to,
@@ -33,6 +41,8 @@ async function resendSendAdapter(opts: { to: string; subject: string; html: stri
     html: opts.html,
     attachments: opts.attachments,
     replyTo: opts.replyTo,
+    trackOpens: opts.trackOpens,
+    trackClicks: opts.trackClicks,
   });
   return { id: undefined };
 }
@@ -87,6 +97,7 @@ export const caseEmailsRouter = router({
       subject: z.string().trim().min(1).max(500),
       bodyMarkdown: z.string().min(1).max(50_000),
       documentIds: z.array(z.string().uuid()).max(20),
+      trackingEnabled: z.boolean().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCaseAccess(ctx, input.caseId);
@@ -102,6 +113,7 @@ export const caseEmailsRouter = router({
         bodyMarkdown: input.bodyMarkdown,
         documentIds: input.documentIds,
         senderId: ctx.user.id,
+        trackingEnabled: input.trackingEnabled ?? false,
       });
     }),
 
