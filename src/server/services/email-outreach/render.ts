@@ -5,8 +5,12 @@
 import { marked } from "marked";
 import DOMPurify from "isomorphic-dompurify";
 
-const ALLOWED_TAGS = ["p", "h2", "h3", "strong", "em", "a", "ul", "ol", "li", "br", "blockquote"];
-const ALLOWED_ATTR = ["href", "rel", "target"];
+export const ALLOWED_TAGS = ["p", "h2", "h3", "strong", "em", "a", "ul", "ol", "li", "br", "blockquote"];
+export const ALLOWED_ATTR = ["href", "rel", "target"];
+
+export function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR });
+}
 
 export function substituteVariables(src: string, variables: Record<string, string>): string {
   return src.replace(/\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}/g, (full, name) => {
