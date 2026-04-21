@@ -46,6 +46,7 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   intake_form_cancelled: "Intake form cancelled",
   milestone_published: "Case update published",
   milestone_retracted: "Case update retracted",
+  email_reply_received: "Client replied to sent email",
 };
 
 const CHANNEL_LABELS: Record<NotificationChannel, string> = {
