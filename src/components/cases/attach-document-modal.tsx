@@ -15,16 +15,32 @@ import {
 } from "@/components/ui/dialog";
 import { Paperclip } from "lucide-react";
 
-interface AttachDocumentModalProps {
+type SingleProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   caseId: string;
+  multiple?: false;
   onSelect: (doc: { id: string; filename: string }) => void;
-}
+  onSelectMany?: undefined;
+};
 
-export function AttachDocumentModal({ open, onOpenChange, caseId, onSelect }: AttachDocumentModalProps) {
+type MultiProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  caseId: string;
+  multiple: true;
+  onSelect?: undefined;
+  onSelectMany: (docs: Array<{ id: string; filename: string }>) => void;
+};
+
+export type AttachDocumentModalProps = SingleProps | MultiProps;
+
+export function AttachDocumentModal(props: AttachDocumentModalProps) {
+  const { open, onOpenChange, caseId } = props;
+  const isMulti = props.multiple === true;
+
   const [search, setSearch] = React.useState("");
-  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const { data, isLoading } = trpc.caseMessages.attachableDocuments.useQuery(
     { caseId, search: search || undefined },
     { enabled: open },
@@ -33,23 +49,46 @@ export function AttachDocumentModal({ open, onOpenChange, caseId, onSelect }: At
   React.useEffect(() => {
     if (open) {
       setSearch("");
-      setSelectedId(null);
+      setSelected(new Set());
     }
   }, [open]);
 
+  function toggle(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (isMulti) {
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+      } else {
+        next.clear();
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
   const submit = () => {
-    const doc = data?.documents.find((d) => d.id === selectedId);
-    if (!doc) return;
-    onSelect({ id: doc.id, filename: doc.filename });
+    const chosen = (data?.documents ?? []).filter((d) => selected.has(d.id));
+    if (chosen.length === 0) return;
+    if (isMulti) {
+      (props as MultiProps).onSelectMany(chosen.map((d) => ({ id: d.id, filename: d.filename })));
+    } else {
+      const first = chosen[0];
+      (props as SingleProps).onSelect({ id: first.id, filename: first.filename });
+    }
     onOpenChange(false);
   };
+
+  const selectedCount = selected.size;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Attach a document</DialogTitle>
-          <DialogDescription>Choose a document already uploaded to this case.</DialogDescription>
+          <DialogTitle>{isMulti ? "Attach documents" : "Attach a document"}</DialogTitle>
+          <DialogDescription>
+            Choose {isMulti ? "one or more documents" : "a document"} already uploaded to this case.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <Input
@@ -71,10 +110,10 @@ export function AttachDocumentModal({ open, onOpenChange, caseId, onSelect }: At
                   <li key={d.id}>
                     <label className="flex cursor-pointer items-center gap-2 rounded p-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900">
                       <input
-                        type="radio"
+                        type={isMulti ? "checkbox" : "radio"}
                         name="doc"
-                        checked={selectedId === d.id}
-                        onChange={() => setSelectedId(d.id)}
+                        checked={selected.has(d.id)}
+                        onChange={() => toggle(d.id)}
                       />
                       <Paperclip className="size-3.5 text-muted-foreground" aria-hidden />
                       <span className="flex-1 truncate">{d.filename}</span>
@@ -90,7 +129,9 @@ export function AttachDocumentModal({ open, onOpenChange, caseId, onSelect }: At
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={submit} disabled={!selectedId}>Attach selected</Button>
+          <Button onClick={submit} disabled={selectedCount === 0}>
+            {isMulti ? `Attach ${selectedCount || ""}`.trim() : "Attach selected"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
