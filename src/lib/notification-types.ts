@@ -37,6 +37,10 @@ export const NOTIFICATION_TYPES = [
   "milestone_retracted",
   "email_reply_received",
   "email_complained",
+  "signature_request_signed",
+  "signature_request_all_signed",
+  "signature_request_declined",
+  "signature_request_expired",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -65,6 +69,10 @@ export const NOTIFICATION_CATEGORIES = {
     "milestone_retracted",
     "email_reply_received",
     "email_complained",
+    "signature_request_signed",
+    "signature_request_all_signed",
+    "signature_request_declined",
+    "signature_request_expired",
   ],
   billing: ["invoice_sent", "invoice_paid", "invoice_overdue", "credits_low", "credits_exhausted"],
   team: ["team_member_invited", "team_member_joined", "added_to_case"],
@@ -215,6 +223,28 @@ export type NotificationMetadata = {
     outboundEmailId: string;
     subject: string;
     recipientEmail: string;
+  };
+  signature_request_signed: {
+    caseId: string;
+    requestId: string;
+    title: string;
+    signerEmail: string;
+  };
+  signature_request_all_signed: {
+    caseId: string;
+    requestId: string;
+    title: string;
+  };
+  signature_request_declined: {
+    caseId: string;
+    requestId: string;
+    title: string;
+    reason: string | null;
+  };
+  signature_request_expired: {
+    caseId: string;
+    requestId: string;
+    title: string;
   };
 };
 

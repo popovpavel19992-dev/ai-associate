@@ -48,6 +48,10 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   milestone_retracted: "Case update retracted",
   email_reply_received: "Client replied to sent email",
   email_complained: "Recipient marked a sent email as spam",
+  signature_request_signed: "A signer signed a request",
+  signature_request_all_signed: "All parties signed a request",
+  signature_request_declined: "A signer declined a request",
+  signature_request_expired: "A signature request expired",
 };
 
 const CHANNEL_LABELS: Record<NotificationChannel, string> = {
