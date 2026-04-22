@@ -179,6 +179,14 @@ export async function getObject(
   };
 }
 
+export async function generateDownloadUrl(s3Key: string): Promise<string> {
+  const command = new GetObjectCommand({
+    Bucket: getBucket(),
+    Key: s3Key,
+  });
+  return getSignedUrl(getClient(), command, { expiresIn: PRESIGN_EXPIRY_SECONDS });
+}
+
 export async function putObject(key: string, body: Buffer, contentType: string): Promise<void> {
   const command = new PutObjectCommand({
     Bucket: process.env.AWS_S3_BUCKET!,
