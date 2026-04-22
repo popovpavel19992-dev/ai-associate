@@ -2,6 +2,9 @@
 import { describe, it, expect, vi } from "vitest";
 import { EsignatureService } from "@/server/services/esignature/service";
 import type { DropboxSignClient, SignatureRequestResult } from "@/server/services/esignature/dropbox-sign-client";
+import signedFixture from "../fixtures/dropbox-sign/signed.json";
+import allSignedFixture from "../fixtures/dropbox-sign/all-signed.json";
+import declinedFixture from "../fixtures/dropbox-sign/declined.json";
 
 function makeMockDb(existingOrgKey: string | null = "encrypted_key") {
   const inserts: Array<{ table: unknown; values: unknown }> = [];
@@ -168,5 +171,111 @@ describe("EsignatureService.create", () => {
         requiresCountersign: false,
       }),
     ).rejects.toThrow(/templateId or sourceDocumentId/i);
+  });
+});
+
+function makeMockDbForIngest(opts: {
+  existingEventHash?: string;
+  request?: { id: string; caseId: string; createdBy: string; title: string };
+  signers?: Array<{ id: string; requestId: string; email: string; signerOrder: number; status: string }>;
+}) {
+  const inserts: Array<{ table: unknown; values: unknown }> = [];
+  const updates: Array<{ table: unknown; set: unknown; where: unknown }> = [];
+  let selectCount = 0;
+  const db: any = {
+    insert: (t: unknown) => ({
+      values: (v: unknown) => {
+        inserts.push({ table: t, values: v });
+        return { returning: async () => [{ id: `row-${inserts.length}`, ...(Array.isArray(v) ? v[0] : (v as object)) }] };
+      },
+    }),
+    update: (t: unknown) => ({
+      set: (s: unknown) => ({
+        where: (w: unknown) => { updates.push({ table: t, set: s, where: w }); return Promise.resolve(); },
+      }),
+    }),
+    select: () => ({
+      from: () => ({
+        where: () => ({
+          limit: async () => {
+            selectCount++;
+            if (selectCount === 1) return opts.existingEventHash ? [{ id: "existing" }] : [];
+            if (selectCount === 2) return opts.request ? [opts.request] : [];
+            return [];
+          },
+          orderBy: async () => opts.signers ?? [],
+        }),
+      }),
+    }),
+  };
+  return { db, inserts, updates };
+}
+
+describe("EsignatureService.ingestEvent", () => {
+  const REQUEST = { id: "r1", caseId: "c1", createdBy: "l1", title: "Retainer" };
+  const SIGNERS = [
+    { id: "s1", requestId: "r1", email: "jane@client.com", signerOrder: 0, status: "awaiting_signature" },
+    { id: "s2", requestId: "r1", email: "lawyer@firm.com", signerOrder: 1, status: "awaiting_turn" },
+  ];
+
+  it("duplicate event hash → no-op", async () => {
+    const { db, inserts, updates } = makeMockDbForIngest({ existingEventHash: "dup" });
+    const svc = new EsignatureService({
+      db,
+      decryptKey: () => "k",
+      getPageCount: async () => 1,
+      fetchS3: async () => Buffer.alloc(0),
+      buildClient: () => makeMockClient(),
+    });
+    const result = await svc.ingestEvent(signedFixture as any);
+    expect(result.status).toBe("duplicate");
+    expect(inserts.length).toBe(0);
+    expect(updates.length).toBe(0);
+  });
+
+  it("no parent request → no-op", async () => {
+    const { db } = makeMockDbForIngest({});
+    const svc = new EsignatureService({
+      db,
+      decryptKey: () => "k",
+      getPageCount: async () => 1,
+      fetchS3: async () => Buffer.alloc(0),
+      buildClient: () => makeMockClient(),
+    });
+    const result = await svc.ingestEvent(signedFixture as any);
+    expect(result.status).toBe("no-parent");
+  });
+
+  it("signed event marks client signed + flips lawyer to awaiting_signature", async () => {
+    const { db, updates } = makeMockDbForIngest({ request: REQUEST, signers: SIGNERS });
+    const svc = new EsignatureService({
+      db,
+      decryptKey: () => "k",
+      getPageCount: async () => 1,
+      fetchS3: async () => Buffer.alloc(0),
+      buildClient: () => makeMockClient(),
+    });
+    const result = await svc.ingestEvent(signedFixture as any);
+    expect(result.status).toBe("ok");
+    expect(updates.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("declined event sets request status declined + captures reason", async () => {
+    const { db, updates } = makeMockDbForIngest({ request: REQUEST, signers: SIGNERS });
+    const svc = new EsignatureService({
+      db,
+      decryptKey: () => "k",
+      getPageCount: async () => 1,
+      fetchS3: async () => Buffer.alloc(0),
+      buildClient: () => makeMockClient(),
+    });
+    const result = await svc.ingestEvent(declinedFixture as any);
+    expect(result.status).toBe("ok");
+    const reqUpdate = updates.find((u) => {
+      const set = u.set as Record<string, unknown>;
+      return set.status === "declined";
+    });
+    expect(reqUpdate).toBeTruthy();
+    expect((reqUpdate!.set as any).declinedReason).toContain("accountant");
   });
 });

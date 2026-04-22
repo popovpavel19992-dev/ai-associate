@@ -1,0 +1,14 @@
+{
+  "event": {
+    "event_time": "1713700300",
+    "event_type": "signature_request_declined",
+    "event_hash": "PLACEHOLDER_HASH"
+  },
+  "signature_request": {
+    "signature_request_id": "sr_test_1",
+    "title": "Retainer",
+    "signatures": [
+      { "signature_id": "sig_c", "signer_email_address": "jane@client.com", "decline_reason": "Need to review with accountant", "status_code": "declined" }
+    ]
+  }
+}

@@ -210,4 +210,107 @@ export class EsignatureService {
 
     return { requestId: insertedRequest.id, hellosignRequestId: result.signatureRequestId };
   }
+
+  async ingestEvent(payload: any): Promise<{ status: "ok" | "duplicate" | "no-parent" }> {
+    const evt = payload.event;
+    const sr = payload.signature_request;
+    if (!evt?.event_hash || !sr?.signature_request_id) {
+      return { status: "no-parent" };
+    }
+
+    const dup = await this.db
+      .select({ id: caseSignatureRequestEvents.id })
+      .from(caseSignatureRequestEvents)
+      .where(eq(caseSignatureRequestEvents.eventHash, evt.event_hash))
+      .limit(1);
+    if (dup.length > 0) return { status: "duplicate" };
+
+    const [req] = await this.db
+      .select({ id: caseSignatureRequests.id, caseId: caseSignatureRequests.caseId, createdBy: caseSignatureRequests.createdBy, title: caseSignatureRequests.title })
+      .from(caseSignatureRequests)
+      .where(eq(caseSignatureRequests.hellosignRequestId, sr.signature_request_id))
+      .limit(1);
+    if (!req) return { status: "no-parent" };
+
+    const eventAt = new Date(Number(evt.event_time) * 1000);
+
+    const newEvent: NewCaseSignatureRequestEvent = {
+      requestId: req.id,
+      eventType: evt.event_type,
+      eventAt,
+      eventHash: evt.event_hash,
+      metadata: { signature_request: sr },
+    };
+    await this.db.insert(caseSignatureRequestEvents).values(newEvent);
+
+    const type = evt.event_type as string;
+    if (type === "signature_request_signed") {
+      const signedSig = (sr.signatures ?? []).find((s: any) => s.status_code === "signed" && s.signed_at && !s.decline_reason);
+      if (!signedSig) return { status: "ok" };
+
+      const signers = await this.db
+        .select()
+        .from(caseSignatureRequestSigners)
+        .where(eq(caseSignatureRequestSigners.requestId, req.id))
+        .orderBy(asc(caseSignatureRequestSigners.signerOrder));
+
+      const matched = signers.find((s: any) => s.email.toLowerCase() === signedSig.signer_email_address.toLowerCase());
+      if (matched) {
+        await this.db
+          .update(caseSignatureRequestSigners)
+          .set({ status: "signed", signedAt: eventAt })
+          .where(eq(caseSignatureRequestSigners.id, matched.id));
+      }
+
+      const nextWaiting = signers.find((s: any) => s.status === "awaiting_turn");
+      if (nextWaiting) {
+        await this.db
+          .update(caseSignatureRequestSigners)
+          .set({ status: "awaiting_signature" })
+          .where(eq(caseSignatureRequestSigners.id, nextWaiting.id));
+      }
+
+      await this.db
+        .update(caseSignatureRequests)
+        .set({ status: "in_progress", updatedAt: new Date() })
+        .where(eq(caseSignatureRequests.id, req.id));
+    } else if (type === "signature_request_all_signed") {
+      await this.db
+        .update(caseSignatureRequests)
+        .set({ status: "completed", completedAt: eventAt, updatedAt: new Date() })
+        .where(eq(caseSignatureRequests.id, req.id));
+    } else if (type === "signature_request_declined") {
+      const declinedSig = (sr.signatures ?? []).find((s: any) => s.decline_reason || s.status_code === "declined");
+      const reason = declinedSig?.decline_reason ?? null;
+      await this.db
+        .update(caseSignatureRequests)
+        .set({ status: "declined", declinedAt: eventAt, declinedReason: reason, updatedAt: new Date() })
+        .where(eq(caseSignatureRequests.id, req.id));
+    } else if (type === "signature_request_expired") {
+      await this.db
+        .update(caseSignatureRequests)
+        .set({ status: "expired", expiredAt: eventAt, updatedAt: new Date() })
+        .where(eq(caseSignatureRequests.id, req.id));
+    } else if (type === "signature_request_canceled") {
+      await this.db
+        .update(caseSignatureRequests)
+        .set({ status: "cancelled", cancelledAt: eventAt, updatedAt: new Date() })
+        .where(eq(caseSignatureRequests.id, req.id));
+    } else if (type === "signature_request_viewed") {
+      const viewedSig = (sr.signatures ?? []).find((s: any) => s.status_code === "on_hold" || s.last_viewed_at);
+      if (viewedSig?.signer_email_address) {
+        await this.db
+          .update(caseSignatureRequestSigners)
+          .set({ viewedAt: eventAt })
+          .where(
+            and(
+              eq(caseSignatureRequestSigners.requestId, req.id),
+              eq(caseSignatureRequestSigners.email, viewedSig.signer_email_address),
+            ),
+          );
+      }
+    }
+
+    return { status: "ok" };
+  }
 }
