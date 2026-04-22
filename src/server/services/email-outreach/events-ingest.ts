@@ -65,17 +65,18 @@ export class EmailEventsIngestService {
     };
     await this.db.insert(caseEmailOutreachEvents).values(newEvent);
 
+    const tsParam = sql.param(payload.eventAt, caseEmailOutreach.deliveredAt);
     if (eventType === "delivered") {
       await this.db
         .update(caseEmailOutreach)
-        .set({ deliveredAt: sql`COALESCE(${caseEmailOutreach.deliveredAt}, ${payload.eventAt})` })
+        .set({ deliveredAt: sql`COALESCE(${caseEmailOutreach.deliveredAt}, ${tsParam})` })
         .where(eq(caseEmailOutreach.id, outreach.id));
     } else if (eventType === "opened") {
       await this.db
         .update(caseEmailOutreach)
         .set({
           openCount: sql`${caseEmailOutreach.openCount} + 1`,
-          firstOpenedAt: sql`COALESCE(${caseEmailOutreach.firstOpenedAt}, ${payload.eventAt})`,
+          firstOpenedAt: sql`COALESCE(${caseEmailOutreach.firstOpenedAt}, ${tsParam})`,
           lastOpenedAt: payload.eventAt,
         })
         .where(eq(caseEmailOutreach.id, outreach.id));
@@ -84,7 +85,7 @@ export class EmailEventsIngestService {
         .update(caseEmailOutreach)
         .set({
           clickCount: sql`${caseEmailOutreach.clickCount} + 1`,
-          firstClickedAt: sql`COALESCE(${caseEmailOutreach.firstClickedAt}, ${payload.eventAt})`,
+          firstClickedAt: sql`COALESCE(${caseEmailOutreach.firstClickedAt}, ${tsParam})`,
           lastClickedAt: payload.eventAt,
         })
         .where(eq(caseEmailOutreach.id, outreach.id));
