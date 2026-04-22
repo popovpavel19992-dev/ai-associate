@@ -22,6 +22,9 @@ export const caseEmailOutreach = pgTable(
     resendId: text("resend_id"),
     sentAt: timestamp("sent_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    bounceReason: text("bounce_reason"),
+    bouncedAt: timestamp("bounced_at", { withTimezone: true }),
+    lawyerLastSeenRepliesAt: timestamp("lawyer_last_seen_replies_at", { withTimezone: true }),
   },
   (table) => [
     index("case_email_outreach_case_created_idx").on(table.caseId, table.createdAt),
