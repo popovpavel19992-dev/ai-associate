@@ -116,7 +116,10 @@ export class EsignatureService {
       signers.push({ role: "Lawyer", email: input.lawyerEmail, name: input.lawyerName, order: 1 });
     }
 
-    const redirectUrl = `${process.env.APP_URL ?? ""}/portal/cases/${input.caseId}?tab=signatures`;
+    const appBase = process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
+    // Dropbox Sign rejects non-HTTPS / localhost redirect URLs — only pass one in production
+    const isPublicHttps = appBase.startsWith("https://") && !appBase.includes("localhost");
+    const redirectUrl = isPublicHttps ? `${appBase}/portal/cases/${input.caseId}?tab=signatures` : undefined;
     const testMode = input.testMode ?? false;
 
     let result;

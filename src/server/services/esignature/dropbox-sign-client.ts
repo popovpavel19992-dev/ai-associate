@@ -67,14 +67,21 @@ export class DropboxSignClient {
         order: s.order,
       })),
       customFields: input.customFields,
-      testMode: input.testMode ? 1 : 0,
+      testMode: input.testMode ?? false,
       signingRedirectUrl: input.signingRedirectUrl,
     } as any);
     return this.mapResponse(res.body);
   }
 
   async sendRaw(input: SendRawInput): Promise<SignatureRequestResult> {
-    const file = new File([input.fileBuffer as unknown as BlobPart], input.fileName, { type: "application/pdf" });
+    // The @dropbox/sign SDK's internal form-data library expects either a
+    // Node.js Readable stream or the SDK's BufferDetailedFile shape
+    // ({ value: Buffer, options: { filename, contentType } }).
+    // Web API `File` objects are NOT compatible — they don't have `.on()`.
+    const fileEntry = {
+      value: input.fileBuffer,
+      options: { filename: input.fileName, contentType: "application/pdf" },
+    };
     const res = await this.api.signatureRequestSend({
       title: input.title,
       subject: input.subject,
@@ -84,9 +91,9 @@ export class DropboxSignClient {
         name: s.name,
         order: s.order,
       })),
-      file: [file],
+      files: [fileEntry],
       formFieldsPerDocument: [input.formFields],
-      testMode: input.testMode ? 1 : 0,
+      testMode: input.testMode ?? false,
       signingRedirectUrl: input.signingRedirectUrl,
     } as any);
     return this.mapResponse(res.body);
