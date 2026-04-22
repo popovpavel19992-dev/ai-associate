@@ -349,6 +349,28 @@ export default function IntegrationsPage() {
         </h2>
         <IcalFeedSection />
       </section>
+
+      <section className="space-y-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">
+          E-Signature
+        </h2>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span className="flex size-8 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">DS</span>
+              Dropbox Sign
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Send documents for e-signature with your own Dropbox Sign account.
+            </p>
+            <a className={buttonVariants({ variant: "outline" })} href="/settings/integrations/dropbox-sign">
+              Configure
+            </a>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }

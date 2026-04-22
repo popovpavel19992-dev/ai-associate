@@ -4,7 +4,8 @@ import { TRPCError } from "@trpc/server";
 import { and, asc, eq, ne } from "drizzle-orm";
 import { router, protectedProcedure } from "../trpc";
 import { clientContacts } from "@/server/db/schema/client-contacts";
-import { assertClientRead, assertClientEdit } from "../lib/permissions";
+import { cases } from "@/server/db/schema/cases";
+import { assertClientRead, assertClientEdit, assertCaseAccess } from "../lib/permissions";
 import { contactSchema } from "@/lib/clients";
 
 /**
@@ -26,6 +27,23 @@ async function loadContactForEdit(
 }
 
 export const clientContactsRouter = router({
+  listForCase: protectedProcedure
+    .input(z.object({ caseId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      await assertCaseAccess(ctx, input.caseId);
+      const [caseRow] = await ctx.db
+        .select({ clientId: cases.clientId })
+        .from(cases)
+        .where(eq(cases.id, input.caseId))
+        .limit(1);
+      if (!caseRow?.clientId) return { contacts: [] };
+      const contacts = await ctx.db
+        .select()
+        .from(clientContacts)
+        .where(eq(clientContacts.clientId, caseRow.clientId));
+      return { contacts };
+    }),
+
   list: protectedProcedure
     .input(z.object({ clientId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {

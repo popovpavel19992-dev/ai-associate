@@ -1,0 +1,15 @@
+{
+  "event": {
+    "event_time": "1713700100",
+    "event_type": "signature_request_signed",
+    "event_hash": "PLACEHOLDER_HASH"
+  },
+  "signature_request": {
+    "signature_request_id": "sr_test_1",
+    "title": "Retainer",
+    "signatures": [
+      { "signature_id": "sig_c", "signer_email_address": "jane@client.com", "signed_at": 1713700100, "status_code": "signed" },
+      { "signature_id": "sig_l", "signer_email_address": "lawyer@firm.com", "signed_at": null, "status_code": "awaiting_signature" }
+    ]
+  }
+}

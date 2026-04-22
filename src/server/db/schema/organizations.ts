@@ -17,4 +17,6 @@ export const organizations = pgTable("organizations", {
   creditsUsedThisMonth: integer("credits_used_this_month").notNull().default(0),
   creditsLimit: integer("credits_limit").notNull().default(200),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  hellosignApiKeyEncrypted: text("hellosign_api_key_encrypted"),
+  hellosignSenderName: text("hellosign_sender_name"),
 });
