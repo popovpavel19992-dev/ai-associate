@@ -10,9 +10,19 @@ export interface SendEmailOptions {
   html: string;
   attachments?: Array<{ filename: string; content: string; contentType?: string }>;
   replyTo?: string;
+  trackOpens?: boolean;
+  trackClicks?: boolean;
 }
 
-export async function sendEmail({ to, subject, html, attachments, replyTo }: SendEmailOptions) {
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  attachments,
+  replyTo,
+  trackOpens,
+  trackClicks,
+}: SendEmailOptions) {
   if (!process.env.RESEND_API_KEY) {
     console.warn("[email] RESEND_API_KEY not set, skipping email:", subject);
     return;
@@ -33,6 +43,8 @@ export async function sendEmail({ to, subject, html, attachments, replyTo }: Sen
         }
       : {}),
     ...(replyTo ? { reply_to: replyTo } : {}),
+    ...(trackOpens !== undefined ? { track_opens: trackOpens } : {}),
+    ...(trackClicks !== undefined ? { track_clicks: trackClicks } : {}),
   } as Parameters<typeof resend.emails.send>[0]);
 }
 

@@ -1,5 +1,5 @@
 // src/server/db/schema/case-email-outreach.ts
-import { pgTable, uuid, text, timestamp, index, check } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, boolean, integer, index, check } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { cases } from "./cases";
 import { users } from "./users";
@@ -25,6 +25,15 @@ export const caseEmailOutreach = pgTable(
     bounceReason: text("bounce_reason"),
     bouncedAt: timestamp("bounced_at", { withTimezone: true }),
     lawyerLastSeenRepliesAt: timestamp("lawyer_last_seen_replies_at", { withTimezone: true }),
+    trackingEnabled: boolean("tracking_enabled").notNull().default(false),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    firstOpenedAt: timestamp("first_opened_at", { withTimezone: true }),
+    lastOpenedAt: timestamp("last_opened_at", { withTimezone: true }),
+    openCount: integer("open_count").notNull().default(0),
+    firstClickedAt: timestamp("first_clicked_at", { withTimezone: true }),
+    lastClickedAt: timestamp("last_clicked_at", { withTimezone: true }),
+    clickCount: integer("click_count").notNull().default(0),
+    complainedAt: timestamp("complained_at", { withTimezone: true }),
   },
   (table) => [
     index("case_email_outreach_case_created_idx").on(table.caseId, table.createdAt),

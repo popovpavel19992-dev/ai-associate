@@ -11,6 +11,12 @@ import { NewEmailModal } from "./new-email-modal";
 import { RepliesSection } from "./replies-section";
 import type { ReplyRowData } from "./reply-row";
 
+function formatTime(d: Date | string | null | undefined): string {
+  if (!d) return "";
+  const date = d instanceof Date ? d : new Date(d);
+  return date.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
 export function EmailDetail({ emailId, caseId }: { emailId: string; caseId: string }) {
   const { data } = trpc.caseEmails.get.useQuery({ emailId });
   const [resendOpen, setResendOpen] = React.useState(false);
@@ -68,6 +74,23 @@ export function EmailDetail({ emailId, caseId }: { emailId: string; caseId: stri
               <FileText className="size-3" /> {a.filename} · {Math.round(a.sizeBytes / 1024)}KB
             </span>
           ))}
+        </div>
+      )}
+
+      {data.trackingEnabled && (
+        <div className="text-xs text-muted-foreground">
+          Tracking:
+          {data.deliveredAt && <> delivered {formatTime(data.deliveredAt)}</>}
+          {(data.openCount ?? 0) > 0 && (
+            <> · opened {data.openCount}× (first {formatTime(data.firstOpenedAt)}, last {formatTime(data.lastOpenedAt)})</>
+          )}
+          {(data.clickCount ?? 0) > 0 && <> · clicked {data.clickCount}×</>}
+        </div>
+      )}
+
+      {data.complainedAt && (
+        <div className="rounded border border-red-400 bg-red-50 p-3 text-sm text-red-800">
+          ⚠ Recipient marked this as spam on {formatTime(data.complainedAt)}. Future emails may land in spam folder.
         </div>
       )}
 

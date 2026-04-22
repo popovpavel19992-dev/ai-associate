@@ -62,6 +62,7 @@ export function NewEmailModal({
   const [templateId, setTemplateId] = React.useState<string | null>(initial?.templateId ?? null);
   const [attached, setAttached] = React.useState<Array<{ id: string; filename: string; fileSize: number }>>(initial?.attachments ?? []);
   const [attachOpen, setAttachOpen] = React.useState(false);
+  const [trackingEnabled, setTrackingEnabled] = React.useState(false);
   const bodyRef = React.useRef<HTMLTextAreaElement>(null);
 
   React.useEffect(() => {
@@ -71,6 +72,7 @@ export function NewEmailModal({
       setBodyMarkdown(initial?.bodyMarkdown ?? "");
       setTemplateId(initial?.templateId ?? null);
       setAttached(initial?.attachments ?? []);
+      setTrackingEnabled(false);
     }
   }, [open, initial]);
 
@@ -246,6 +248,22 @@ export function NewEmailModal({
           </div>
         </div>
 
+        <div className="flex items-start gap-3 rounded border p-3">
+          <input
+            type="checkbox"
+            id="track-opens-clicks"
+            checked={trackingEnabled}
+            onChange={(e) => setTrackingEnabled(e.target.checked)}
+            className="mt-1"
+          />
+          <label htmlFor="track-opens-clicks" className="flex flex-col text-sm">
+            <span className="font-medium">Track opens &amp; clicks</span>
+            <span className="text-xs text-muted-foreground">
+              When enabled, a 1px tracking pixel is added and links route through track.resend.com.
+            </span>
+          </label>
+        </div>
+
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
@@ -256,6 +274,7 @@ export function NewEmailModal({
               subject: subject.trim(),
               bodyMarkdown,
               documentIds: attached.map((a) => a.id),
+              trackingEnabled,
             })}
           >
             {send.isPending ? "Sending…" : "Send"}
