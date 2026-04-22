@@ -51,8 +51,7 @@ export function NewSignatureRequestModal({
   }, [open, initialSourceDocumentId]);
 
   const templates = trpc.caseSignatures.listTemplates.useQuery(undefined, { enabled: open && sourceMode === "template" });
-  // clientContacts.list requires clientId (not caseId); no listForCase query exists — graceful empty list
-  const contacts = (trpc as any).clientContacts?.listForCase?.useQuery?.({ caseId }, { enabled: open }) ?? { data: { contacts: [] } };
+  const contacts = trpc.clientContacts.listForCase.useQuery({ caseId }, { enabled: open });
   // documents.listByCase returns an array directly (not { documents: [] })
   const caseDocs = trpc.documents.listByCase.useQuery({ caseId }, { enabled: open && sourceMode === "document" });
 
