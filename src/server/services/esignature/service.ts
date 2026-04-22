@@ -11,6 +11,7 @@ import { organizations } from "@/server/db/schema/organizations";
 import { clientContacts } from "@/server/db/schema/client-contacts";
 import { documents } from "@/server/db/schema/documents";
 import { putObject } from "@/server/services/s3";
+import { notifications } from "@/server/db/schema/notifications";
 import type { DropboxSignClient } from "./dropbox-sign-client";
 
 const DEFAULT_SIG_WIDTH = 200;
@@ -272,6 +273,19 @@ export class EsignatureService {
           .where(eq(caseSignatureRequestSigners.id, nextWaiting.id));
       }
 
+      if (req.createdBy) {
+        try {
+          await this.db.insert(notifications).values({
+            userId: req.createdBy,
+            type: "signature_request_signed",
+            title: "A signer signed",
+            body: `${signedSig.signer_email_address} signed "${req.title}"`,
+            caseId: req.caseId,
+            dedupKey: `sig-signed:${req.id}:${signedSig.signature_id}`,
+          });
+        } catch (e) { console.error("[esig] notif insert failed", e); }
+      }
+
       await this.db
         .update(caseSignatureRequests)
         .set({ status: "in_progress", updatedAt: new Date() })
@@ -281,6 +295,19 @@ export class EsignatureService {
         .update(caseSignatureRequests)
         .set({ status: "completed", completedAt: eventAt, updatedAt: new Date() })
         .where(eq(caseSignatureRequests.id, req.id));
+
+      if (req.createdBy) {
+        try {
+          await this.db.insert(notifications).values({
+            userId: req.createdBy,
+            type: "signature_request_all_signed",
+            title: "All parties signed",
+            body: `"${req.title}" is fully signed`,
+            caseId: req.caseId,
+            dedupKey: `sig-all-signed:${req.id}`,
+          });
+        } catch (e) { console.error("[esig] notif insert failed", e); }
+      }
     } else if (type === "signature_request_declined") {
       const declinedSig = (sr.signatures ?? []).find((s: any) => s.decline_reason || s.status_code === "declined");
       const reason = declinedSig?.decline_reason ?? null;
@@ -288,11 +315,37 @@ export class EsignatureService {
         .update(caseSignatureRequests)
         .set({ status: "declined", declinedAt: eventAt, declinedReason: reason, updatedAt: new Date() })
         .where(eq(caseSignatureRequests.id, req.id));
+
+      if (req.createdBy) {
+        try {
+          await this.db.insert(notifications).values({
+            userId: req.createdBy,
+            type: "signature_request_declined",
+            title: "Signer declined",
+            body: `"${req.title}" was declined${reason ? `: ${reason}` : ""}`,
+            caseId: req.caseId,
+            dedupKey: `sig-declined:${req.id}`,
+          });
+        } catch (e) { console.error("[esig] notif insert failed", e); }
+      }
     } else if (type === "signature_request_expired") {
       await this.db
         .update(caseSignatureRequests)
         .set({ status: "expired", expiredAt: eventAt, updatedAt: new Date() })
         .where(eq(caseSignatureRequests.id, req.id));
+
+      if (req.createdBy) {
+        try {
+          await this.db.insert(notifications).values({
+            userId: req.createdBy,
+            type: "signature_request_expired",
+            title: "Signature request expired",
+            body: `"${req.title}" expired`,
+            caseId: req.caseId,
+            dedupKey: `sig-expired:${req.id}`,
+          });
+        } catch (e) { console.error("[esig] notif insert failed", e); }
+      }
     } else if (type === "signature_request_canceled") {
       await this.db
         .update(caseSignatureRequests)
