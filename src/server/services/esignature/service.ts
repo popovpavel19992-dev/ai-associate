@@ -1,6 +1,7 @@
 // src/server/services/esignature/service.ts
 import { TRPCError } from "@trpc/server";
 import { and, asc, desc, eq } from "drizzle-orm";
+import { createHash, randomUUID } from "crypto";
 import { db as defaultDb } from "@/server/db";
 import { caseSignatureRequests, type NewCaseSignatureRequest } from "@/server/db/schema/case-signature-requests";
 import { caseSignatureRequestSigners, type NewCaseSignatureRequestSigner } from "@/server/db/schema/case-signature-request-signers";
@@ -9,6 +10,7 @@ import { cases } from "@/server/db/schema/cases";
 import { organizations } from "@/server/db/schema/organizations";
 import { clientContacts } from "@/server/db/schema/client-contacts";
 import { documents } from "@/server/db/schema/documents";
+import { putObject } from "@/server/services/s3";
 import type { DropboxSignClient } from "./dropbox-sign-client";
 
 const DEFAULT_SIG_WIDTH = 200;
@@ -312,5 +314,132 @@ export class EsignatureService {
     }
 
     return { status: "ok" };
+  }
+
+  async completeRequest(input: { requestId: string; apiKey: string }): Promise<{ signedDocumentId: string; certificateS3Key: string }> {
+    const [req] = await this.db
+      .select()
+      .from(caseSignatureRequests)
+      .where(eq(caseSignatureRequests.id, input.requestId))
+      .limit(1);
+    if (!req) throw new TRPCError({ code: "NOT_FOUND", message: "Request not found" });
+    if (!req.hellosignRequestId) throw new TRPCError({ code: "BAD_REQUEST", message: "Request never sent" });
+
+    if (req.signedDocumentId && req.certificateS3Key) {
+      return { signedDocumentId: req.signedDocumentId, certificateS3Key: req.certificateS3Key };
+    }
+
+    const client = this.buildClient(input.apiKey);
+    const { signedPdf, certificatePdf } = await client.downloadFiles(req.hellosignRequestId);
+
+    const certKey = `signatures/${req.id}/certificate.pdf`;
+    await putObject(certKey, certificatePdf, "application/pdf");
+
+    const checksum = createHash("sha256").update(signedPdf).digest("hex");
+    const safeTitle = req.title.replace(/[^\w.-]+/g, "_");
+
+    // Insert doc row first so Postgres generates the UUID, then upload to the keyed path
+    const [docRow] = await this.db
+      .insert(documents)
+      .values({
+        caseId: req.caseId,
+        filename: `${req.title}-signed.pdf`,
+        s3Key: `documents/placeholder`,
+        fileType: "pdf",
+        fileSize: signedPdf.byteLength,
+        userId: req.createdBy!,
+        checksumSha256: checksum,
+      })
+      .returning();
+
+    const signedKey = `documents/${docRow.id}/${safeTitle}-signed.pdf`;
+    await putObject(signedKey, signedPdf, "application/pdf");
+
+    await this.db
+      .update(documents)
+      .set({ s3Key: signedKey })
+      .where(eq(documents.id, docRow.id));
+
+    await this.db
+      .update(caseSignatureRequests)
+      .set({ signedDocumentId: docRow.id, certificateS3Key: certKey, updatedAt: new Date() })
+      .where(eq(caseSignatureRequests.id, req.id));
+
+    return { signedDocumentId: docRow.id, certificateS3Key: certKey };
+  }
+
+  async cancel(input: { requestId: string; apiKey: string }): Promise<void> {
+    const [req] = await this.db
+      .select({ id: caseSignatureRequests.id, hellosignRequestId: caseSignatureRequests.hellosignRequestId, status: caseSignatureRequests.status })
+      .from(caseSignatureRequests)
+      .where(eq(caseSignatureRequests.id, input.requestId))
+      .limit(1);
+    if (!req) throw new TRPCError({ code: "NOT_FOUND", message: "Request not found" });
+    if (!req.hellosignRequestId) throw new TRPCError({ code: "BAD_REQUEST", message: "Not sent yet" });
+    if (req.status === "completed" || req.status === "cancelled") {
+      throw new TRPCError({ code: "BAD_REQUEST", message: `Already ${req.status}` });
+    }
+
+    const client = this.buildClient(input.apiKey);
+    await client.cancel(req.hellosignRequestId);
+
+    await this.db
+      .update(caseSignatureRequests)
+      .set({ status: "cancelled", cancelledAt: new Date(), updatedAt: new Date() })
+      .where(eq(caseSignatureRequests.id, req.id));
+  }
+
+  async remind(input: { requestId: string; signerEmail: string; apiKey: string }): Promise<void> {
+    const [req] = await this.db
+      .select({ id: caseSignatureRequests.id, hellosignRequestId: caseSignatureRequests.hellosignRequestId })
+      .from(caseSignatureRequests)
+      .where(eq(caseSignatureRequests.id, input.requestId))
+      .limit(1);
+    if (!req?.hellosignRequestId) throw new TRPCError({ code: "NOT_FOUND", message: "Request not found" });
+
+    const client = this.buildClient(input.apiKey);
+    await client.remind(req.hellosignRequestId, input.signerEmail);
+  }
+
+  async listForCase(input: { caseId: string }) {
+    return this.db
+      .select()
+      .from(caseSignatureRequests)
+      .where(eq(caseSignatureRequests.caseId, input.caseId))
+      .orderBy(desc(caseSignatureRequests.createdAt));
+  }
+
+  async getRequest(input: { requestId: string }) {
+    const [req] = await this.db
+      .select()
+      .from(caseSignatureRequests)
+      .where(eq(caseSignatureRequests.id, input.requestId))
+      .limit(1);
+    if (!req) throw new TRPCError({ code: "NOT_FOUND", message: "Request not found" });
+
+    const signers = await this.db
+      .select()
+      .from(caseSignatureRequestSigners)
+      .where(eq(caseSignatureRequestSigners.requestId, input.requestId))
+      .orderBy(asc(caseSignatureRequestSigners.signerOrder));
+
+    const events = await this.db
+      .select()
+      .from(caseSignatureRequestEvents)
+      .where(eq(caseSignatureRequestEvents.requestId, input.requestId))
+      .orderBy(asc(caseSignatureRequestEvents.eventAt));
+
+    return { ...req, signers, events };
+  }
+
+  async testConnection(input: { apiKey: string }): Promise<{ ok: boolean; email?: string; error?: string }> {
+    const client = this.buildClient(input.apiKey);
+    const res = await client.testConnection();
+    return res.ok ? { ok: true, email: res.email } : { ok: false, error: res.error };
+  }
+
+  async listTemplates(input: { apiKey: string }) {
+    const client = this.buildClient(input.apiKey);
+    return client.listTemplates();
   }
 }
