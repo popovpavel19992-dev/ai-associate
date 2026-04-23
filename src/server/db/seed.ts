@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { db } from "./index";
 import { sectionPresets } from "./schema/section-presets";
+import { seedMotionTemplates } from "./seed/motion-templates";
 
 const SYSTEM_PRESETS = [
   {
@@ -43,6 +44,8 @@ const SYSTEM_PRESETS = [
 async function seed() {
   await db.insert(sectionPresets).values(SYSTEM_PRESETS).onConflictDoNothing();
   console.log("Seeded section presets");
+  await seedMotionTemplates();
+  console.log("Seeded motion templates");
   process.exit(0);
 }
 
