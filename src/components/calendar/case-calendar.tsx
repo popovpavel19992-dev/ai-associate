@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { SlotInfo } from "react-big-calendar";
 import { CalendarView } from "./calendar-view";
 import { EventCreateModal } from "./event-create-modal";
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function CaseCalendar({ caseId }: Props) {
+  const router = useRouter();
   // Broad range — case-scoped list doesn't date-filter server-side anyway.
   const [range, setRange] = useState<{ from: Date; to: Date }>(() => {
     const now = new Date();
@@ -37,7 +39,8 @@ export function CaseCalendar({ caseId }: Props) {
 
   const handleSelectItem = (item: CalendarItem) => {
     if (item.source === "event") setEditingEventId(item.id);
-    else setOpenTaskId(item.taskId);
+    else if (item.source === "task") setOpenTaskId(item.taskId);
+    else if (item.source === "deadline") router.push(`/cases/${item.caseId}?tab=deadlines`);
   };
 
   const handleSelectSlot = (slot: SlotInfo) => {

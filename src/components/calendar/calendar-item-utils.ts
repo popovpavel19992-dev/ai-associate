@@ -31,7 +31,19 @@ export type CalendarTaskItem = {
   priority: TaskPriority;
 };
 
-export type CalendarItem = CalendarEventItem | CalendarTaskItem;
+export type CalendarDeadlineItem = {
+  source: "deadline";
+  id: string;
+  title: string;
+  startsAt: Date;
+  endsAt: null;
+  caseId: string;
+  caseName: string;
+  deadlineSource: "rule_generated" | "manual";
+  completedAt: Date | null;
+};
+
+export type CalendarItem = CalendarEventItem | CalendarTaskItem | CalendarDeadlineItem;
 
 type RawEvent = {
   id: string;
@@ -54,9 +66,20 @@ type RawTask = {
   priority: TaskPriority;
 };
 
+type RawDeadline = {
+  id: string;
+  caseId: string;
+  caseName: string;
+  title: string;
+  dueDate: string;
+  source: "rule_generated" | "manual";
+  completedAt: Date | string | null;
+};
+
 export function mergeToCalendarItems(
   events: RawEvent[] | undefined,
   tasks: RawTask[] | undefined,
+  deadlines?: RawDeadline[] | undefined,
 ): CalendarItem[] {
   const out: CalendarItem[] = [];
 
@@ -90,6 +113,24 @@ export function mergeToCalendarItems(
     });
   }
 
+  for (const d of deadlines ?? []) {
+    out.push({
+      source: "deadline",
+      id: d.id,
+      title: d.title,
+      startsAt: new Date(d.dueDate + "T00:00:00.000Z"),
+      endsAt: null,
+      caseId: d.caseId,
+      caseName: d.caseName,
+      deadlineSource: d.source,
+      completedAt: d.completedAt
+        ? d.completedAt instanceof Date
+          ? d.completedAt
+          : new Date(d.completedAt)
+        : null,
+    });
+  }
+
   out.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
   return out;
 }
@@ -97,6 +138,9 @@ export function mergeToCalendarItems(
 export function isOverdue(item: CalendarItem, now: Date = new Date()): boolean {
   if (item.source === "task") {
     return item.status !== "done" && item.startsAt.getTime() < now.getTime();
+  }
+  if (item.source === "deadline") {
+    return item.completedAt === null && item.startsAt.getTime() < now.getTime();
   }
   if (!DEADLINE_KINDS.has(item.kind)) return false;
   const end = item.endsAt ?? item.startsAt;
@@ -110,6 +154,8 @@ export function isUpcoming24h(
   if (isOverdue(item, now)) return false;
   if (item.source === "task") {
     if (item.status === "done") return false;
+  } else if (item.source === "deadline") {
+    if (item.completedAt !== null) return false;
   } else if (!DEADLINE_KINDS.has(item.kind)) {
     return false;
   }
@@ -121,6 +167,13 @@ export function isUpcoming24h(
 export function getItemColorClass(item: CalendarItem): string {
   if (item.source === "event") {
     return CALENDAR_EVENT_KIND_META[item.kind].colorClass;
+  }
+  if (item.source === "deadline") {
+    // Completed deadlines get a muted green; pending use amber
+    if (item.completedAt !== null) {
+      return "bg-green-900 text-green-200 border-green-700";
+    }
+    return "bg-amber-900 text-amber-100 border-amber-700";
   }
   // Tasks use a neutral slate look so they read as "linked task" not "event"
   return "bg-zinc-800 text-zinc-200 border-zinc-600";
