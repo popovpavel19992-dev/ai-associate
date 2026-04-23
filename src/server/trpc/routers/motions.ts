@@ -275,4 +275,69 @@ export const motionsRouter = router({
         .where(eq(caseMotions.id, input.motionId));
       return { ok: true as const };
     }),
+
+  markFiled: protectedProcedure
+    .input(
+      z.object({
+        motionId: z.string().uuid(),
+        filedAt: z.string().datetime(),
+        createTrigger: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [motion] = await ctx.db
+        .select()
+        .from(caseMotions)
+        .where(eq(caseMotions.id, input.motionId))
+        .limit(1);
+      if (!motion) throw new TRPCError({ code: "NOT_FOUND", message: "Motion not found" });
+      await assertCaseAccess(ctx, motion.caseId);
+      if (motion.status === "filed")
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Already filed" });
+
+      let triggerEventId: string | null = null;
+      if (input.createTrigger) {
+        // Reuse 2.4.1's DeadlinesService — it inserts the trigger event AND
+        // applies matching deadline rules in one call.
+        const { DeadlinesService } = await import("@/server/services/deadlines/service");
+        const svc = new DeadlinesService({ db: ctx.db });
+        const result = await svc.createTriggerEvent({
+          caseId: motion.caseId,
+          triggerEvent: "motion_filed",
+          eventDate: new Date(input.filedAt).toISOString().slice(0, 10),
+          jurisdiction: "FRCP",
+          notes: `Auto-created from motion: ${motion.title}`,
+          createdBy: ctx.user.id,
+        });
+        triggerEventId = result.triggerEventId;
+      }
+
+      await ctx.db
+        .update(caseMotions)
+        .set({
+          status: "filed",
+          filedAt: new Date(input.filedAt),
+          triggerEventId,
+          updatedAt: new Date(),
+        })
+        .where(eq(caseMotions.id, motion.id));
+
+      return { ok: true as const, triggerEventId };
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ motionId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const [row] = await ctx.db
+        .select({ status: caseMotions.status, caseId: caseMotions.caseId })
+        .from(caseMotions)
+        .where(eq(caseMotions.id, input.motionId))
+        .limit(1);
+      if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Motion not found" });
+      await assertCaseAccess(ctx, row.caseId);
+      if (row.status === "filed")
+        throw new TRPCError({ code: "FORBIDDEN", message: "Filed motions cannot be deleted" });
+      await ctx.db.delete(caseMotions).where(eq(caseMotions.id, input.motionId));
+      return { ok: true as const };
+    }),
 });
