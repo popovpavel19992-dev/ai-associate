@@ -45,6 +45,12 @@ export function useCalendarItems({
     caseId,
   });
 
+  const deadlinesQuery = trpc.deadlines.listForRange.useQuery({
+    from: from.toISOString().slice(0, 10),
+    to: to.toISOString().slice(0, 10),
+    caseIds: caseIds ?? (caseId ? [caseId] : undefined),
+  });
+
   const rawEvents = caseId ? caseEventsQuery.data : globalEventsQuery.data;
 
   const items = useMemo(
@@ -69,19 +75,29 @@ export function useCalendarItems({
           status: t.status,
           priority: t.priority,
         })),
+        deadlinesQuery.data?.map((d) => ({
+          id: d.id,
+          caseId: d.caseId,
+          caseName: d.caseName,
+          title: d.title,
+          dueDate: d.dueDate,
+          source: d.source as "rule_generated" | "manual",
+          completedAt: d.completedAt,
+        })),
       ),
-    [rawEvents, tasksQuery.data],
+    [rawEvents, tasksQuery.data, deadlinesQuery.data],
   );
 
   const activeEventsQuery = caseId ? caseEventsQuery : globalEventsQuery;
 
   return {
     items,
-    isLoading: activeEventsQuery.isLoading || tasksQuery.isLoading,
-    error: activeEventsQuery.error ?? tasksQuery.error,
+    isLoading: activeEventsQuery.isLoading || tasksQuery.isLoading || deadlinesQuery.isLoading,
+    error: activeEventsQuery.error ?? tasksQuery.error ?? deadlinesQuery.error,
     refetch: () => {
       activeEventsQuery.refetch();
       tasksQuery.refetch();
+      deadlinesQuery.refetch();
     },
   };
 }

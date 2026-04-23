@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { SlotInfo } from "react-big-calendar";
 import { trpc } from "@/lib/trpc";
 import { CalendarView } from "./calendar-view";
@@ -12,6 +13,7 @@ import { useCalendarItems } from "./use-calendar-items";
 import type { CalendarItem } from "./calendar-item-utils";
 
 export function GlobalCalendar() {
+  const router = useRouter();
   const [range, setRange] = useState<{ from: Date; to: Date }>(() => {
     const now = new Date();
     return {
@@ -36,7 +38,8 @@ export function GlobalCalendar() {
 
   const handleSelectItem = (item: CalendarItem) => {
     if (item.source === "event") setEditingEventId(item.id);
-    else setOpenTaskId(item.taskId);
+    else if (item.source === "task") setOpenTaskId(item.taskId);
+    else if (item.source === "deadline") router.push(`/cases/${item.caseId}?tab=deadlines`);
   };
   const handleSelectSlot = (slot: SlotInfo) => {
     setCreateSlot(slot.start);

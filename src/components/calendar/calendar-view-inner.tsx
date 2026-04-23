@@ -54,7 +54,7 @@ export default function CalendarViewInner({
   const rbcEvents = useMemo<RBCEvent[]>(
     () =>
       items.map((i) => ({
-        title: i.title,
+        title: i.source === "deadline" ? `⚠ ${i.title}` : i.title,
         start: i.startsAt,
         end: i.endsAt ?? i.startsAt,
         allDay: i.endsAt === null,
