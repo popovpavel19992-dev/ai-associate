@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 
@@ -8,7 +8,7 @@ export function MotionWizard({ caseId }: { caseId: string }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
-  const [selectedMemos, setSelectedMemos] = useState<string[]>([]);
+  const [selectedMemos, setSelectedMemos] = useState<string[] | null>(null);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
 
   const { data: templates } = trpc.motions.listTemplates.useQuery();
@@ -17,14 +17,17 @@ export function MotionWizard({ caseId }: { caseId: string }) {
     onSuccess: (m) => router.push(`/cases/${caseId}/motions/${m.id}`),
   });
 
-  useEffect(() => {
-    if (suggestions && suggestions.memos.length && selectedMemos.length === 0) {
-      setSelectedMemos(suggestions.memos.map((m) => m.id));
-    }
-  }, [suggestions, selectedMemos.length]);
+  // Derive default selection from suggestions without useEffect (avoids
+  // react-hooks/set-state-in-effect cascading renders). `null` means
+  // "user has not interacted yet — fall back to suggestion defaults".
+  const effectiveSelectedMemos: string[] =
+    selectedMemos ?? (suggestions?.memos.map((m) => m.id) ?? []);
 
   const toggleMemo = (id: string) =>
-    setSelectedMemos((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+    setSelectedMemos((prev) => {
+      const s = prev ?? effectiveSelectedMemos;
+      return s.includes(id) ? s.filter((x) => x !== id) : [...s, id];
+    });
   const toggleCollection = (id: string) =>
     setSelectedCollections((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
@@ -84,7 +87,7 @@ export function MotionWizard({ caseId }: { caseId: string }) {
           {suggestions?.memos.map((m) => (
             <li key={m.id}>
               <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={selectedMemos.includes(m.id)} onChange={() => toggleMemo(m.id)} />
+                <input type="checkbox" checked={effectiveSelectedMemos.includes(m.id)} onChange={() => toggleMemo(m.id)} />
                 {m.title}
               </label>
             </li>
@@ -113,7 +116,7 @@ export function MotionWizard({ caseId }: { caseId: string }) {
           disabled={!templateId || !title || create.isPending}
           onClick={() =>
             templateId &&
-            create.mutate({ caseId, templateId, title, memoIds: selectedMemos, collectionIds: selectedCollections })
+            create.mutate({ caseId, templateId, title, memoIds: effectiveSelectedMemos, collectionIds: selectedCollections })
           }
           className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
         >
