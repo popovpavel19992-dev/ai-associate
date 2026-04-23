@@ -41,6 +41,9 @@ export const NOTIFICATION_TYPES = [
   "signature_request_all_signed",
   "signature_request_declined",
   "signature_request_expired",
+  "deadline_upcoming",
+  "deadline_due_today",
+  "deadline_overdue",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -79,6 +82,7 @@ export const NOTIFICATION_CATEGORIES = {
   calendar: ["event_reminder", "calendar_sync_failed"],
   portal: ["portal_message_received", "portal_document_uploaded"],
   research: ["research_bookmark_added", "research_session_linked", "research_memo_ready", "research_memo_failed", "research_collection_shared"],
+  deadlines: ["deadline_upcoming", "deadline_due_today", "deadline_overdue"],
 } as const;
 
 export type NotificationCategory = keyof typeof NOTIFICATION_CATEGORIES;
@@ -246,6 +250,9 @@ export type NotificationMetadata = {
     requestId: string;
     title: string;
   };
+  deadline_upcoming: { caseId: string; deadlineId: string; offset: number };
+  deadline_due_today: { caseId: string; deadlineId: string };
+  deadline_overdue: { caseId: string; deadlineId: string };
 };
 
 /** Inngest event payload for notification/send */

@@ -52,6 +52,9 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   signature_request_all_signed: "All parties signed a request",
   signature_request_declined: "A signer declined a request",
   signature_request_expired: "A signature request expired",
+  deadline_upcoming: "Deadline coming up",
+  deadline_due_today: "Deadline due today",
+  deadline_overdue: "Deadline is overdue",
 };
 
 const CHANNEL_LABELS: Record<NotificationChannel, string> = {
@@ -65,6 +68,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   billing: "Billing",
   team: "Team",
   calendar: "Calendar",
+  deadlines: "Deadlines",
 };
 
 // Types that are email-only (no in_app/push toggle)
