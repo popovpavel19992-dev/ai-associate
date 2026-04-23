@@ -125,4 +125,154 @@ export const motionsRouter = router({
         .returning();
       return inserted;
     }),
+
+  generateSection: protectedProcedure
+    .input(
+      z.object({
+        motionId: z.string().uuid(),
+        sectionKey: z.enum(["facts", "argument", "conclusion"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [motion] = await ctx.db
+        .select()
+        .from(caseMotions)
+        .where(eq(caseMotions.id, input.motionId))
+        .limit(1);
+      if (!motion) throw new TRPCError({ code: "NOT_FOUND", message: "Motion not found" });
+      await assertCaseAccess(ctx, motion.caseId);
+      if (motion.status === "filed")
+        throw new TRPCError({ code: "FORBIDDEN", message: "Cannot regenerate filed motion" });
+      if (!process.env.ANTHROPIC_API_KEY) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Anthropic API key not configured" });
+      }
+
+      const [tpl] = await ctx.db
+        .select()
+        .from(motionTemplates)
+        .where(eq(motionTemplates.id, motion.templateId))
+        .limit(1);
+      if (!tpl) throw new TRPCError({ code: "NOT_FOUND", message: "Template not found" });
+
+      const caseRow = await loadCase(ctx, motion.caseId);
+
+      // research_memos has no `content` column; assemble content from memo sections.
+      let attachedMemos: { id: string; title: string; content: string }[] = [];
+      if (motion.attachedMemoIds.length > 0) {
+        const memoRows = await ctx.db
+          .select({ id: researchMemos.id, title: researchMemos.title })
+          .from(researchMemos)
+          .where(inArray(researchMemos.id, motion.attachedMemoIds));
+        const sectionRows = await ctx.db
+          .select({
+            memoId: researchMemoSections.memoId,
+            ord: researchMemoSections.ord,
+            content: researchMemoSections.content,
+          })
+          .from(researchMemoSections)
+          .where(inArray(researchMemoSections.memoId, motion.attachedMemoIds));
+        const byMemo = new Map<string, { ord: number; content: string }[]>();
+        for (const s of sectionRows) {
+          const arr = byMemo.get(s.memoId) ?? [];
+          arr.push({ ord: s.ord, content: s.content });
+          byMemo.set(s.memoId, arr);
+        }
+        attachedMemos = memoRows.map((m: { id: string; title: string }) => {
+          const parts = (byMemo.get(m.id) ?? []).sort((a, b) => a.ord - b.ord).map((s) => s.content);
+          return { id: m.id, title: m.title, content: parts.join("\n\n") };
+        });
+      }
+
+      const { draftMotionSection, NoMemosAttachedError } = await import("@/server/services/motions/draft");
+      try {
+        const out = await draftMotionSection({
+          motionType: tpl.motionType as "motion_to_dismiss" | "motion_for_summary_judgment" | "motion_to_compel",
+          sectionKey: input.sectionKey,
+          caseFacts: caseRow.description ?? "",
+          attachedMemos,
+        });
+
+        const nextSections = {
+          ...(motion.sections as Record<string, unknown>),
+          [input.sectionKey]: { text: out.text, aiGenerated: true, citations: out.citations },
+        };
+        await ctx.db
+          .update(caseMotions)
+          .set({ sections: nextSections, updatedAt: new Date() })
+          .where(eq(caseMotions.id, motion.id));
+        return { text: out.text, citations: out.citations };
+      } catch (e) {
+        if (e instanceof NoMemosAttachedError) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: e.message });
+        }
+        throw e;
+      }
+    }),
+
+  updateSection: protectedProcedure
+    .input(
+      z.object({
+        motionId: z.string().uuid(),
+        sectionKey: z.enum(["facts", "argument", "conclusion"]),
+        text: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [motion] = await ctx.db
+        .select()
+        .from(caseMotions)
+        .where(eq(caseMotions.id, input.motionId))
+        .limit(1);
+      if (!motion) throw new TRPCError({ code: "NOT_FOUND", message: "Motion not found" });
+      await assertCaseAccess(ctx, motion.caseId);
+      if (motion.status === "filed")
+        throw new TRPCError({ code: "FORBIDDEN", message: "Filed motions are immutable" });
+
+      const existing = (motion.sections as Record<
+        string,
+        { text: string; aiGenerated: boolean; citations: unknown[] } | undefined
+      >)[input.sectionKey];
+      const nextSections = {
+        ...(motion.sections as Record<string, unknown>),
+        [input.sectionKey]: {
+          text: input.text,
+          aiGenerated: existing?.aiGenerated ?? false,
+          citations: existing?.citations ?? [],
+        },
+      };
+      await ctx.db
+        .update(caseMotions)
+        .set({ sections: nextSections, updatedAt: new Date() })
+        .where(eq(caseMotions.id, motion.id));
+      return { ok: true as const };
+    }),
+
+  updateAttachments: protectedProcedure
+    .input(
+      z.object({
+        motionId: z.string().uuid(),
+        memoIds: z.array(z.string().uuid()),
+        collectionIds: z.array(z.string().uuid()),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [motion] = await ctx.db
+        .select({ caseId: caseMotions.caseId, status: caseMotions.status })
+        .from(caseMotions)
+        .where(eq(caseMotions.id, input.motionId))
+        .limit(1);
+      if (!motion) throw new TRPCError({ code: "NOT_FOUND", message: "Motion not found" });
+      await assertCaseAccess(ctx, motion.caseId);
+      if (motion.status === "filed")
+        throw new TRPCError({ code: "FORBIDDEN", message: "Filed motions are immutable" });
+      await ctx.db
+        .update(caseMotions)
+        .set({
+          attachedMemoIds: input.memoIds,
+          attachedCollectionIds: input.collectionIds,
+          updatedAt: new Date(),
+        })
+        .where(eq(caseMotions.id, input.motionId));
+      return { ok: true as const };
+    }),
 });
