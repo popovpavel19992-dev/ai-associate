@@ -142,3 +142,47 @@ describe("DeadlinesService.updateTriggerEventDate", () => {
     expect(deadlineUpdates.length).toBe(1);
   });
 });
+
+describe("DeadlinesService.createManualDeadline + complete", () => {
+  it("inserts manual deadline with source=manual", async () => {
+    const { db, inserts } = makeMockDb({});
+    const svc = new DeadlinesService({ db });
+    await svc.createManualDeadline({
+      caseId: "case-1",
+      title: "Client check-in",
+      dueDate: "2026-06-01",
+      reminders: [5, 1],
+    });
+    const i = inserts.find((x) => x.table === "case_deadlines");
+    expect(i).toBeTruthy();
+    const v = Array.isArray(i!.values) ? i!.values[0] : i!.values;
+    expect(v.source).toBe("manual");
+    expect(v.title).toBe("Client check-in");
+    expect(v.reminders).toEqual([5, 1]);
+  });
+});
+
+describe("DeadlinesService.updateDeadline", () => {
+  it("flips manualOverride=true", async () => {
+    const { db, updates } = makeMockDb({});
+    const svc = new DeadlinesService({ db });
+    await svc.updateDeadline({ deadlineId: "d1", title: "Changed" });
+    const u = updates.find((x) => x.table === "case_deadlines");
+    expect(u).toBeTruthy();
+    expect((u!.set as any).manualOverride).toBe(true);
+    expect((u!.set as any).title).toBe("Changed");
+  });
+});
+
+describe("DeadlinesService.markComplete", () => {
+  it("sets completedAt without changing manualOverride", async () => {
+    const { db, updates } = makeMockDb({});
+    const svc = new DeadlinesService({ db });
+    await svc.markComplete({ deadlineId: "d1", userId: "u1" });
+    const u = updates.find((x) => x.table === "case_deadlines");
+    expect(u).toBeTruthy();
+    expect((u!.set as any).completedAt).toBeInstanceOf(Date);
+    expect((u!.set as any).completedBy).toBe("u1");
+    expect((u!.set as any).manualOverride).toBeUndefined();
+  });
+});

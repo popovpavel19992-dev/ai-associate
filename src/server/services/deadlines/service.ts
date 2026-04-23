@@ -194,4 +194,77 @@ export class DeadlinesService {
     });
     return { recomputed: result.recomputed };
   }
+
+  async createManualDeadline(input: {
+    caseId: string;
+    title: string;
+    dueDate: string;
+    reminders?: number[];
+    notes?: string;
+  }): Promise<{ deadlineId: string }> {
+    const newRow: NewCaseDeadline = {
+      caseId: input.caseId,
+      title: input.title,
+      dueDate: input.dueDate,
+      source: "manual",
+      manualOverride: false,
+      reminders: input.reminders ?? [7, 3, 1],
+      notes: input.notes ?? null,
+    };
+    const [row] = await this.db.insert(caseDeadlines).values(newRow).returning();
+    return { deadlineId: row.id };
+  }
+
+  async updateDeadline(input: {
+    deadlineId: string;
+    title?: string;
+    dueDate?: string;
+    reminders?: number[];
+    notes?: string;
+  }): Promise<void> {
+    const patch: Record<string, unknown> = { updatedAt: new Date(), manualOverride: true };
+    if (input.title !== undefined) patch.title = input.title;
+    if (input.dueDate !== undefined) patch.dueDate = input.dueDate;
+    if (input.reminders !== undefined) patch.reminders = input.reminders;
+    if (input.notes !== undefined) patch.notes = input.notes;
+    await this.db.update(caseDeadlines).set(patch).where(eq(caseDeadlines.id, input.deadlineId));
+  }
+
+  async markComplete(input: { deadlineId: string; userId: string }): Promise<void> {
+    await this.db
+      .update(caseDeadlines)
+      .set({ completedAt: new Date(), completedBy: input.userId, updatedAt: new Date() })
+      .where(eq(caseDeadlines.id, input.deadlineId));
+  }
+
+  async uncomplete(input: { deadlineId: string }): Promise<void> {
+    await this.db
+      .update(caseDeadlines)
+      .set({ completedAt: null, completedBy: null, updatedAt: new Date() })
+      .where(eq(caseDeadlines.id, input.deadlineId));
+  }
+
+  async deleteDeadline(input: { deadlineId: string }): Promise<void> {
+    await this.db.delete(caseDeadlines).where(eq(caseDeadlines.id, input.deadlineId));
+  }
+
+  async deleteTriggerEvent(input: { triggerEventId: string }): Promise<void> {
+    await this.db.delete(caseTriggerEvents).where(eq(caseTriggerEvents.id, input.triggerEventId));
+  }
+
+  async listForCase(input: { caseId: string }) {
+    const triggers = await this.db
+      .select()
+      .from(caseTriggerEvents)
+      .where(eq(caseTriggerEvents.caseId, input.caseId))
+      .orderBy(caseTriggerEvents.eventDate);
+
+    const deadlines = await this.db
+      .select()
+      .from(caseDeadlines)
+      .where(eq(caseDeadlines.caseId, input.caseId))
+      .orderBy(caseDeadlines.dueDate);
+
+    return { triggers, deadlines };
+  }
 }
