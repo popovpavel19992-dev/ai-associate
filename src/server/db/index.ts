@@ -29,6 +29,9 @@ import * as cachedOpinionsSchema from "./schema/cached-opinions";
 import * as cachedStatutesSchema from "./schema/cached-statutes";
 import * as opinionBookmarksSchema from "./schema/opinion-bookmarks";
 import * as researchUsageSchema from "./schema/research-usage";
+import * as emailDripSequencesSchema from "./schema/email-drip-sequences";
+import * as emailDripSequenceStepsSchema from "./schema/email-drip-sequence-steps";
+import * as emailDripEnrollmentsSchema from "./schema/email-drip-enrollments";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -63,5 +66,8 @@ export const db = drizzle(client, {
     ...cachedStatutesSchema,
     ...opinionBookmarksSchema,
     ...researchUsageSchema,
+    ...emailDripSequencesSchema,
+    ...emailDripSequenceStepsSchema,
+    ...emailDripEnrollmentsSchema,
   },
 });
