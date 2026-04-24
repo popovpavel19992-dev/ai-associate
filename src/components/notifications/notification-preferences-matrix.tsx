@@ -55,6 +55,7 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   deadline_upcoming: "Deadline coming up",
   deadline_due_today: "Deadline due today",
   deadline_overdue: "Deadline is overdue",
+  filing_submitted: "Filing submitted to court",
 };
 
 const CHANNEL_LABELS: Record<NotificationChannel, string> = {
@@ -69,6 +70,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   team: "Team",
   calendar: "Calendar",
   deadlines: "Deadlines",
+  filings: "Filings",
 };
 
 // Types that are email-only (no in_app/push toggle)

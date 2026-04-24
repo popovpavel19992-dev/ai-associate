@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { ExhibitList } from "./exhibit-list";
+import { SubmissionModal } from "@/components/cases/filings/submission-modal";
 
 export function PackageWizard({
   caseId,
@@ -19,6 +20,15 @@ export function PackageWizard({
   const { data: pkg, refetch } = trpc.filingPackages.get.useQuery({ packageId });
   const [proposedOrder, setProposedOrder] = React.useState<string>("");
   const [previewOpen, setPreviewOpen] = React.useState(false);
+  const [submitOpen, setSubmitOpen] = React.useState(false);
+
+  const { data: existingFilings } = trpc.filings.listByCase.useQuery(
+    { caseId },
+    { enabled: !!pkg && pkg.status === "finalized" },
+  );
+  const existingFilingForPackage = existingFilings?.find(
+    (f) => f.packageId === packageId,
+  );
 
   React.useEffect(() => {
     if (pkg?.proposedOrderText !== undefined) setProposedOrder(pkg.proposedOrderText ?? "");
@@ -93,6 +103,25 @@ export function PackageWizard({
               Download filing package
             </a>
           )}
+          {isFinalized && !existingFilingForPackage && (
+            <button
+              type="button"
+              onClick={() => setSubmitOpen(true)}
+              className="rounded-md bg-purple-600 px-3 py-2 text-sm text-white hover:bg-purple-700"
+            >
+              Submit to court
+            </button>
+          )}
+          {isFinalized && existingFilingForPackage && (
+            <span className="self-center text-xs text-gray-600">
+              Filed on{" "}
+              {new Date(
+                existingFilingForPackage.submittedAt,
+              ).toLocaleDateString()}{" "}
+              · {existingFilingForPackage.court} · #
+              {existingFilingForPackage.confirmationNumber}
+            </span>
+          )}
         </div>
       </header>
 
@@ -147,6 +176,18 @@ export function PackageWizard({
           </div>
         </div>
       )}
+
+      <SubmissionModal
+        caseId={caseId}
+        motionId={motionId}
+        packageId={packageId}
+        open={submitOpen}
+        onClose={() => setSubmitOpen(false)}
+        onCreated={(filingId) => {
+          setSubmitOpen(false);
+          router.push(`/cases/${caseId}?tab=filings&highlight=${filingId}`);
+        }}
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
-import { notFound } from "next/navigation";
+import { notFound, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { ReportView } from "@/components/reports/report-view";
@@ -26,6 +26,7 @@ import { EmailsTab } from "@/components/cases/emails/emails-tab";
 import { SignaturesTab } from "@/components/cases/signatures/signatures-tab";
 import { DeadlinesTab } from "@/components/cases/deadlines/deadlines-tab";
 import { MotionsTab } from "@/components/cases/motions/motions-tab";
+import { FilingsTab } from "@/components/cases/filings/filings-tab";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -45,6 +46,7 @@ const TABS = [
   { key: "signatures", label: "Signatures" },
   { key: "deadlines", label: "Deadlines" },
   { key: "motions", label: "Motions" },
+  { key: "filings", label: "Filings" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -55,8 +57,13 @@ export default function CaseDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab") as TabKey | null;
+  const highlightParam = searchParams.get("highlight") ?? undefined;
   const utils = trpc.useUtils();
-  const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const [activeTab, setActiveTab] = useState<TabKey>(
+    tabParam && TABS.some((t) => t.key === tabParam) ? tabParam : "overview",
+  );
   const { data: profile } = trpc.users.getProfile.useQuery();
 
   const { data: caseData, isLoading } = trpc.cases.getById.useQuery(
@@ -261,6 +268,7 @@ export default function CaseDetailPage({
         {activeTab === "signatures" && <SignaturesTab caseId={caseData.id} />}
         {activeTab === "deadlines" && <DeadlinesTab caseId={caseData.id} />}
         {activeTab === "motions" && <MotionsTab caseId={caseData.id} />}
+        {activeTab === "filings" && <FilingsTab caseId={caseData.id} highlightId={highlightParam} />}
         </div>
         {(caseData.client || caseData.orgId) && (
           <div className="hidden w-56 shrink-0 space-y-4 overflow-y-auto border-l border-zinc-800 p-4 lg:block">
