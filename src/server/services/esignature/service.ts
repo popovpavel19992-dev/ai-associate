@@ -315,6 +315,10 @@ export class EsignatureService {
       hellosignRequestId: result.signatureRequestId,
       testMode,
       sentAt: new Date(),
+      // Default row to parallel; router overrides for sequential multi-party
+      // after insert. Set explicitly so we never depend on Drizzle's default
+      // inference behaviour.
+      signingOrder: "parallel",
     };
     const [insertedRequest] = await this.db
       .insert(caseSignatureRequests)
