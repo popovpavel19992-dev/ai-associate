@@ -295,6 +295,21 @@ export const motionsRouter = router({
       if (motion.status === "filed")
         throw new TRPCError({ code: "BAD_REQUEST", message: "Already filed" });
 
+      // Pre-file validation: block filing until all 3 AI sections are drafted.
+      // Why: once filed, sections are immutable (see updateSection / generateSection
+      // FORBIDDEN guards). Filing a motion with empty Argument would leave the lawyer
+      // unable to draft it — caught during 2.4.3 UAT on 2026-04-24.
+      const sections = (motion.sections ?? {}) as Record<string, { text?: string } | undefined>;
+      const missing = (["facts", "argument", "conclusion"] as const).filter(
+        (k) => !sections[k]?.text?.trim(),
+      );
+      if (missing.length > 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Cannot file: section${missing.length > 1 ? "s" : ""} not drafted — ${missing.join(", ")}. Draft all sections before filing.`,
+        });
+      }
+
       let triggerEventId: string | null = null;
       if (input.createTrigger) {
         // Load template to get motionType for deadline rule filtering (2.4.2b)
