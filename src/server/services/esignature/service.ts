@@ -325,6 +325,9 @@ export class EsignatureService {
       .values(newRequest)
       .returning();
 
+    // Lowercase-normalize email keys/values so that any casing drift
+    // introduced by Dropbox Sign (which historically has normalized
+    // signer emails) cannot break signatureId → signer row resolution.
     const sigIdByEmail = new Map(
       result.signatures.map((s) => [s.signerEmailAddress.toLowerCase(), s.signatureId]),
     );
@@ -336,18 +339,30 @@ export class EsignatureService {
     const signerRows: NewCaseSignatureRequestSigner[] = signers.map((s, i) => {
       const isLawyer = s.role.toLowerCase() === "lawyer";
       const active = !anyOrder ? true : (s.order ?? i) === 0;
+      const emailLower = s.email.toLowerCase();
       return {
         requestId: insertedRequest.id,
         signerRole: isLawyer ? "lawyer" : "client",
         signerOrder: s.order ?? i,
-        email: s.email,
+        email: emailLower,
         name: s.name,
         userId: s.userId ?? (isLawyer ? input.createdBy : null),
         clientContactId: s.clientContactId ?? (!isLawyer ? input.clientContactId : null),
         status: active ? "awaiting_signature" : "awaiting_turn",
-        hellosignSignatureId: sigIdByEmail.get(s.email.toLowerCase()) ?? null,
+        hellosignSignatureId: sigIdByEmail.get(emailLower) ?? null,
       };
     });
+
+    // If DBS returns any signer we can't match back to our list, abort —
+    // downstream webhooks (keyed by hellosignSignatureId) and reminders
+    // would silently break otherwise.
+    const unmatched = signerRows.filter((r) => !r.hellosignSignatureId).map((r) => r.email);
+    if (unmatched.length > 0) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: `Dropbox Sign returned signers we couldn't match: ${unmatched.join(", ")}`,
+      });
+    }
     await this.db.insert(caseSignatureRequestSigners).values(signerRows);
 
     return { requestId: insertedRequest.id, hellosignRequestId: result.signatureRequestId };
@@ -499,7 +514,7 @@ export class EsignatureService {
           .where(
             and(
               eq(caseSignatureRequestSigners.requestId, req.id),
-              eq(caseSignatureRequestSigners.email, viewedSig.signer_email_address),
+              eq(caseSignatureRequestSigners.email, String(viewedSig.signer_email_address).toLowerCase()),
             ),
           );
       }
