@@ -12,6 +12,7 @@ function mapResendEventType(raw: string): EventPayload["eventType"] | null {
     case "email.opened": return "opened";
     case "email.clicked": return "clicked";
     case "email.complained": return "complained";
+    case "email.bounced": return "bounced";
     default: return null;
   }
 }
