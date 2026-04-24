@@ -528,6 +528,11 @@ export const casesRouter = router({
         name: z.string().min(1).max(200).optional(),
         opposingParty: z.string().max(200).optional(),
         opposingCounsel: z.string().max(200).optional(),
+        plaintiffName: z.string().max(200).optional(),
+        defendantName: z.string().max(200).optional(),
+        caseNumber: z.string().max(100).optional(),
+        court: z.string().max(200).optional(),
+        district: z.string().max(200).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -544,6 +549,11 @@ export const casesRouter = router({
       if (input.name) patch.name = input.name;
       if (input.opposingParty !== undefined) patch.opposingParty = input.opposingParty;
       if (input.opposingCounsel !== undefined) patch.opposingCounsel = input.opposingCounsel;
+      if (input.plaintiffName !== undefined) patch.plaintiffName = input.plaintiffName;
+      if (input.defendantName !== undefined) patch.defendantName = input.defendantName;
+      if (input.caseNumber !== undefined) patch.caseNumber = input.caseNumber;
+      if (input.court !== undefined) patch.court = input.court;
+      if (input.district !== undefined) patch.district = input.district;
 
       const [updated] = await ctx.db
         .update(cases)
