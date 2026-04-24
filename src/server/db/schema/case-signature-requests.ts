@@ -15,6 +15,7 @@ export const caseSignatureRequests = pgTable(
     title: text("title").notNull(),
     message: text("message"),
     requiresCountersign: boolean("requires_countersign").notNull().default(true),
+    signingOrder: text("signing_order").notNull().default("parallel"),
     status: text("status").notNull(),
     hellosignRequestId: text("hellosign_request_id"),
     signedDocumentId: uuid("signed_document_id").references(() => documents.id, { onDelete: "set null" }),
@@ -35,6 +36,10 @@ export const caseSignatureRequests = pgTable(
     check(
       "case_signature_requests_status_check",
       sql`${table.status} IN ('draft','sent','in_progress','completed','declined','expired','cancelled')`,
+    ),
+    check(
+      "case_signature_requests_signing_order_check",
+      sql`${table.signingOrder} IN ('parallel','sequential')`,
     ),
   ],
 );
