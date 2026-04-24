@@ -177,4 +177,123 @@ export const servicesRouter = router({
 
       return { service: inserted, mailRuleApplicable, affectedDeadlines };
     }),
+
+  applyMailRule: protectedProcedure
+    .input(z.object({ filingId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const filing = await loadFiling(ctx, input.filingId);
+      if (!filing) throw new TRPCError({ code: "NOT_FOUND" });
+      if (filing.status === "closed") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Closed filings are immutable" });
+      }
+      await assertCaseAccess(ctx, filing.caseId);
+
+      const mailServices = await ctx.db
+        .select({ id: caseFilingServices.id })
+        .from(caseFilingServices)
+        .where(
+          and(
+            eq(caseFilingServices.filingId, input.filingId),
+            inArray(caseFilingServices.method, ["mail", "certified_mail"]),
+          ),
+        )
+        .limit(1);
+      if (mailServices.length === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No mail-like service on this filing" });
+      }
+
+      if (!filing.motionId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Filing has no linked motion for deadline shift" });
+      }
+      const [motion] = await ctx.db
+        .select({ triggerEventId: caseMotions.triggerEventId })
+        .from(caseMotions)
+        .where(eq(caseMotions.id, filing.motionId))
+        .limit(1);
+      if (!motion?.triggerEventId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No deadlines found for this filing" });
+      }
+
+      const deadlines = await ctx.db
+        .select()
+        .from(caseDeadlines)
+        .where(eq(caseDeadlines.triggerEventId, motion.triggerEventId));
+
+      let shifted = 0;
+      let skipped = 0;
+      for (const d of deadlines) {
+        if ((d.shiftedReason ?? "").includes("FRCP 6(d) mail rule")) {
+          skipped++;
+          continue;
+        }
+        const prefix = d.shiftedReason && d.shiftedReason.length > 0 ? `${d.shiftedReason}; ` : "";
+        await ctx.db
+          .update(caseDeadlines)
+          .set({
+            dueDate: addCalendarDays(d.dueDate, 3),
+            shiftedReason: `${prefix}FRCP 6(d) mail rule`,
+            updatedAt: new Date(),
+          })
+          .where(eq(caseDeadlines.id, d.id));
+        shifted++;
+      }
+
+      return { shifted, skipped };
+    }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        serviceId: z.string().uuid(),
+        method: METHOD.optional(),
+        servedAt: z.string().datetime().optional(),
+        trackingReference: z.string().max(200).nullable().optional(),
+        notes: z.string().max(2000).nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [row] = await ctx.db
+        .select({ id: caseFilingServices.id, filingId: caseFilingServices.filingId })
+        .from(caseFilingServices)
+        .where(eq(caseFilingServices.id, input.serviceId))
+        .limit(1);
+      if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const filing = await loadFiling(ctx, row.filingId);
+      if (!filing) throw new TRPCError({ code: "NOT_FOUND" });
+      if (filing.status === "closed") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Closed filings are immutable" });
+      }
+      await assertCaseAccess(ctx, filing.caseId);
+
+      const patch: Partial<typeof caseFilingServices.$inferInsert> = { updatedAt: new Date() };
+      if (input.method !== undefined) patch.method = input.method;
+      if (input.servedAt !== undefined) patch.servedAt = new Date(input.servedAt);
+      if (input.trackingReference !== undefined) patch.trackingReference = input.trackingReference;
+      if (input.notes !== undefined) patch.notes = input.notes;
+
+      await ctx.db.update(caseFilingServices).set(patch).where(eq(caseFilingServices.id, row.id));
+      return { ok: true };
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ serviceId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const [row] = await ctx.db
+        .select({ id: caseFilingServices.id, filingId: caseFilingServices.filingId })
+        .from(caseFilingServices)
+        .where(eq(caseFilingServices.id, input.serviceId))
+        .limit(1);
+      if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const filing = await loadFiling(ctx, row.filingId);
+      if (!filing) throw new TRPCError({ code: "NOT_FOUND" });
+      if (filing.status === "closed") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Closed filings are immutable" });
+      }
+      await assertCaseAccess(ctx, filing.caseId);
+
+      await ctx.db.delete(caseFilingServices).where(eq(caseFilingServices.id, row.id));
+      return { ok: true };
+    }),
 });
