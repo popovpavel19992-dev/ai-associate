@@ -80,6 +80,7 @@ export const motionsRouter = router({
         title: z.string().min(1).max(200),
         memoIds: z.array(z.string().uuid()).default([]),
         collectionIds: z.array(z.string().uuid()).default([]),
+        splitMemo: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -95,6 +96,13 @@ export const motionsRouter = router({
       if (!tpl) throw new TRPCError({ code: "NOT_FOUND", message: "Template not found" });
       if (tpl.orgId && tpl.orgId !== ctx.user.orgId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Template not available to this org" });
+      }
+      // 2.4.3b: split-memo can only be requested on templates that opt in.
+      if (input.splitMemo && !tpl.supportsMemoSplit) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This template does not support a separate Memorandum of Law.",
+        });
       }
 
       const caption = {
@@ -118,6 +126,7 @@ export const motionsRouter = router({
           sections: {},
           attachedMemoIds: input.memoIds,
           attachedCollectionIds: input.collectionIds,
+          splitMemo: input.splitMemo ?? false,
           createdBy: ctx.user.id,
         })
         .returning();
