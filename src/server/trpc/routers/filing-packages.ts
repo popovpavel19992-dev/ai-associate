@@ -1,13 +1,19 @@
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { protectedProcedure, router } from "@/server/trpc/trpc";
 import { caseFilingPackages } from "@/server/db/schema/case-filing-packages";
 import { caseFilingPackageExhibits } from "@/server/db/schema/case-filing-package-exhibits";
 import { caseMotions } from "@/server/db/schema/case-motions";
 import { motionTemplates } from "@/server/db/schema/motion-templates";
 import { cases } from "@/server/db/schema/cases";
+import { documents } from "@/server/db/schema/documents";
 import { db } from "@/server/db";
+
+function labelFor(order: number): string {
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  return order < letters.length ? letters[order]! : `AA${order - letters.length}`;
+}
 
 type LoadCtx = {
   db: typeof db;
@@ -126,5 +132,172 @@ export const filingPackagesRouter = router({
         })
         .returning();
       return inserted[0];
+    }),
+
+  addExhibits: protectedProcedure
+    .input(
+      z.object({
+        packageId: z.string().uuid(),
+        caseDocumentIds: z.array(z.string().uuid()).default([]),
+        adHocUploads: z
+          .array(
+            z.object({
+              s3Key: z.string().min(1),
+              originalFilename: z.string().min(1),
+              mimeType: z.string().min(1),
+            }),
+          )
+          .default([]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const pkg = await loadPackage(ctx, input.packageId);
+      if (pkg.status === "finalized") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Package is finalized; delete and recreate to edit.",
+        });
+      }
+
+      const currentMax = await ctx.db
+        .select({ n: caseFilingPackageExhibits.displayOrder })
+        .from(caseFilingPackageExhibits)
+        .where(eq(caseFilingPackageExhibits.packageId, pkg.id))
+        .orderBy(desc(caseFilingPackageExhibits.displayOrder))
+        .limit(1);
+      let nextOrder = (currentMax[0]?.n ?? -1) + 1;
+
+      const rows: (typeof caseFilingPackageExhibits.$inferInsert)[] = [];
+
+      if (input.caseDocumentIds.length) {
+        const docs = await ctx.db
+          .select()
+          .from(documents)
+          .where(
+            and(
+              inArray(documents.id, input.caseDocumentIds),
+              eq(documents.caseId, pkg.caseId),
+            ),
+          );
+        for (const d of docs) {
+          rows.push({
+            packageId: pkg.id,
+            label: labelFor(nextOrder),
+            displayOrder: nextOrder,
+            sourceType: "case_document",
+            documentId: d.id,
+            originalFilename: d.filename,
+            mimeType:
+              d.fileType === "pdf"
+                ? "application/pdf"
+                : d.fileType === "docx"
+                  ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  : "image/png",
+          });
+          nextOrder++;
+        }
+      }
+
+      for (const up of input.adHocUploads) {
+        if (
+          up.mimeType ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Exhibit "${up.originalFilename}" is a DOCX file. Convert to PDF before adding as an exhibit.`,
+          });
+        }
+        rows.push({
+          packageId: pkg.id,
+          label: labelFor(nextOrder),
+          displayOrder: nextOrder,
+          sourceType: "ad_hoc_upload",
+          adHocS3Key: up.s3Key,
+          originalFilename: up.originalFilename,
+          mimeType: up.mimeType,
+        });
+        nextOrder++;
+      }
+
+      if (rows.length) {
+        await ctx.db.insert(caseFilingPackageExhibits).values(rows);
+      }
+      return { added: rows.length };
+    }),
+
+  reorderExhibits: protectedProcedure
+    .input(
+      z.object({
+        packageId: z.string().uuid(),
+        exhibitIds: z.array(z.string().uuid()),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const pkg = await loadPackage(ctx, input.packageId);
+      if (pkg.status === "finalized") {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      for (let i = 0; i < input.exhibitIds.length; i++) {
+        await ctx.db
+          .update(caseFilingPackageExhibits)
+          .set({ displayOrder: i })
+          .where(
+            and(
+              eq(caseFilingPackageExhibits.id, input.exhibitIds[i]!),
+              eq(caseFilingPackageExhibits.packageId, pkg.id),
+            ),
+          );
+      }
+      return { ok: true };
+    }),
+
+  updateExhibitLabel: protectedProcedure
+    .input(
+      z.object({
+        exhibitId: z.string().uuid(),
+        packageId: z.string().uuid(),
+        label: z.string().min(1).max(20),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const pkg = await loadPackage(ctx, input.packageId);
+      if (pkg.status === "finalized") {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      await ctx.db
+        .update(caseFilingPackageExhibits)
+        .set({ label: input.label })
+        .where(
+          and(
+            eq(caseFilingPackageExhibits.id, input.exhibitId),
+            eq(caseFilingPackageExhibits.packageId, pkg.id),
+          ),
+        );
+      return { ok: true };
+    }),
+
+  removeExhibit: protectedProcedure
+    .input(
+      z.object({
+        exhibitId: z.string().uuid(),
+        packageId: z.string().uuid(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const pkg = await loadPackage(ctx, input.packageId);
+      if (pkg.status === "finalized") {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      await ctx.db
+        .delete(caseFilingPackageExhibits)
+        .where(
+          and(
+            eq(caseFilingPackageExhibits.id, input.exhibitId),
+            eq(caseFilingPackageExhibits.packageId, pkg.id),
+          ),
+        );
+      return { ok: true };
     }),
 });
