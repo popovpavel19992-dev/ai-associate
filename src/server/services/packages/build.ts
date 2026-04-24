@@ -17,9 +17,33 @@ import { caseFilings } from "@/server/db/schema/case-filings";
 import { caseFilingServices } from "@/server/db/schema/case-filing-services";
 import { caseParties } from "@/server/db/schema/case-parties";
 import { MotionPdf } from "./renderers/motion-pdf";
+import { TableOfContents, type TocHeading } from "./renderers/toc";
+import { TableOfAuthorities } from "./renderers/toa";
 import { normalizeExhibitToPdf } from "./exhibits";
 import { mergePdfsWithPageNumbers } from "./merge";
+import { extractCitations, groupAndSort } from "./citation-extractor";
+import { PDFDocument } from "pdf-lib";
 import type { CoverSheetData, SignerInfo } from "./types";
+import type { SectionKey } from "@/server/services/motions/types";
+
+function toRoman(n: number): string {
+  const map: Array<[number, string]> = [
+    [10, "X"],
+    [9, "IX"],
+    [5, "V"],
+    [4, "IV"],
+    [1, "I"],
+  ];
+  let out = "";
+  let x = n;
+  for (const [v, s] of map) {
+    while (x >= v) {
+      out += s;
+      x -= v;
+    }
+  }
+  return out;
+}
 
 export class MissingSourceDocumentError extends Error {
   constructor(label: string) {
@@ -66,13 +90,13 @@ export async function buildPackagePdf(input: {
 
   const buffers: Buffer[] = [];
 
-  buffers.push(
-    Buffer.from(
-      (await renderToBuffer(
-        React.createElement(TitlePage, { caption }) as RenderElement,
-      )) as unknown as Uint8Array,
-    ),
+  const titleBuf = Buffer.from(
+    (await renderToBuffer(
+      React.createElement(TitlePage, { caption }) as RenderElement,
+    )) as unknown as Uint8Array,
   );
+  buffers.push(titleBuf);
+  const titlePageCount = (await PDFDocument.load(titleBuf)).getPageCount();
 
   if (pkg.motionId) {
     const motionRows = await db
@@ -98,18 +122,93 @@ export async function buildPackagePdf(input: {
       );
       if (missing.length > 0) throw new MissingMotionSectionsError(missing);
 
-      buffers.push(
-        Buffer.from(
+      // Render the motion body once up front — used for both ToC page math
+      // and final assembly.
+      const motionBuf = Buffer.from(
+        (await renderToBuffer(
+          React.createElement(MotionPdf, {
+            caption,
+            skeleton: tpl.skeleton as never,
+            sections: motion.sections as never,
+            signer,
+          }) as RenderElement,
+        )) as unknown as Uint8Array,
+      );
+
+      // ToC headings: roman-numeral prefix + section heading, derived from
+      // the template skeleton's AI sections in order.
+      const skeleton = tpl.skeleton as {
+        sections: Array<{ type: string; heading?: string; key?: SectionKey }>;
+      };
+      const aiSections = skeleton.sections.filter((s) => s.type === "ai");
+      const headings: TocHeading[] = aiSections.map((s, i) => ({
+        number: `${toRoman(i + 1)}.`,
+        title: s.heading ?? "",
+      }));
+
+      // Citations: extract → group/sort → produce ToA input arrays.
+      const occurrences = extractCitations(sections);
+      const { cases, statutes } = groupAndSort(occurrences);
+
+      // Iterative page-offset solver:
+      //   motionStartPage = titlePageCount + tocPages + toaPages + 1
+      // Seed with tocPages=1, toaPages=1 (expected MVP size). Re-render up
+      // to 2 times if actual page counts change the offset — ToC/ToA page
+      // length is bounded (total under 3 pages in MVP), so this converges.
+      let tocPages = 1;
+      let toaPages = 1;
+      let motionStartPage = titlePageCount + tocPages + toaPages + 1;
+      let tocBuf: Buffer = Buffer.alloc(0);
+      let toaBuf: Buffer = Buffer.alloc(0);
+      for (let attempt = 0; attempt < 3; attempt++) {
+        tocBuf = Buffer.from(
           (await renderToBuffer(
-            React.createElement(MotionPdf, {
+            React.createElement(TableOfContents, {
               caption,
-              skeleton: tpl.skeleton as never,
-              sections: motion.sections as never,
-              signer,
+              headings,
+              motionStartPage,
             }) as RenderElement,
           )) as unknown as Uint8Array,
-        ),
-      );
+        );
+        toaBuf = Buffer.from(
+          (await renderToBuffer(
+            React.createElement(TableOfAuthorities, {
+              caption,
+              cases,
+              statutes,
+              motionStartPage,
+            }) as RenderElement,
+          )) as unknown as Uint8Array,
+        );
+        const actualToc = (await PDFDocument.load(tocBuf)).getPageCount();
+        const actualToa = (await PDFDocument.load(toaBuf)).getPageCount();
+        const correctedStart = titlePageCount + actualToc + actualToa + 1;
+        if (correctedStart === motionStartPage) {
+          tocPages = actualToc;
+          toaPages = actualToa;
+          break;
+        }
+        if (attempt === 2) {
+          // Give up after 3 tries — emit with slight mis-numbering and warn.
+          console.warn(
+            `[2.4.3c] ToC/ToA page-offset solver did not converge after ${attempt + 1} attempts (motionStartPage=${motionStartPage}, correctedStart=${correctedStart}). Rendering with motionStartPage=${correctedStart}.`,
+          );
+          motionStartPage = correctedStart;
+          tocPages = actualToc;
+          toaPages = actualToa;
+        } else {
+          motionStartPage = correctedStart;
+        }
+      }
+      if (tocPages + toaPages > 3) {
+        console.warn(
+          `[2.4.3c] ToC/ToA exceeded 3 pages total (toc=${tocPages}, toa=${toaPages}).`,
+        );
+      }
+
+      buffers.push(tocBuf);
+      buffers.push(toaBuf);
+      buffers.push(motionBuf);
     }
   }
 
