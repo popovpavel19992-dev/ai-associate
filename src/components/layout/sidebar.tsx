@@ -36,6 +36,7 @@ const navItems = [
   { href: "/drafts", label: "Drafts", icon: PenLine },
   { href: "/quick-analysis", label: "Quick Analysis", icon: Zap },
   { href: "/cases", label: "Cases", icon: Briefcase },
+  { href: "/filings", label: "Filings", icon: FileText },
   { href: "/research", label: "Research", icon: ScrollText },
   { href: "/research/collections", label: "Collections", icon: Library },
   { href: "/clients", label: "Clients", icon: Users },
