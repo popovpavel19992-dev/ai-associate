@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, gte, lte, ilike, type SQL } from "drizzle-orm";
 import { protectedProcedure, router } from "@/server/trpc/trpc";
 import { assertCaseAccess } from "@/server/trpc/lib/permissions";
 import { caseFilings } from "@/server/db/schema/case-filings";
@@ -9,6 +9,7 @@ import { caseFilingPackages } from "@/server/db/schema/case-filing-packages";
 import { caseMembers } from "@/server/db/schema/case-members";
 import { users } from "@/server/db/schema/users";
 import { cases } from "@/server/db/schema/cases";
+import { motionTemplates } from "@/server/db/schema/motion-templates";
 import { inngest } from "@/server/inngest/client";
 import { notifyFilingSubmitted } from "@/server/services/filings/notification-hooks";
 
@@ -203,5 +204,56 @@ export const filingsRouter = router({
     await ctx.db.delete(caseFilings).where(eq(caseFilings.id, row.id));
     return { ok: true };
   }),
+
+  listByCase: protectedProcedure.input(z.object({ caseId: z.string().uuid() })).query(async ({ ctx, input }) => {
+    await assertCaseAccess(ctx, input.caseId);
+    return ctx.db
+      .select()
+      .from(caseFilings)
+      .where(eq(caseFilings.caseId, input.caseId))
+      .orderBy(desc(caseFilings.submittedAt));
+  }),
+
+  listForOrg: protectedProcedure
+    .input(
+      z.object({
+        status: z.enum(["submitted", "closed", "all"]).default("submitted"),
+        court: z.string().optional(),
+        dateFrom: z.string().datetime().optional(),
+        dateTo: z.string().datetime().optional(),
+        motionType: z.string().optional(),
+        limit: z.number().int().min(1).max(100).default(25),
+        offset: z.number().int().min(0).default(0),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      if (!ctx.user.orgId) return { rows: [] as Array<{ filing: typeof caseFilings.$inferSelect; caseName: string | null; motionType: string | null }> };
+
+      const preds: SQL[] = [eq(caseFilings.orgId, ctx.user.orgId)];
+      if (input.status !== "all") preds.push(eq(caseFilings.status, input.status));
+      if (input.court) preds.push(ilike(caseFilings.court, `%${input.court}%`));
+      if (input.dateFrom) preds.push(gte(caseFilings.submittedAt, new Date(input.dateFrom)));
+      if (input.dateTo) preds.push(lte(caseFilings.submittedAt, new Date(input.dateTo)));
+
+      let rows = await ctx.db
+        .select({
+          filing: caseFilings,
+          caseName: cases.name,
+          motionType: motionTemplates.motionType,
+        })
+        .from(caseFilings)
+        .leftJoin(cases, eq(cases.id, caseFilings.caseId))
+        .leftJoin(caseMotions, eq(caseMotions.id, caseFilings.motionId))
+        .leftJoin(motionTemplates, eq(motionTemplates.id, caseMotions.templateId))
+        .where(and(...preds))
+        .orderBy(desc(caseFilings.submittedAt))
+        .limit(input.limit)
+        .offset(input.offset);
+
+      if (input.motionType) {
+        rows = rows.filter((r) => r.motionType === input.motionType);
+      }
+      return { rows };
+    }),
 });
 
