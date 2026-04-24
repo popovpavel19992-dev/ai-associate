@@ -27,6 +27,7 @@ export interface EmailOutreachServiceDeps {
     replyTo?: string;
     trackOpens?: boolean;
     trackClicks?: boolean;
+    threadHeaders?: { inReplyTo: string; references: string[] };
   }) => Promise<{ id?: string }>;
   fetchObject?: (s3Key: string) => Promise<Buffer>;
 }
@@ -201,6 +202,7 @@ export class EmailOutreachService {
     senderId: string;
     outreachId?: string;
     trackingEnabled?: boolean;
+    parentReplyId?: string | null;
   }): Promise<{ emailId: string; resendId: string | null }> {
     const MAX_BYTES = 35 * 1024 * 1024;
     const outreachId = input.outreachId ?? randomUUID();
@@ -209,6 +211,37 @@ export class EmailOutreachService {
     const recipient = await this.resolveRecipient({ caseId: input.caseId });
     if (!recipient) {
       throw new TRPCError({ code: "BAD_REQUEST", message: "No recipient email — add an email contact on the Client page" });
+    }
+
+    // Threading: resolve parent reply (if any) to build RFC2822 In-Reply-To / References chain.
+    let threadHeaders: { inReplyTo: string; references: string[] } | undefined;
+    let persistInReplyTo: string | null = null;
+    let persistParentReplyId: string | null = null;
+    if (input.parentReplyId) {
+      const [parentReply] = await this.db
+        .select({
+          id: caseEmailReplies.id,
+          caseId: caseEmailReplies.caseId,
+          messageId: caseEmailReplies.messageId,
+          inReplyTo: caseEmailReplies.inReplyTo,
+        })
+        .from(caseEmailReplies)
+        .where(eq(caseEmailReplies.id, input.parentReplyId))
+        .limit(1);
+      if (!parentReply || parentReply.caseId !== input.caseId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Parent reply not found on this case" });
+      }
+      // We can only thread if the parent reply has a Message-ID we can point to.
+      if (parentReply.messageId) {
+        // References: root outbound Message-ID (parent.inReplyTo) first, then the parent reply Message-ID.
+        // This yields: <original-outbound-id> <parent-reply-id>
+        const refs: string[] = [];
+        if (parentReply.inReplyTo) refs.push(parentReply.inReplyTo);
+        refs.push(parentReply.messageId);
+        threadHeaders = { inReplyTo: parentReply.messageId, references: refs };
+        persistInReplyTo = parentReply.messageId;
+      }
+      persistParentReplyId = parentReply.id;
     }
 
     const variables = await this.resolveVariables({ caseId: input.caseId, senderId: input.senderId });
@@ -256,6 +289,7 @@ export class EmailOutreachService {
         replyTo,
         trackOpens: input.trackingEnabled ?? false,
         trackClicks: input.trackingEnabled ?? false,
+        threadHeaders,
       });
 
       const [row] = await this.db
@@ -274,6 +308,8 @@ export class EmailOutreachService {
           resendId: resendRes.id ?? null,
           sentAt: new Date(),
           trackingEnabled: input.trackingEnabled ?? false,
+          parentReplyId: persistParentReplyId,
+          inReplyTo: persistInReplyTo,
         })
         .returning();
 
@@ -307,6 +343,8 @@ export class EmailOutreachService {
           status: "failed",
           errorMessage: msg.slice(0, 2000),
           trackingEnabled: input.trackingEnabled ?? false,
+          parentReplyId: persistParentReplyId,
+          inReplyTo: persistInReplyTo,
         });
       throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Failed to send: ${msg}` });
     }
@@ -507,6 +545,44 @@ export class EmailOutreachService {
       .update(caseEmailOutreach)
       .set({ lawyerLastSeenRepliesAt: new Date() })
       .where(eq(caseEmailOutreach.id, input.outreachId));
+  }
+
+  /**
+   * Returns outbound outreach rows whose parentReplyId falls in the reply chain
+   * of the given outreach. Used by UI to render our replies-to-replies inline.
+   */
+  async outboundRepliesForOutreach(input: { outreachId: string }): Promise<Array<{
+    id: string;
+    subject: string;
+    bodyHtml: string;
+    sentAt: Date | null;
+    createdAt: Date;
+    parentReplyId: string;
+    status: string;
+    sentBy: string | null;
+  }>> {
+    // Find reply ids of the thread
+    const replyIds = await this.db
+      .select({ id: caseEmailReplies.id })
+      .from(caseEmailReplies)
+      .where(eq(caseEmailReplies.outreachId, input.outreachId));
+    if (replyIds.length === 0) return [];
+    const ids = replyIds.map((r) => r.id);
+    const rows = await this.db
+      .select({
+        id: caseEmailOutreach.id,
+        subject: caseEmailOutreach.subject,
+        bodyHtml: caseEmailOutreach.bodyHtml,
+        sentAt: caseEmailOutreach.sentAt,
+        createdAt: caseEmailOutreach.createdAt,
+        parentReplyId: caseEmailOutreach.parentReplyId,
+        status: caseEmailOutreach.status,
+        sentBy: caseEmailOutreach.sentBy,
+      })
+      .from(caseEmailOutreach)
+      .where(sql`${caseEmailOutreach.parentReplyId} = ANY(${ids})`)
+      .orderBy(asc(caseEmailOutreach.createdAt));
+    return rows.map((r) => ({ ...r, parentReplyId: r.parentReplyId as string }));
   }
 }
 
