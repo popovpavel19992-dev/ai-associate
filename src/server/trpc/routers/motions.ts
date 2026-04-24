@@ -97,14 +97,12 @@ export const motionsRouter = router({
         throw new TRPCError({ code: "FORBIDDEN", message: "Template not available to this org" });
       }
 
-      // The cases schema does not carry plaintiff/defendant/caseNumber/court fields.
-      // Populate a best-effort caption from available columns; UI will let user edit later.
       const caption = {
-        court: "U.S. District Court",
-        district: "",
-        plaintiff: caseRow.name,
-        defendant: caseRow.opposingParty ?? "",
-        caseNumber: "",
+        court: caseRow.court ?? "U.S. District Court",
+        district: caseRow.district ?? "",
+        plaintiff: caseRow.plaintiffName ?? caseRow.name,
+        defendant: caseRow.defendantName ?? caseRow.opposingParty ?? "",
+        caseNumber: caseRow.caseNumber ?? "",
         documentTitle: tpl.name,
       };
 

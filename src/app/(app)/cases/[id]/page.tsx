@@ -185,6 +185,7 @@ export default function CaseDetailPage({
         <div className="flex-1 overflow-y-auto">
         {activeTab === "overview" && (
           <CaseOverview
+            caseId={caseData.id}
             stage={currentStage}
             stageChangedAt={caseData.stageChangedAt}
             description={caseData.description}
@@ -193,6 +194,13 @@ export default function CaseDetailPage({
             stageTaskTemplates={stageTaskTemplatesList}
             opposingParty={caseData.opposingParty}
             opposingCounsel={caseData.opposingCounsel}
+            caption={{
+              plaintiffName: caseData.plaintiffName,
+              defendantName: caseData.defendantName,
+              caseNumber: caseData.caseNumber,
+              court: caseData.court,
+              district: caseData.district,
+            }}
           />
         )}
 
