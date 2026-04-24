@@ -2,8 +2,10 @@
 
 import { FileText, FileCheck, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { CaseCaptionCard, type CaseCaption } from "./case-caption-card";
 
 interface CaseOverviewProps {
+  caseId: string;
   stage: { name: string; color: string; description: string } | null;
   stageChangedAt: Date | string | null;
   description: string | null;
@@ -12,9 +14,11 @@ interface CaseOverviewProps {
   stageTaskTemplates: { title: string; priority: string }[];
   opposingParty: string | null;
   opposingCounsel: string | null;
+  caption: CaseCaption;
 }
 
 export function CaseOverview({
+  caseId,
   stage,
   stageChangedAt,
   description,
@@ -23,6 +27,7 @@ export function CaseOverview({
   stageTaskTemplates,
   opposingParty,
   opposingCounsel,
+  caption,
 }: CaseOverviewProps) {
   return (
     <div className="grid gap-4 p-4 md:grid-cols-2">
@@ -90,6 +95,9 @@ export function CaseOverview({
           </div>
         </div>
       </div>
+
+      {/* Litigation Caption */}
+      <CaseCaptionCard caseId={caseId} caption={caption} />
 
       {/* Quick Stats */}
       <div className="flex gap-4 md:col-span-2">
