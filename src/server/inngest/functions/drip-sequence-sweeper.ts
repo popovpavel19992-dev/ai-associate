@@ -1,5 +1,5 @@
 // src/server/inngest/functions/drip-sequence-sweeper.ts
-import { and, eq, lte, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { inngest } from "../client";
 import { db } from "@/server/db";
 import { emailDripEnrollments } from "@/server/db/schema/email-drip-enrollments";
@@ -8,6 +8,7 @@ import { emailTemplates } from "@/server/db/schema/email-templates";
 import { EmailOutreachService } from "@/server/services/email-outreach/service";
 import { sendEmail } from "@/server/services/email";
 import { getObject } from "@/server/services/s3";
+import { advanceEnrollment, dueEnrollments } from "@/server/services/drip-sequences/service";
 
 const SWEEP_BATCH_SIZE = 100;
 
@@ -55,24 +56,22 @@ export const dripSequenceSweeper = inngest.createFunction(
     const now = new Date();
 
     const due = await step.run("find-due", async () => {
-      return db
+      const rows = await dueEnrollments(db, now, SWEEP_BATCH_SIZE);
+      // Pull enrolledBy alongside (not exposed by helper) — small follow-up query.
+      const ids = rows.map((r) => r.enrollmentId);
+      if (ids.length === 0) return [];
+      const enrichments = await db
         .select({
           id: emailDripEnrollments.id,
-          sequenceId: emailDripEnrollments.sequenceId,
-          clientContactId: emailDripEnrollments.clientContactId,
-          caseId: emailDripEnrollments.caseId,
-          orgId: emailDripEnrollments.orgId,
-          currentStepOrder: emailDripEnrollments.currentStepOrder,
           enrolledBy: emailDripEnrollments.enrolledBy,
         })
         .from(emailDripEnrollments)
-        .where(
-          and(
-            eq(emailDripEnrollments.status, "active"),
-            lte(emailDripEnrollments.nextSendAt, now),
-          ),
-        )
-        .limit(SWEEP_BATCH_SIZE);
+        .where(inArray(emailDripEnrollments.id, ids));
+      const byId = new Map(enrichments.map((e) => [e.id, e.enrolledBy]));
+      return rows.map((r) => ({
+        ...r,
+        enrolledBy: byId.get(r.enrollmentId) as string,
+      }));
     });
 
     if (due.length === 0) {
@@ -83,17 +82,17 @@ export const dripSequenceSweeper = inngest.createFunction(
     let failed = 0;
 
     for (const enrollment of due) {
-      const result = await step.run(`send-${enrollment.id}`, async () => {
+      const result = await step.run(`send-${enrollment.enrollmentId}`, async () => {
         try {
           if (!enrollment.caseId) {
             console.warn(
-              `[drip-sweeper] enrollment ${enrollment.id} missing caseId; cannot send via email-outreach service`,
+              `[drip-sweeper] enrollment ${enrollment.enrollmentId} missing caseId; cannot send via email-outreach service`,
             );
             return { ok: false as const, reason: "missing_case_id" };
           }
 
           // 1. Load current step + template.
-          const [step] = await db
+          const [stepRow] = await db
             .select({
               id: emailDripSequenceSteps.id,
               stepOrder: emailDripSequenceSteps.stepOrder,
@@ -111,9 +110,9 @@ export const dripSequenceSweeper = inngest.createFunction(
             )
             .limit(1);
 
-          if (!step) {
+          if (!stepRow) {
             console.warn(
-              `[drip-sweeper] no step found for enrollment ${enrollment.id} at order ${enrollment.currentStepOrder}`,
+              `[drip-sweeper] no step found for enrollment ${enrollment.enrollmentId} at order ${enrollment.currentStepOrder}`,
             );
             return { ok: false as const, reason: "step_not_found" };
           }
@@ -127,54 +126,17 @@ export const dripSequenceSweeper = inngest.createFunction(
 
           await svc.send({
             caseId: enrollment.caseId,
-            templateId: step.templateId,
-            subject: step.templateSubject,
-            bodyMarkdown: step.templateBodyMarkdown,
+            templateId: stepRow.templateId,
+            subject: stepRow.templateSubject,
+            bodyMarkdown: stepRow.templateBodyMarkdown,
             documentIds: [],
             senderId: enrollment.enrolledBy,
             trackingEnabled: false,
             parentReplyId: null,
           });
 
-          // 3. Advance enrollment: find next step, set nextSendAt = now + delayDays,
-          //    or mark completed if no further step exists.
-          const [nextStep] = await db
-            .select({
-              stepOrder: emailDripSequenceSteps.stepOrder,
-              delayDays: emailDripSequenceSteps.delayDays,
-            })
-            .from(emailDripSequenceSteps)
-            .where(
-              and(
-                eq(emailDripSequenceSteps.sequenceId, enrollment.sequenceId),
-                sql`${emailDripSequenceSteps.stepOrder} > ${enrollment.currentStepOrder}`,
-              ),
-            )
-            .orderBy(emailDripSequenceSteps.stepOrder)
-            .limit(1);
-
-          const sentAt = new Date();
-          if (nextStep) {
-            const next = new Date(sentAt.getTime() + nextStep.delayDays * 24 * 60 * 60 * 1000);
-            await db
-              .update(emailDripEnrollments)
-              .set({
-                currentStepOrder: nextStep.stepOrder,
-                nextSendAt: next,
-                lastStepSentAt: sentAt,
-              })
-              .where(eq(emailDripEnrollments.id, enrollment.id));
-          } else {
-            await db
-              .update(emailDripEnrollments)
-              .set({
-                status: "completed",
-                nextSendAt: null,
-                lastStepSentAt: sentAt,
-                completedAt: sentAt,
-              })
-              .where(eq(emailDripEnrollments.id, enrollment.id));
-          }
+          // 3. Advance enrollment via service helper (atomic find-next + update).
+          await advanceEnrollment(db, enrollment.enrollmentId);
 
           return { ok: true as const };
         } catch (err) {
@@ -183,7 +145,7 @@ export const dripSequenceSweeper = inngest.createFunction(
           // log to console.
           const msg = err instanceof Error ? err.message : String(err);
           console.error(
-            `[drip-sweeper] send failed for enrollment ${enrollment.id} (seq=${enrollment.sequenceId} step=${enrollment.currentStepOrder}): ${msg}`,
+            `[drip-sweeper] send failed for enrollment ${enrollment.enrollmentId} (seq=${enrollment.sequenceId} step=${enrollment.currentStepOrder}): ${msg}`,
           );
           return { ok: false as const, reason: msg.slice(0, 500) };
         }
