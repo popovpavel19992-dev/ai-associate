@@ -47,6 +47,7 @@ import { caseEmailsRouter } from "./routers/case-emails";
 import { caseSignaturesRouter } from "./routers/case-signatures";
 import { portalSignaturesRouter } from "./routers/portal-signatures";
 import { deadlinesRouter } from "./routers/deadlines";
+import { motionsRouter } from "./routers/motions";
 
 export const appRouter = router({
   users: usersRouter,
@@ -97,6 +98,7 @@ export const appRouter = router({
   caseSignatures: caseSignaturesRouter,
   portalSignatures: portalSignaturesRouter,
   deadlines: deadlinesRouter,
+  motions: motionsRouter,
 });
 
 export type AppRouter = typeof appRouter;

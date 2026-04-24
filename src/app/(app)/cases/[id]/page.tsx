@@ -25,6 +25,7 @@ import { UpdatesTab } from "@/components/cases/updates/updates-tab";
 import { EmailsTab } from "@/components/cases/emails/emails-tab";
 import { SignaturesTab } from "@/components/cases/signatures/signatures-tab";
 import { DeadlinesTab } from "@/components/cases/deadlines/deadlines-tab";
+import { MotionsTab } from "@/components/cases/motions/motions-tab";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -43,6 +44,7 @@ const TABS = [
   { key: "emails", label: "Emails" },
   { key: "signatures", label: "Signatures" },
   { key: "deadlines", label: "Deadlines" },
+  { key: "motions", label: "Motions" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -258,6 +260,7 @@ export default function CaseDetailPage({
         {activeTab === "emails" && <EmailsTab caseId={caseData.id} />}
         {activeTab === "signatures" && <SignaturesTab caseId={caseData.id} />}
         {activeTab === "deadlines" && <DeadlinesTab caseId={caseData.id} />}
+        {activeTab === "motions" && <MotionsTab caseId={caseData.id} />}
         </div>
         {(caseData.client || caseData.orgId) && (
           <div className="hidden w-56 shrink-0 space-y-4 overflow-y-auto border-l border-zinc-800 p-4 lg:block">
