@@ -18,25 +18,48 @@ export interface SendFromTemplateInput {
   signingRedirectUrl?: string;
 }
 
+/**
+ * Form field placement for the Dropbox Sign `signatureRequestSend` endpoint.
+ * Coordinates are in PDF points with a top-left origin; the caller is
+ * responsible for any coordinate conversion.
+ *
+ * Serialized as `form_fields_per_document` in the upstream API. See:
+ * https://developers.hellosign.com/api/reference/operation/signatureRequestSend
+ */
+export interface RawFormField {
+  api_id: string;
+  name?: string;
+  type: "signature" | "date_signed" | "text" | "initials";
+  /** Index into the `signers` array this field is assigned to. */
+  signer: number;
+  page: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  required?: boolean;
+}
+
 export interface SendRawInput {
   fileBuffer: Buffer;
   fileName: string;
   title: string;
   subject?: string;
   message?: string;
-  signers: Array<{ email: string; name: string; order: number }>;
-  formFields: Array<{
-    api_id: string;
-    name: string;
-    type: "signature" | "date_signed" | "text";
-    signer: number;
-    page: number;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    required?: boolean;
-  }>;
+  /**
+   * When any signer has `order` set, Dropbox Sign enforces sequential
+   * (ordered) routing; when omitted, signers receive the request in
+   * parallel. Up to 20 signers are supported by the API, but our
+   * product caps this at 5.
+   */
+  signers: Array<{ email: string; name: string; order?: number }>;
+  /**
+   * Optional explicit field placement. When omitted, Dropbox Sign will
+   * auto-place a signature field (legacy behaviour). When provided, we
+   * forward the array as `formFieldsPerDocument` (wrapped in a single
+   * outer array, because we only upload one document per request).
+   */
+  formFields?: Array<RawFormField>;
   testMode?: boolean;
   signingRedirectUrl?: string;
 }
@@ -82,20 +105,31 @@ export class DropboxSignClient {
       value: input.fileBuffer,
       options: { filename: input.fileName, contentType: "application/pdf" },
     };
-    const res = await this.api.signatureRequestSend({
+    const payload: Record<string, unknown> = {
       title: input.title,
       subject: input.subject,
       message: input.message,
-      signers: input.signers.map((s) => ({
-        emailAddress: s.email,
-        name: s.name,
-        order: s.order,
-      })),
+      signers: input.signers.map((s) => {
+        const base: Record<string, unknown> = {
+          emailAddress: s.email,
+          name: s.name,
+        };
+        // Only include `order` when explicitly provided — its mere presence
+        // on any signer switches Dropbox Sign into sequential routing.
+        if (typeof s.order === "number") base.order = s.order;
+        return base;
+      }),
       files: [fileEntry],
-      formFieldsPerDocument: [input.formFields],
       testMode: input.testMode ?? false,
       signingRedirectUrl: input.signingRedirectUrl,
-    } as any);
+    };
+    // When explicit placements are provided, forward them; otherwise omit so
+    // Dropbox Sign falls back to its auto-place behaviour (legacy path).
+    if (input.formFields && input.formFields.length > 0) {
+      // Outer array = per-document; we only upload one file per request.
+      payload.formFieldsPerDocument = [input.formFields];
+    }
+    const res = await this.api.signatureRequestSend(payload as any);
     return this.mapResponse(res.body);
   }
 
