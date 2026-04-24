@@ -4,6 +4,7 @@ import { and, asc, eq, lte, sql } from "drizzle-orm";
 import { emailDripSequences } from "@/server/db/schema/email-drip-sequences";
 import { emailDripSequenceSteps } from "@/server/db/schema/email-drip-sequence-steps";
 import { emailDripEnrollments } from "@/server/db/schema/email-drip-enrollments";
+import { clientContacts } from "@/server/db/schema/client-contacts";
 
 export type CancellationReason = "reply" | "bounce" | "complaint" | "manual";
 
@@ -382,6 +383,15 @@ export async function listSequencesWithStepCount(db: AnyDb, orgId: string) {
         SELECT COUNT(*)::int FROM ${emailDripSequenceSteps}
         WHERE ${emailDripSequenceSteps.sequenceId} = ${emailDripSequences.id}
       ), 0)`,
+      activeEnrollmentCount: sql<number>`COALESCE((
+        SELECT COUNT(*)::int FROM ${emailDripEnrollments}
+        WHERE ${emailDripEnrollments.sequenceId} = ${emailDripSequences.id}
+          AND ${emailDripEnrollments.status} = 'active'
+      ), 0)`,
+      totalEnrollmentCount: sql<number>`COALESCE((
+        SELECT COUNT(*)::int FROM ${emailDripEnrollments}
+        WHERE ${emailDripEnrollments.sequenceId} = ${emailDripSequences.id}
+      ), 0)`,
     })
     .from(emailDripSequences)
     .where(eq(emailDripSequences.orgId, orgId))
@@ -408,8 +418,26 @@ export async function getSequenceWithSteps(db: AnyDb, orgId: string, sequenceId:
 
 export async function listEnrollmentsForCase(db: AnyDb, orgId: string, caseId: string) {
   return db
-    .select()
+    .select({
+      id: emailDripEnrollments.id,
+      sequenceId: emailDripEnrollments.sequenceId,
+      sequenceName: emailDripSequences.name,
+      clientContactId: emailDripEnrollments.clientContactId,
+      clientContactEmail: clientContacts.email,
+      clientContactName: clientContacts.name,
+      caseId: emailDripEnrollments.caseId,
+      orgId: emailDripEnrollments.orgId,
+      status: emailDripEnrollments.status,
+      currentStepOrder: emailDripEnrollments.currentStepOrder,
+      nextSendAt: emailDripEnrollments.nextSendAt,
+      enrolledAt: emailDripEnrollments.enrolledAt,
+      cancelledAt: emailDripEnrollments.cancelledAt,
+      completedAt: emailDripEnrollments.completedAt,
+      lastStepSentAt: emailDripEnrollments.lastStepSentAt,
+    })
     .from(emailDripEnrollments)
+    .innerJoin(emailDripSequences, eq(emailDripSequences.id, emailDripEnrollments.sequenceId))
+    .innerJoin(clientContacts, eq(clientContacts.id, emailDripEnrollments.clientContactId))
     .where(
       and(
         eq(emailDripEnrollments.orgId, orgId),
