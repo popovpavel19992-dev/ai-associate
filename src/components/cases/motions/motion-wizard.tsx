@@ -10,6 +10,7 @@ export function MotionWizard({ caseId }: { caseId: string }) {
   const [title, setTitle] = useState("");
   const [selectedMemos, setSelectedMemos] = useState<string[] | null>(null);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+  const [splitMemo, setSplitMemo] = useState<boolean>(false);
 
   const { data: templates } = trpc.motions.listTemplates.useQuery();
   const { data: suggestions } = trpc.motions.suggestMemos.useQuery({ caseId });
@@ -22,6 +23,8 @@ export function MotionWizard({ caseId }: { caseId: string }) {
   // "user has not interacted yet — fall back to suggestion defaults".
   const effectiveSelectedMemos: string[] =
     selectedMemos ?? (suggestions?.memos.map((m) => m.id) ?? []);
+
+  const selectedTemplate = templates?.find((t) => t.id === templateId);
 
   const toggleMemo = (id: string) =>
     setSelectedMemos((prev) => {
@@ -109,6 +112,26 @@ export function MotionWizard({ caseId }: { caseId: string }) {
         </ul>
       </div>
 
+      {selectedTemplate?.supportsMemoSplit && (
+        <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={splitMemo}
+              onChange={(e) => setSplitMemo(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="font-medium">Generate as separate Memorandum of Law</span>
+              <span className="ml-1 text-xs text-gray-600">
+                — produces a short notice motion plus a full memorandum carrying the
+                facts, argument, and conclusion sections (recommended for argument-heavy motions).
+              </span>
+            </span>
+          </label>
+        </div>
+      )}
+
       <div className="flex justify-between">
         <button type="button" onClick={() => setStep(1)} className="rounded-md border px-4 py-2 text-sm">Back</button>
         <button
@@ -116,7 +139,14 @@ export function MotionWizard({ caseId }: { caseId: string }) {
           disabled={!templateId || !title || create.isPending}
           onClick={() =>
             templateId &&
-            create.mutate({ caseId, templateId, title, memoIds: effectiveSelectedMemos, collectionIds: selectedCollections })
+            create.mutate({
+              caseId,
+              templateId,
+              title,
+              memoIds: effectiveSelectedMemos,
+              collectionIds: selectedCollections,
+              splitMemo: selectedTemplate?.supportsMemoSplit ? splitMemo : undefined,
+            })
           }
           className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
         >

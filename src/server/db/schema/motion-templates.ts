@@ -14,6 +14,7 @@ export const motionTemplates = pgTable(
     sectionPrompts: jsonb("section_prompts").notNull(),
     defaultDeadlineRuleSlugs: text("default_deadline_rule_slugs").array().notNull().default([]),
     active: boolean("active").notNull().default(true),
+    supportsMemoSplit: boolean("supports_memo_split").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [

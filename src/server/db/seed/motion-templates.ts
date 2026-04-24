@@ -14,9 +14,9 @@ const SKELETON_COMMON: MotionSkeleton["sections"] = [
 ];
 
 const TEMPLATES = [
-  { slug: "motion_to_dismiss_12b6", name: "Motion to Dismiss (FRCP 12(b)(6))", description: "Failure to state a claim upon which relief can be granted.", motionType: "motion_to_dismiss" as const, defaultDeadlineRuleSlugs: [] },
-  { slug: "motion_for_summary_judgment", name: "Motion for Summary Judgment (FRCP 56)", description: "No genuine dispute as to material fact.", motionType: "motion_for_summary_judgment" as const, defaultDeadlineRuleSlugs: [] },
-  { slug: "motion_to_compel_discovery", name: "Motion to Compel Discovery (FRCP 37)", description: "Compelling discovery responses after meet-and-confer.", motionType: "motion_to_compel" as const, defaultDeadlineRuleSlugs: [] },
+  { slug: "motion_to_dismiss_12b6", name: "Motion to Dismiss (FRCP 12(b)(6))", description: "Failure to state a claim upon which relief can be granted.", motionType: "motion_to_dismiss" as const, defaultDeadlineRuleSlugs: [], supportsMemoSplit: true },
+  { slug: "motion_for_summary_judgment", name: "Motion for Summary Judgment (FRCP 56)", description: "No genuine dispute as to material fact.", motionType: "motion_for_summary_judgment" as const, defaultDeadlineRuleSlugs: [], supportsMemoSplit: true },
+  { slug: "motion_to_compel_discovery", name: "Motion to Compel Discovery (FRCP 37)", description: "Compelling discovery responses after meet-and-confer.", motionType: "motion_to_compel" as const, defaultDeadlineRuleSlugs: [], supportsMemoSplit: true },
 ];
 
 export async function seedMotionTemplates(): Promise<void> {
@@ -37,6 +37,7 @@ export async function seedMotionTemplates(): Promise<void> {
       sectionPrompts: SYSTEM_PROMPTS[t.motionType],
       defaultDeadlineRuleSlugs: t.defaultDeadlineRuleSlugs,
       active: true,
+      supportsMemoSplit: t.supportsMemoSplit,
     };
 
     if (existing[0]) {

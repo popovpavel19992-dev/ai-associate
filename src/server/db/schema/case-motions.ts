@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, jsonb, timestamp, index, check } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, jsonb, boolean, timestamp, index, check } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organizations } from "./organizations";
 import { cases } from "./cases";
@@ -19,6 +19,7 @@ export const caseMotions = pgTable(
     sections: jsonb("sections").notNull().default({}),
     attachedMemoIds: uuid("attached_memo_ids").array().notNull().default([]),
     attachedCollectionIds: uuid("attached_collection_ids").array().notNull().default([]),
+    splitMemo: boolean("split_memo").notNull().default(false),
     filedAt: timestamp("filed_at", { withTimezone: true }),
     triggerEventId: uuid("trigger_event_id").references(() => caseTriggerEvents.id, { onDelete: "set null" }),
     createdBy: uuid("created_by").references(() => users.id).notNull(),
