@@ -2,6 +2,7 @@ import "dotenv/config";
 import { db } from "./index";
 import { sectionPresets } from "./schema/section-presets";
 import { seedMotionTemplates } from "./seed/motion-templates";
+import { seedDiscoveryRequestTemplates } from "./seed/discovery-request-templates";
 
 const SYSTEM_PRESETS = [
   {
@@ -46,6 +47,8 @@ async function seed() {
   console.log("Seeded section presets");
   await seedMotionTemplates();
   console.log("Seeded motion templates");
+  await seedDiscoveryRequestTemplates();
+  console.log("Seeded discovery request templates");
   process.exit(0);
 }
 
