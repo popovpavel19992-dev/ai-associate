@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { PDFDocument } from "pdf-lib";
 import { normalizeExhibitToPdf } from "@/server/services/packages/exhibits";
 import { DocxExhibitNotSupportedError, UnsupportedMimeTypeError } from "@/server/services/packages/types";
+import * as docxConverter from "@/server/services/packages/docx-converter";
 
 async function makeTinyPdf(): Promise<Buffer> {
   const doc = await PDFDocument.create();
@@ -40,7 +41,13 @@ describe("normalizeExhibitToPdf", () => {
     expect(loaded.getPageCount()).toBe(1);
   });
 
-  it("throws DocxExhibitNotSupportedError for DOCX", async () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.CONVERTAPI_SECRET;
+  });
+
+  it("throws DocxExhibitNotSupportedError for DOCX when CONVERTAPI_SECRET is unset", async () => {
+    delete process.env.CONVERTAPI_SECRET;
     await expect(
       normalizeExhibitToPdf({
         mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -48,6 +55,23 @@ describe("normalizeExhibitToPdf", () => {
         getContent: async () => Buffer.from(""),
       }),
     ).rejects.toBeInstanceOf(DocxExhibitNotSupportedError);
+  });
+
+  it("converts DOCX via ConvertAPI when CONVERTAPI_SECRET is set", async () => {
+    process.env.CONVERTAPI_SECRET = "test-secret";
+    const fakePdf = Buffer.from("%PDF-1.4 fake");
+    const spy = vi
+      .spyOn(docxConverter, "convertDocxToPdf")
+      .mockResolvedValue(fakePdf);
+
+    const out = await normalizeExhibitToPdf({
+      mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      originalFilename: "foo.docx",
+      getContent: async () => Buffer.from("docx-bytes"),
+    });
+
+    expect(spy).toHaveBeenCalledOnce();
+    expect(out).toBe(fakePdf);
   });
 
   it("throws UnsupportedMimeTypeError for unknown types", async () => {
