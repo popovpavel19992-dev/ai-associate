@@ -1,9 +1,10 @@
 // src/server/db/schema/case-email-outreach.ts
-import { pgTable, uuid, text, timestamp, boolean, integer, index, check } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, boolean, integer, index, check, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { cases } from "./cases";
 import { users } from "./users";
 import { emailTemplates } from "./email-templates";
+import { caseEmailReplies } from "./case-email-replies";
 
 export const caseEmailOutreach = pgTable(
   "case_email_outreach",
@@ -34,9 +35,12 @@ export const caseEmailOutreach = pgTable(
     lastClickedAt: timestamp("last_clicked_at", { withTimezone: true }),
     clickCount: integer("click_count").notNull().default(0),
     complainedAt: timestamp("complained_at", { withTimezone: true }),
+    parentReplyId: uuid("parent_reply_id").references((): AnyPgColumn => caseEmailReplies.id, { onDelete: "set null" }),
+    inReplyTo: text("in_reply_to"),
   },
   (table) => [
     index("case_email_outreach_case_created_idx").on(table.caseId, table.createdAt),
+    index("case_email_outreach_parent_reply_idx").on(table.parentReplyId),
     check(
       "case_email_outreach_status_check",
       sql`${table.status} IN ('sent','failed')`,

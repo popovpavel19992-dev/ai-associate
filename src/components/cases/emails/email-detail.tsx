@@ -8,8 +8,12 @@ import { FileText, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { SanitizedHtml } from "@/components/common/sanitized-html";
 import { NewEmailModal } from "./new-email-modal";
-import { RepliesSection } from "./replies-section";
-import type { ReplyRowData } from "./reply-row";
+import { ReplyThread, AutoRepliesSection } from "./reply-thread";
+import {
+  buildReplyThread,
+  type InboundReplyNode,
+  type OutboundReplyNode,
+} from "./reply-thread-utils";
 
 function formatTime(d: Date | string | null | undefined): string {
   if (!d) return "";
@@ -20,7 +24,12 @@ function formatTime(d: Date | string | null | undefined): string {
 export function EmailDetail({ emailId, caseId }: { emailId: string; caseId: string }) {
   const { data } = trpc.caseEmails.get.useQuery({ emailId });
   const [resendOpen, setResendOpen] = React.useState(false);
-  const [replyContext, setReplyContext] = React.useState<ReplyRowData | null>(null);
+  const [replyContext, setReplyContext] = React.useState<InboundReplyNode | null>(null);
+
+  const outboundReplies = trpc.caseEmails.outboundRepliesForOutreach.useQuery(
+    { outreachId: data?.id ?? "" },
+    { enabled: !!data?.id },
+  );
 
   const markRead = trpc.caseEmails.markRepliesRead.useMutation();
   React.useEffect(() => {
@@ -98,9 +107,12 @@ export function EmailDetail({ emailId, caseId }: { emailId: string; caseId: stri
         <SanitizedHtml html={data.bodyHtml} />
       </div>
 
-      <RepliesSection
-        replies={(data.replies ?? []).map((r) => ({
+      {(() => {
+        const inboundNodes: InboundReplyNode[] = (data.replies ?? []).map((r) => ({
+          kind: "inbound_reply" as const,
           id: r.id,
+          messageId: (r as { messageId?: string | null }).messageId ?? null,
+          inReplyTo: (r as { inReplyTo?: string | null }).inReplyTo ?? null,
           fromEmail: r.fromEmail,
           fromName: r.fromName,
           subject: r.subject,
@@ -109,12 +121,41 @@ export function EmailDetail({ emailId, caseId }: { emailId: string; caseId: stri
           senderMismatch: r.senderMismatch,
           receivedAt: r.receivedAt,
           attachments: r.attachments,
-        }))}
-        onReply={(reply) => {
+        }));
+        const outboundNodes: OutboundReplyNode[] = (outboundReplies.data ?? []).map((o) => ({
+          kind: "outbound_reply" as const,
+          id: o.id,
+          subject: o.subject,
+          bodyHtml: o.bodyHtml,
+          parentReplyId: o.parentReplyId,
+          inReplyTo: null,
+          createdAt: o.createdAt,
+          sentByName: null,
+        }));
+        const { roots, autoReplies } = buildReplyThread(inboundNodes, outboundNodes, null);
+        const total = inboundNodes.length + outboundNodes.length;
+        if (total === 0) return null;
+        const handleReply = (reply: InboundReplyNode) => {
           setReplyContext(reply);
           setResendOpen(true);
-        }}
-      />
+        };
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-semibold">Replies ({total})</h4>
+            {roots.map((n) => (
+              <ReplyThread
+                key={n.id}
+                node={n}
+                caseId={caseId}
+                onReplyToInbound={handleReply}
+              />
+            ))}
+            {autoReplies.length > 0 && (
+              <AutoRepliesSection autoReplies={autoReplies} onReply={handleReply} />
+            )}
+          </div>
+        );
+      })()}
 
       <NewEmailModal
         caseId={caseId}
@@ -126,10 +167,13 @@ export function EmailDetail({ emailId, caseId }: { emailId: string; caseId: stri
         initial={
           replyContext
             ? {
-                subject: data.subject.startsWith("Re:") ? data.subject : `Re: ${data.subject}`,
+                subject: replyContext.subject.startsWith("Re:")
+                  ? replyContext.subject
+                  : `Re: ${replyContext.subject}`,
                 bodyMarkdown: "",
                 templateId: null,
                 attachments: [],
+                parentReplyId: replyContext.id,
               }
             : {
                 subject: data.subject,

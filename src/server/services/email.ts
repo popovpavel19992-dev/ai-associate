@@ -4,6 +4,13 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM = "ClearTerms <notifications@clearterms.ai>";
 
+export interface SendEmailThreadHeaders {
+  /** RFC2822 Message-ID of the message being replied to, e.g. "<abc@mail.gmail.com>" */
+  inReplyTo: string;
+  /** RFC2822 Message-ID chain, root first. Joined with a space in the References header. */
+  references: string[];
+}
+
 export interface SendEmailOptions {
   to: string;
   subject: string;
@@ -12,6 +19,7 @@ export interface SendEmailOptions {
   replyTo?: string;
   trackOpens?: boolean;
   trackClicks?: boolean;
+  threadHeaders?: SendEmailThreadHeaders;
 }
 
 export async function sendEmail({
@@ -22,11 +30,20 @@ export async function sendEmail({
   replyTo,
   trackOpens,
   trackClicks,
+  threadHeaders,
 }: SendEmailOptions) {
   if (!process.env.RESEND_API_KEY) {
     console.warn("[email] RESEND_API_KEY not set, skipping email:", subject);
     return;
   }
+
+  const headers =
+    threadHeaders && threadHeaders.inReplyTo
+      ? {
+          "In-Reply-To": threadHeaders.inReplyTo,
+          "References": threadHeaders.references.filter((r) => r && r.trim().length > 0).join(" "),
+        }
+      : undefined;
 
   await resend.emails.send({
     from: FROM,
@@ -45,6 +62,7 @@ export async function sendEmail({
     ...(replyTo ? { reply_to: replyTo } : {}),
     ...(trackOpens !== undefined ? { track_opens: trackOpens } : {}),
     ...(trackClicks !== undefined ? { track_clicks: trackClicks } : {}),
+    ...(headers ? { headers } : {}),
   } as Parameters<typeof resend.emails.send>[0]);
 }
 

@@ -42,6 +42,7 @@ export interface NewEmailModalInitial {
   bodyMarkdown?: string;
   templateId?: string | null;
   attachments?: Array<{ id: string; filename: string; fileSize: number }>;
+  parentReplyId?: string;
 }
 
 export function NewEmailModal({
@@ -87,6 +88,7 @@ export function NewEmailModal({
     onSuccess: async () => {
       toast.success("Email sent");
       await utils.caseEmails.list.invalidate({ caseId });
+      await utils.caseEmails.outboundRepliesForOutreach.invalidate();
       onOpenChange(false);
     },
     onError: (e) => toast.error(e.message),
@@ -275,6 +277,7 @@ export function NewEmailModal({
               bodyMarkdown,
               documentIds: attached.map((a) => a.id),
               trackingEnabled,
+              ...(initial?.parentReplyId ? { parentReplyId: initial.parentReplyId } : {}),
             })}
           >
             {send.isPending ? "Sending…" : "Send"}

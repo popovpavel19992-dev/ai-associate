@@ -33,6 +33,7 @@ async function resendSendAdapter(opts: {
   replyTo?: string;
   trackOpens?: boolean;
   trackClicks?: boolean;
+  threadHeaders?: { inReplyTo: string; references: string[] };
 }): Promise<{ id?: string }> {
   // sendEmail does not currently return the Resend id; keep undefined for now.
   await sendEmail({
@@ -43,6 +44,7 @@ async function resendSendAdapter(opts: {
     replyTo: opts.replyTo,
     trackOpens: opts.trackOpens,
     trackClicks: opts.trackClicks,
+    threadHeaders: opts.threadHeaders,
   });
   return { id: undefined };
 }
@@ -98,9 +100,21 @@ export const caseEmailsRouter = router({
       bodyMarkdown: z.string().min(1).max(50_000),
       documentIds: z.array(z.string().uuid()).max(20),
       trackingEnabled: z.boolean().optional(),
+      parentReplyId: z.string().uuid().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCaseAccess(ctx, input.caseId);
+      // If threading, verify the parent reply belongs to this case.
+      if (input.parentReplyId) {
+        const [pr] = await ctx.db
+          .select({ caseId: caseEmailReplies.caseId })
+          .from(caseEmailReplies)
+          .where(eq(caseEmailReplies.id, input.parentReplyId))
+          .limit(1);
+        if (!pr || pr.caseId !== input.caseId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Parent reply not found on this case" });
+        }
+      }
       const svc = new EmailOutreachService({
         db: ctx.db,
         resendSend: resendSendAdapter,
@@ -114,7 +128,22 @@ export const caseEmailsRouter = router({
         documentIds: input.documentIds,
         senderId: ctx.user.id,
         trackingEnabled: input.trackingEnabled ?? false,
+        parentReplyId: input.parentReplyId ?? null,
       });
+    }),
+
+  outboundRepliesForOutreach: protectedProcedure
+    .input(z.object({ outreachId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const [o] = await ctx.db
+        .select({ caseId: caseEmailOutreach.caseId })
+        .from(caseEmailOutreach)
+        .where(eq(caseEmailOutreach.id, input.outreachId))
+        .limit(1);
+      if (!o) throw new TRPCError({ code: "NOT_FOUND", message: "Email not found" });
+      await assertCaseAccess(ctx, o.caseId);
+      const svc = new EmailOutreachService({ db: ctx.db });
+      return svc.outboundRepliesForOutreach({ outreachId: input.outreachId });
     }),
 
   promoteReplyAttachment: protectedProcedure
