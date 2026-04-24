@@ -2,7 +2,8 @@ import { z } from "zod/v4";
 import { eq } from "drizzle-orm";
 import { router, protectedProcedure } from "../trpc";
 import { subscriptions } from "../../db/schema/subscriptions";
-import { stripe, STRIPE_PRICE_IDS } from "@/lib/stripe";
+import { STRIPE_PRICE_IDS } from "@/lib/stripe";
+import { getStripe } from "@/server/services/stripe";
 import { PLAN_LIMITS } from "@/lib/constants";
 import type { Plan } from "@/lib/types";
 
@@ -36,7 +37,7 @@ export const subscriptionsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const priceId = STRIPE_PRICE_IDS[input.plan];
 
-      const session = await stripe.checkout.sessions.create({
+      const session = await getStripe().checkout.sessions.create({
         mode: "subscription",
         customer_email: ctx.user.email,
         line_items: [{ price: priceId, quantity: 1 }],
@@ -55,7 +56,7 @@ export const subscriptionsRouter = router({
       return { url: null };
     }
 
-    const session = await stripe.billingPortal.sessions.create({
+    const session = await getStripe().billingPortal.sessions.create({
       customer: customerId,
       return_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing`,
     });
