@@ -13,6 +13,7 @@ import { inngest } from "@/server/inngest/client";
 import { notifyFilingSubmitted } from "@/server/services/filings/notification-hooks";
 
 const METHOD = z.enum(["cm_ecf", "mail", "hand_delivery", "email", "fax"]);
+const CLOSED_REASON = z.enum(["granted", "denied", "withdrawn", "other"]);
 
 const createInput = z
   .object({
@@ -131,6 +132,76 @@ export const filingsRouter = router({
       filing: inserted,
       warning: duplicates.length > 0 ? "A similar submitted filing exists at this court — double-check confirmation #." : null,
     };
+  }),
+
+  get: protectedProcedure.input(z.object({ filingId: z.string().uuid() })).query(async ({ ctx, input }) => {
+    const [row] = await ctx.db.select().from(caseFilings).where(eq(caseFilings.id, input.filingId)).limit(1);
+    if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Filing not found" });
+    await assertCaseAccess(ctx, row.caseId);
+    return row;
+  }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        filingId: z.string().uuid(),
+        confirmationNumber: z.string().min(1).max(100).optional(),
+        court: z.string().min(1).max(100).optional(),
+        judgeName: z.string().max(100).nullable().optional(),
+        submissionMethod: METHOD.optional(),
+        feePaidCents: z.number().int().min(0).optional(),
+        submittedAt: z.string().datetime().optional(),
+        notes: z.string().max(2000).nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [row] = await ctx.db.select().from(caseFilings).where(eq(caseFilings.id, input.filingId)).limit(1);
+      if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+      await assertCaseAccess(ctx, row.caseId);
+      if (row.status === "closed") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Closed filings are immutable" });
+      }
+      const patch: Partial<typeof caseFilings.$inferInsert> = { updatedAt: new Date() };
+      if (input.confirmationNumber !== undefined) patch.confirmationNumber = input.confirmationNumber;
+      if (input.court !== undefined) patch.court = input.court;
+      if (input.judgeName !== undefined) patch.judgeName = input.judgeName;
+      if (input.submissionMethod !== undefined) patch.submissionMethod = input.submissionMethod;
+      if (input.feePaidCents !== undefined) patch.feePaidCents = input.feePaidCents;
+      if (input.submittedAt !== undefined) patch.submittedAt = new Date(input.submittedAt);
+      if (input.notes !== undefined) patch.notes = input.notes;
+      await ctx.db.update(caseFilings).set(patch).where(eq(caseFilings.id, row.id));
+      return { ok: true };
+    }),
+
+  close: protectedProcedure
+    .input(z.object({ filingId: z.string().uuid(), closedReason: CLOSED_REASON }))
+    .mutation(async ({ ctx, input }) => {
+      const [row] = await ctx.db.select().from(caseFilings).where(eq(caseFilings.id, input.filingId)).limit(1);
+      if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+      await assertCaseAccess(ctx, row.caseId);
+      if (row.status === "closed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Filing is already closed" });
+      }
+      await ctx.db
+        .update(caseFilings)
+        .set({ status: "closed", closedAt: new Date(), closedReason: input.closedReason, updatedAt: new Date() })
+        .where(eq(caseFilings.id, row.id));
+      return { ok: true };
+    }),
+
+  delete: protectedProcedure.input(z.object({ filingId: z.string().uuid() })).mutation(async ({ ctx, input }) => {
+    const [row] = await ctx.db
+      .select({ id: caseFilings.id, caseId: caseFilings.caseId, status: caseFilings.status })
+      .from(caseFilings)
+      .where(eq(caseFilings.id, input.filingId))
+      .limit(1);
+    if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+    await assertCaseAccess(ctx, row.caseId);
+    if (row.status === "closed") {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Cannot delete a closed filing" });
+    }
+    await ctx.db.delete(caseFilings).where(eq(caseFilings.id, row.id));
+    return { ok: true };
   }),
 });
 
