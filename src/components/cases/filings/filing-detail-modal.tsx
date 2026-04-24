@@ -4,6 +4,9 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { CloseModal } from "./close-modal";
+import { AddServiceModal } from "./add-service-modal";
+import { ApplyMailRuleModal, type AffectedDeadline } from "./apply-mail-rule-modal";
+import { PartiesManagerModal } from "./parties-manager-modal";
 
 const METHOD_LABELS: Record<string, string> = {
   cm_ecf: "CM/ECF",
@@ -26,6 +29,22 @@ export function FilingDetailModal({
   const { data: filing, isLoading } = trpc.filings.get.useQuery({ filingId });
   const [editing, setEditing] = React.useState(false);
   const [closeOpen, setCloseOpen] = React.useState(false);
+  const [addServiceOpen, setAddServiceOpen] = React.useState(false);
+  const [partiesManagerOpen, setPartiesManagerOpen] = React.useState(false);
+  const [mailRuleModal, setMailRuleModal] = React.useState<{ affected: AffectedDeadline[] } | null>(null);
+
+  const { data: services } = trpc.services.listByFiling.useQuery(
+    { filingId },
+    { enabled: true },
+  );
+
+  const deleteService = trpc.services.delete.useMutation({
+    onSuccess: async () => {
+      toast.success("Service removed");
+      await utils.services.listByFiling.invalidate({ filingId });
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const [confirmationNumber, setConfirmationNumber] = React.useState("");
   const [court, setCourt] = React.useState("");
@@ -219,6 +238,77 @@ export function FilingDetailModal({
           </form>
         )}
 
+        {!editing && (
+          <section className="rounded-md border border-gray-200 p-3 space-y-2">
+            <header className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Parties served ({services?.length ?? 0})</h3>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPartiesManagerOpen(true)}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Manage case parties
+                </button>
+                {!isClosed && (
+                  <button
+                    type="button"
+                    onClick={() => setAddServiceOpen(true)}
+                    className="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
+                  >
+                    + Add service
+                  </button>
+                )}
+              </div>
+            </header>
+
+            {(!services || services.length === 0) && (
+              <p className="text-xs text-gray-500">
+                No parties recorded. Add service entries to generate a Certificate of Service.
+              </p>
+            )}
+
+            {services && services.length > 0 && (
+              <>
+                <ul className="space-y-1 text-sm">
+                  {services.map((s) => (
+                    <li key={s.id} className="flex items-start justify-between rounded border p-2">
+                      <div>
+                        <div className="font-medium">{s.partyName}</div>
+                        <div className="text-xs text-gray-600">
+                          {s.method} · {new Date(s.servedAt).toLocaleDateString()}
+                          {s.trackingReference && ` · #${s.trackingReference}`}
+                        </div>
+                      </div>
+                      {!isClosed && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm(`Remove service for "${s.partyName}"?`)) {
+                              deleteService.mutate({ serviceId: s.id });
+                            }
+                          }}
+                          className="text-xs text-red-600 hover:underline"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <a
+                  href={`/api/filings/${filingId}/cos`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block rounded border px-3 py-1 text-sm hover:bg-gray-50"
+                >
+                  Download Certificate of Service
+                </a>
+              </>
+            )}
+          </section>
+        )}
+
         {!isClosed && !editing && (
           <div className="flex justify-end gap-2">
             <button
@@ -252,6 +342,35 @@ export function FilingDetailModal({
           }
           pending={closeM.isPending}
         />
+
+        <AddServiceModal
+          open={addServiceOpen}
+          caseId={filing.caseId}
+          filingId={filingId}
+          onClose={() => setAddServiceOpen(false)}
+          onCreated={(res) => {
+            setAddServiceOpen(false);
+            if (res.mailRuleApplicable && res.affectedDeadlines.length > 0) {
+              setMailRuleModal({ affected: res.affectedDeadlines });
+            }
+          }}
+        />
+
+        <PartiesManagerModal
+          open={partiesManagerOpen}
+          caseId={filing.caseId}
+          onClose={() => setPartiesManagerOpen(false)}
+        />
+
+        {mailRuleModal && (
+          <ApplyMailRuleModal
+            open
+            filingId={filingId}
+            caseId={filing.caseId}
+            affectedDeadlines={mailRuleModal.affected}
+            onClose={() => setMailRuleModal(null)}
+          />
+        )}
       </div>
     </div>
   );
