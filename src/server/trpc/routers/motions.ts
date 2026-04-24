@@ -297,6 +297,13 @@ export const motionsRouter = router({
 
       let triggerEventId: string | null = null;
       if (input.createTrigger) {
+        // Load template to get motionType for deadline rule filtering (2.4.2b)
+        const [template] = await ctx.db
+          .select()
+          .from(motionTemplates)
+          .where(eq(motionTemplates.id, motion.templateId))
+          .limit(1);
+
         // Reuse 2.4.1's DeadlinesService — it inserts the trigger event AND
         // applies matching deadline rules in one call.
         const { DeadlinesService } = await import("@/server/services/deadlines/service");
@@ -308,6 +315,7 @@ export const motionsRouter = router({
           jurisdiction: "FRCP",
           notes: `Auto-created from motion: ${motion.title}`,
           createdBy: ctx.user.id,
+          motionType: template?.motionType,
         });
         triggerEventId = result.triggerEventId;
       }
