@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { SectionEditor } from "./section-editor";
 import { BuildPackageButton } from "./build-package-button";
@@ -19,10 +20,12 @@ export function MotionDetail({ caseId, motionId }: { caseId: string; motionId: s
       refetch();
       utils.motions.list.invalidate({ caseId });
     },
+    onError: (e) => toast.error(e.message),
   });
 
   const del = trpc.motions.delete.useMutation({
     onSuccess: () => router.push(`/cases/${caseId}`),
+    onError: (e) => toast.error(e.message),
   });
 
   if (!motion) return <p className="p-6 text-sm text-gray-500">Loading…</p>;
