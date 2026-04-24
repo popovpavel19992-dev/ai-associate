@@ -17,6 +17,8 @@ import { caseFilings } from "@/server/db/schema/case-filings";
 import { caseFilingServices } from "@/server/db/schema/case-filing-services";
 import { caseParties } from "@/server/db/schema/case-parties";
 import { MotionPdf } from "./renderers/motion-pdf";
+import { MemorandumPdf } from "./renderers/memorandum-pdf";
+import { MotionShortPdf } from "./renderers/motion-short-pdf";
 import { TableOfContents, type TocHeading } from "./renderers/toc";
 import { TableOfAuthorities } from "./renderers/toa";
 import { normalizeExhibitToPdf } from "./exhibits";
@@ -122,21 +124,51 @@ export async function buildPackagePdf(input: {
       );
       if (missing.length > 0) throw new MissingMotionSectionsError(missing);
 
-      // Render the motion body once up front — used for both ToC page math
-      // and final assembly.
-      const motionBuf = Buffer.from(
-        (await renderToBuffer(
-          React.createElement(MotionPdf, {
-            caption,
-            skeleton: tpl.skeleton as never,
-            sections: motion.sections as never,
-            signer,
-          }) as RenderElement,
-        )) as unknown as Uint8Array,
-      );
+      // 2.4.3b memo-split branching:
+      //   splitMemo=false → render the standard motion (caption + sections + sig)
+      //   splitMemo=true  → render TWO PDFs: a 1-page notice motion and a long
+      //                     Memorandum of Law carrying facts/argument/conclusion.
+      // The merge order in both cases is TitlePage → ToC + ToA → motion body
+      // (one or two PDFs) → exhibits → proposed order → CoS.
+      const splitMemo = motion.splitMemo;
+
+      let motionBuf: Buffer;
+      let memoBuf: Buffer | null = null;
+      if (splitMemo) {
+        motionBuf = Buffer.from(
+          (await renderToBuffer(
+            React.createElement(MotionShortPdf, {
+              caption,
+              signer,
+            }) as RenderElement,
+          )) as unknown as Uint8Array,
+        );
+        memoBuf = Buffer.from(
+          (await renderToBuffer(
+            React.createElement(MemorandumPdf, {
+              caption,
+              skeleton: tpl.skeleton as never,
+              sections: motion.sections as never,
+              signer,
+            }) as RenderElement,
+          )) as unknown as Uint8Array,
+        );
+      } else {
+        motionBuf = Buffer.from(
+          (await renderToBuffer(
+            React.createElement(MotionPdf, {
+              caption,
+              skeleton: tpl.skeleton as never,
+              sections: motion.sections as never,
+              signer,
+            }) as RenderElement,
+          )) as unknown as Uint8Array,
+        );
+      }
 
       // ToC headings: roman-numeral prefix + section heading, derived from
-      // the template skeleton's AI sections in order.
+      // the template skeleton's AI sections in order. When split, these still
+      // describe the memo (which carries the same facts/argument/conclusion).
       const skeleton = tpl.skeleton as {
         sections: Array<{ type: string; heading?: string; key?: SectionKey }>;
       };
@@ -146,18 +178,27 @@ export async function buildPackagePdf(input: {
         title: s.heading ?? "",
       }));
 
-      // Citations: extract → group/sort → produce ToA input arrays.
+      // Citations: extract → group/sort → produce ToA input arrays. Sections
+      // live on `motion.sections` whether split or not, so the same call works.
       const occurrences = extractCitations(sections);
       const { cases, statutes } = groupAndSort(occurrences);
 
-      // Iterative page-offset solver:
-      //   motionStartPage = titlePageCount + tocPages + toaPages + 1
+      // Iterative page-offset solver. `bodyStartPage` is the page where the
+      // ToC/ToA should anchor — the motion when not split, or the memorandum
+      // when split (since the short motion has no AI sections worth listing).
+      //   not split: bodyStartPage = titlePageCount + tocPages + toaPages + 1
+      //   split:     bodyStartPage = titlePageCount + tocPages + toaPages
+      //                            + motionShortPageCount + 1
       // Seed with tocPages=1, toaPages=1 (expected MVP size). Re-render up
       // to 2 times if actual page counts change the offset — ToC/ToA page
       // length is bounded (total under 3 pages in MVP), so this converges.
+      const motionShortPages = splitMemo
+        ? (await PDFDocument.load(motionBuf)).getPageCount()
+        : 0;
       let tocPages = 1;
       let toaPages = 1;
-      let motionStartPage = titlePageCount + tocPages + toaPages + 1;
+      let bodyStartPage =
+        titlePageCount + tocPages + toaPages + motionShortPages + 1;
       let tocBuf: Buffer = Buffer.alloc(0);
       let toaBuf: Buffer = Buffer.alloc(0);
       for (let attempt = 0; attempt < 3; attempt++) {
@@ -166,7 +207,7 @@ export async function buildPackagePdf(input: {
             React.createElement(TableOfContents, {
               caption,
               headings,
-              motionStartPage,
+              motionStartPage: bodyStartPage,
             }) as RenderElement,
           )) as unknown as Uint8Array,
         );
@@ -176,14 +217,15 @@ export async function buildPackagePdf(input: {
               caption,
               cases,
               statutes,
-              motionStartPage,
+              motionStartPage: bodyStartPage,
             }) as RenderElement,
           )) as unknown as Uint8Array,
         );
         const actualToc = (await PDFDocument.load(tocBuf)).getPageCount();
         const actualToa = (await PDFDocument.load(toaBuf)).getPageCount();
-        const correctedStart = titlePageCount + actualToc + actualToa + 1;
-        if (correctedStart === motionStartPage) {
+        const correctedStart =
+          titlePageCount + actualToc + actualToa + motionShortPages + 1;
+        if (correctedStart === bodyStartPage) {
           tocPages = actualToc;
           toaPages = actualToa;
           break;
@@ -191,13 +233,13 @@ export async function buildPackagePdf(input: {
         if (attempt === 2) {
           // Give up after 3 tries — emit with slight mis-numbering and warn.
           console.warn(
-            `[2.4.3c] ToC/ToA page-offset solver did not converge after ${attempt + 1} attempts (motionStartPage=${motionStartPage}, correctedStart=${correctedStart}). Rendering with motionStartPage=${correctedStart}.`,
+            `[2.4.3c] ToC/ToA page-offset solver did not converge after ${attempt + 1} attempts (bodyStartPage=${bodyStartPage}, correctedStart=${correctedStart}). Rendering with bodyStartPage=${correctedStart}.`,
           );
-          motionStartPage = correctedStart;
+          bodyStartPage = correctedStart;
           tocPages = actualToc;
           toaPages = actualToa;
         } else {
-          motionStartPage = correctedStart;
+          bodyStartPage = correctedStart;
         }
       }
       if (tocPages + toaPages > 3) {
@@ -209,6 +251,7 @@ export async function buildPackagePdf(input: {
       buffers.push(tocBuf);
       buffers.push(toaBuf);
       buffers.push(motionBuf);
+      if (memoBuf) buffers.push(memoBuf);
     }
   }
 
