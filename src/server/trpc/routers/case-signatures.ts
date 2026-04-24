@@ -190,6 +190,16 @@ export const caseSignaturesRouter = router({
         }
       }
 
+      // Multi-party + case document requires explicit field placement —
+      // silently falling back to DBS auto-placement would violate the
+      // wizard's "place fields" UX contract.
+      if (input.sourceDocumentId && (!input.formFields || input.formFields.length === 0)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Multi-party requests with a case document require at least one placed field",
+        });
+      }
+
       // Every formFields[i].signerIndex must map to a real signer.
       if (input.formFields) {
         for (const f of input.formFields) {
