@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Worktree caches — nested .next/** bundles OOM eslint otherwise.
+    ".worktrees/**",
+    ".claude/worktrees/**",
   ]),
 ]);
 
