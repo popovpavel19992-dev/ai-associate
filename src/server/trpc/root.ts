@@ -52,6 +52,7 @@ import { filingPackagesRouter } from "./routers/filing-packages";
 import { filingsRouter } from "./routers/filings";
 import { partiesRouter } from "./routers/parties";
 import { servicesRouter } from "./routers/services";
+import { dripSequencesRouter } from "./routers/drip-sequences";
 
 export const appRouter = router({
   users: usersRouter,
@@ -107,6 +108,7 @@ export const appRouter = router({
   filings: filingsRouter,
   parties: partiesRouter,
   services: servicesRouter,
+  dripSequences: dripSequencesRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -44,6 +44,7 @@ const navItems = [
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/settings/templates", label: "Templates", icon: FileText },
   { href: "/settings/email-templates", label: "Email templates", icon: Mail },
+  { href: "/settings/email-sequences", label: "Email sequences", icon: Mail },
   { href: "/settings/deadline-rules", label: "Deadline rules", icon: Clock },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
