@@ -168,15 +168,26 @@ export class EsignatureService {
     }
     const apiKey = this.decryptKey(org.hellosignApiKeyEncrypted);
 
-    const [contact] = await this.db
-      .select({ id: clientContacts.id, email: clientContacts.email, name: clientContacts.name, clientId: clientContacts.clientId })
-      .from(clientContacts)
-      .where(eq(clientContacts.id, input.clientContactId))
-      .limit(1);
-    if (!contact || contact.clientId !== caseRow.clientId) {
-      throw new TRPCError({ code: "BAD_REQUEST", message: "Client contact not on this case" });
+    // In multi-party mode (signers[] supplied) the top-level
+    // clientContactId is an optional best-effort fallback — each signer
+    // carries its own contact/name/email. Only validate it when we're on
+    // the legacy single-contact path; otherwise an all-manual-entry
+    // multi-party request (or a case with no client contacts at all)
+    // would explode here.
+    const isMultiParty = !!(input.signers && input.signers.length > 0);
+    let contact: { id: string; email: string | null; name: string | null; clientId: string | null } | null = null;
+    if (!isMultiParty) {
+      const [row] = await this.db
+        .select({ id: clientContacts.id, email: clientContacts.email, name: clientContacts.name, clientId: clientContacts.clientId })
+        .from(clientContacts)
+        .where(eq(clientContacts.id, input.clientContactId))
+        .limit(1);
+      if (!row || row.clientId !== caseRow.clientId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Client contact not on this case" });
+      }
+      if (!row.email) throw new TRPCError({ code: "BAD_REQUEST", message: "Client contact has no email" });
+      contact = row;
     }
-    if (!contact.email) throw new TRPCError({ code: "BAD_REQUEST", message: "Client contact has no email" });
 
     const client = this.buildClient(apiKey);
 
@@ -207,7 +218,7 @@ export class EsignatureService {
       }));
     } else {
       signers = [
-        { role: "Client", email: contact.email, name: contact.name ?? contact.email, order: 0, clientContactId: input.clientContactId },
+        { role: "Client", email: contact!.email!, name: contact!.name ?? contact!.email!, order: 0, clientContactId: input.clientContactId },
       ];
       if (input.requiresCountersign) {
         signers.push({ role: "Lawyer", email: input.lawyerEmail, name: input.lawyerName, order: 1, userId: input.createdBy });
@@ -347,7 +358,7 @@ export class EsignatureService {
         email: emailLower,
         name: s.name,
         userId: s.userId ?? (isLawyer ? input.createdBy : null),
-        clientContactId: s.clientContactId ?? (!isLawyer ? input.clientContactId : null),
+        clientContactId: s.clientContactId ?? (!isMultiParty && !isLawyer ? input.clientContactId : null),
         status: active ? "awaiting_signature" : "awaiting_turn",
         hellosignSignatureId: sigIdByEmail.get(emailLower) ?? null,
       };
