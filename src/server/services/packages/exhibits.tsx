@@ -19,7 +19,8 @@ export async function normalizeExhibitToPdf(input: NormalizeInput): Promise<Buff
   if (IMAGE_MIMES.has(input.mimeType)) {
     const imgBuf = await input.getContent();
     const dataUri = `data:${input.mimeType};base64,${imgBuf.toString("base64")}`;
-    const pdfBuf = await renderToBuffer(React.createElement(ImageWrapper, { src: dataUri }));
+    const element = ImageWrapper({ src: dataUri }) as Parameters<typeof renderToBuffer>[0];
+    const pdfBuf = await renderToBuffer(element);
     return Buffer.from(pdfBuf as unknown as Uint8Array);
   }
   if (input.mimeType === DOCX_MIME) {
