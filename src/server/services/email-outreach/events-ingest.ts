@@ -4,8 +4,10 @@ import { db as defaultDb } from "@/server/db";
 import { caseEmailOutreach } from "@/server/db/schema/case-email-outreach";
 import { caseEmailOutreachEvents, type NewCaseEmailOutreachEvent } from "@/server/db/schema/case-email-outreach-events";
 import { notifications } from "@/server/db/schema/notifications";
+import { cancelEnrollmentsForContact, type CancellationReason } from "@/server/services/drip-sequences/service";
+import { resolveClientContactIdForReply } from "./inbound";
 
-export type EventType = "delivered" | "opened" | "clicked" | "complained";
+export type EventType = "delivered" | "opened" | "clicked" | "complained" | "bounced";
 
 export interface EventPayload {
   eventId: string;
@@ -23,7 +25,7 @@ export interface EmailEventsIngestServiceDeps {
   db?: typeof defaultDb;
 }
 
-const ALLOWED_TYPES = new Set<EventType>(["delivered", "opened", "clicked", "complained"]);
+const ALLOWED_TYPES = new Set<EventType>(["delivered", "opened", "clicked", "complained", "bounced"]);
 
 export class EmailEventsIngestService {
   private readonly db: typeof defaultDb;
@@ -45,11 +47,27 @@ export class EmailEventsIngestService {
         id: caseEmailOutreach.id,
         caseId: caseEmailOutreach.caseId,
         sentBy: caseEmailOutreach.sentBy,
+        recipientEmail: caseEmailOutreach.recipientEmail,
       })
       .from(caseEmailOutreach)
       .where(eq(caseEmailOutreach.resendId, payload.resendEmailId))
       .limit(1);
     if (!outreach) return { status: "no-parent" };
+
+    const cancelDripFor = async (reason: CancellationReason) => {
+      try {
+        const contactId = await resolveClientContactIdForReply(
+          this.db,
+          outreach.caseId,
+          outreach.recipientEmail,
+        );
+        if (contactId) {
+          await cancelEnrollmentsForContact(this.db, contactId, reason);
+        }
+      } catch (e) {
+        console.error(`[events-ingest] drip auto-cancel (${reason}) failed`, e);
+      }
+    };
 
     if (!ALLOWED_TYPES.has(payload.eventType as EventType)) {
       return { status: "skipped" };
@@ -108,6 +126,16 @@ export class EmailEventsIngestService {
           console.error("[events-ingest] notification insert failed", e);
         }
       }
+      await cancelDripFor("complaint");
+    } else if (eventType === "bounced") {
+      await this.db
+        .update(caseEmailOutreach)
+        .set({
+          status: "bounced",
+          bouncedAt: sql`COALESCE(${caseEmailOutreach.bouncedAt}, ${tsParam})`,
+        })
+        .where(eq(caseEmailOutreach.id, outreach.id));
+      await cancelDripFor("bounce");
     }
 
     return { status: "ok" };
