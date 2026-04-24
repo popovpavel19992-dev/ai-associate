@@ -12,7 +12,10 @@ import { downloadObjectToBuffer } from "@/server/services/s3";
 import { TitlePage } from "./renderers/title-page";
 import { ExhibitDivider } from "./renderers/exhibit-divider";
 import { ProposedOrder } from "./renderers/proposed-order";
-import { CertificateOfService } from "./renderers/certificate-of-service";
+import { CertificateOfService, type ServiceEntry } from "./renderers/certificate-of-service";
+import { caseFilings } from "@/server/db/schema/case-filings";
+import { caseFilingServices } from "@/server/db/schema/case-filing-services";
+import { caseParties } from "@/server/db/schema/case-parties";
 import { MotionPdf } from "./renderers/motion-pdf";
 import { normalizeExhibitToPdf } from "./exhibits";
 import { mergePdfsWithPageNumbers } from "./merge";
@@ -166,12 +169,47 @@ export async function buildPackagePdf(input: {
     ),
   );
 
+  // Load services on this package's motion's filings (if any) for filled CoS
+  let serviceEntries: ServiceEntry[] = [];
+  if (pkg.motionId) {
+    const filings = await db
+      .select({ id: caseFilings.id })
+      .from(caseFilings)
+      .where(eq(caseFilings.motionId, pkg.motionId));
+    if (filings.length > 0) {
+      const filingIds = filings.map((f) => f.id);
+      const rows = await db
+        .select({
+          partyName: caseParties.name,
+          partyRole: caseParties.role,
+          method: caseFilingServices.method,
+          servedAt: caseFilingServices.servedAt,
+          servedEmail: caseFilingServices.servedEmail,
+          servedAddress: caseFilingServices.servedAddress,
+          trackingReference: caseFilingServices.trackingReference,
+        })
+        .from(caseFilingServices)
+        .innerJoin(caseParties, eq(caseParties.id, caseFilingServices.partyId))
+        .where(inArray(caseFilingServices.filingId, filingIds));
+      serviceEntries = rows.map((r) => ({
+        partyName: r.partyName,
+        partyRole: r.partyRole,
+        method: r.method,
+        servedAt: r.servedAt instanceof Date ? r.servedAt.toISOString() : r.servedAt,
+        servedEmail: r.servedEmail,
+        servedAddress: r.servedAddress,
+        trackingReference: r.trackingReference,
+      }));
+    }
+  }
+
   buffers.push(
     Buffer.from(
       (await renderToBuffer(
         React.createElement(CertificateOfService, {
           caption,
           signer,
+          services: serviceEntries,
         }) as RenderElement,
       )) as unknown as Uint8Array,
     ),

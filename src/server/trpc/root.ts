@@ -50,6 +50,8 @@ import { deadlinesRouter } from "./routers/deadlines";
 import { motionsRouter } from "./routers/motions";
 import { filingPackagesRouter } from "./routers/filing-packages";
 import { filingsRouter } from "./routers/filings";
+import { partiesRouter } from "./routers/parties";
+import { servicesRouter } from "./routers/services";
 
 export const appRouter = router({
   users: usersRouter,
@@ -103,6 +105,8 @@ export const appRouter = router({
   motions: motionsRouter,
   filingPackages: filingPackagesRouter,
   filings: filingsRouter,
+  parties: partiesRouter,
+  services: servicesRouter,
 });
 
 export type AppRouter = typeof appRouter;
