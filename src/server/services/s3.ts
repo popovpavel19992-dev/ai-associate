@@ -208,3 +208,21 @@ export async function copyObject(srcKey: string, dstKey: string, contentType: st
   });
   await getClient().send(command);
 }
+
+export async function downloadObjectToBuffer(s3Key: string): Promise<Buffer> {
+  const response = await getClient().send(
+    new GetObjectCommand({
+      Bucket: getBucket(),
+      Key: s3Key,
+    }),
+  );
+  if (!response.Body) {
+    throw new Error(`Empty response for S3 key: ${s3Key}`);
+  }
+  const stream = response.Body as unknown as NodeJS.ReadableStream;
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as unknown as Uint8Array));
+  }
+  return Buffer.concat(chunks);
+}

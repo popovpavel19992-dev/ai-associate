@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import { SectionEditor } from "./section-editor";
+import { BuildPackageButton } from "./build-package-button";
 
 export function MotionDetail({ caseId, motionId }: { caseId: string; motionId: string }) {
   const router = useRouter();
@@ -41,6 +42,9 @@ export function MotionDetail({ caseId, motionId }: { caseId: string; motionId: s
           <a href={`/api/motions/${motionId}/docx`} className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
             Export DOCX
           </a>
+          {isFiled && (
+            <BuildPackageButton caseId={caseId} motionId={motionId} />
+          )}
           {!isFiled && (
             <>
               <button
