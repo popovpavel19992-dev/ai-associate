@@ -266,8 +266,23 @@ export const caseSignaturesRouter = router({
         if (!doc || doc.caseId !== input.caseId) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Document not on this case" });
         }
-        const pdfBuffer = await fetchS3ToBuffer(doc.s3Key);
-        pageSizes = await getPageSizes(pdfBuffer);
+        let pdfBuffer: Buffer;
+        try {
+          pdfBuffer = await fetchS3ToBuffer(doc.s3Key);
+        } catch (e) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Could not read source PDF: S3 fetch failed (${(e as Error).message})`,
+          });
+        }
+        try {
+          pageSizes = await getPageSizes(pdfBuffer);
+        } catch (e) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Could not read source PDF: PDF parse failed (${(e as Error).message})`,
+          });
+        }
         for (const f of input.formFields) {
           if (f.page < 1 || f.page > pageSizes.length) {
             throw new TRPCError({
@@ -317,45 +332,70 @@ export const caseSignaturesRouter = router({
         signingOrder: signingOrder === "sequential",
       });
 
-      // Persist signingOrder mode on the request row (service leaves column default).
-      await ctx.db
-        .update(caseSignatureRequests)
-        .set({ signingOrder })
-        .where(eq(caseSignatureRequests.id, result.requestId));
+      // Compensating-tx note: svc.create() already sent the request to DBS
+      // and inserted our request + signer rows in a single atomic op. We
+      // cannot reorder field inserts to happen before the DBS send without
+      // refactoring the service to accept a tx handle. Instead we wrap the
+      // post-create work in try/catch and on failure attempt to cancel the
+      // DBS request so the operator-facing state is consistent. If cancel
+      // itself fails we log with WARNING including requestId for manual
+      // reconciliation. TODO(2.3.6b): thread tx through EsignatureService.
+      try {
+        // Persist signingOrder mode on the request row (service leaves column default).
+        await ctx.db
+          .update(caseSignatureRequests)
+          .set({ signingOrder })
+          .where(eq(caseSignatureRequests.id, result.requestId));
 
-      // Persist field placements (normalized fractions — the DB schema stores them as fractions).
-      if (input.formFields && input.formFields.length > 0) {
-        const signerRows = await ctx.db
-          .select({ id: caseSignatureRequestSigners.id, email: caseSignatureRequestSigners.email })
-          .from(caseSignatureRequestSigners)
-          .where(eq(caseSignatureRequestSigners.requestId, result.requestId));
-        const idByEmail = new Map(
-          signerRows.map((r: { id: string; email: string }) => [r.email.toLowerCase(), r.id]),
-        );
-        const fieldRows = input.formFields.map((f) => {
-          const signerEmail = signers[f.signerIndex].emailAddress.toLowerCase();
-          const signerId = idByEmail.get(signerEmail);
-          if (!signerId) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: `Could not resolve signer row for index ${f.signerIndex}`,
-            });
+        // Persist field placements (normalized fractions — the DB schema stores them as fractions).
+        if (input.formFields && input.formFields.length > 0) {
+          const signerRows = await ctx.db
+            .select({ id: caseSignatureRequestSigners.id, email: caseSignatureRequestSigners.email })
+            .from(caseSignatureRequestSigners)
+            .where(eq(caseSignatureRequestSigners.requestId, result.requestId));
+          const idByEmail = new Map(
+            signerRows.map((r: { id: string; email: string }) => [r.email.toLowerCase(), r.id]),
+          );
+          const fieldRows = input.formFields.map((f) => {
+            const signerEmail = signers[f.signerIndex].emailAddress.toLowerCase();
+            const signerId = idByEmail.get(signerEmail);
+            if (!signerId) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: `Could not resolve signer row for index ${f.signerIndex}`,
+              });
+            }
+            return {
+              requestId: result.requestId,
+              signerId,
+              fieldType: f.fieldType,
+              page: f.page,
+              x: f.x,
+              y: f.y,
+              width: f.width,
+              height: f.height,
+              required: f.required,
+            };
+          });
+          if (fieldRows.length > 0) {
+            await ctx.db.insert(caseSignatureRequestFields).values(fieldRows);
           }
-          return {
-            requestId: result.requestId,
-            signerId,
-            fieldType: f.fieldType,
-            page: f.page,
-            x: f.x,
-            y: f.y,
-            width: f.width,
-            height: f.height,
-            required: f.required,
-          };
-        });
-        if (fieldRows.length > 0) {
-          await ctx.db.insert(caseSignatureRequestFields).values(fieldRows);
         }
+      } catch (postCreateErr) {
+        console.warn(
+          `[esig] WARNING post-create persistence failed for requestId=${result.requestId} hellosignRequestId=${result.hellosignRequestId} — attempting DBS cancel to compensate`,
+          postCreateErr,
+        );
+        try {
+          const apiKey = await orgApiKey(ctx);
+          await svc.cancel({ requestId: result.requestId, apiKey });
+        } catch (cancelErr) {
+          console.warn(
+            `[esig] WARNING compensating cancel FAILED for requestId=${result.requestId} hellosignRequestId=${result.hellosignRequestId} — manual reconciliation required`,
+            cancelErr,
+          );
+        }
+        throw postCreateErr;
       }
 
       return result;
