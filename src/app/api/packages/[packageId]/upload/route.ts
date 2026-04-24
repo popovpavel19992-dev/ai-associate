@@ -7,12 +7,20 @@ import { users } from "@/server/db/schema/users";
 import { putObject } from "@/server/services/s3";
 
 const MAX_BYTES = 25 * 1024 * 1024;
-const ALLOWED = new Set([
+const DOCX_MIME =
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const ALLOWED_BASE = new Set([
   "application/pdf",
   "image/png",
   "image/jpeg",
   "image/webp",
 ]);
+// DOCX is accepted only when ConvertAPI is configured (see 2.4.3b).
+function isAllowed(mime: string): boolean {
+  if (ALLOWED_BASE.has(mime)) return true;
+  if (mime === DOCX_MIME && process.env.CONVERTAPI_SECRET) return true;
+  return false;
+}
 
 export async function POST(
   req: NextRequest,
@@ -63,12 +71,11 @@ export async function POST(
       { status: 400 },
     );
   }
-  if (!ALLOWED.has(file.type)) {
+  if (!isAllowed(file.type)) {
     return NextResponse.json(
       {
         error:
-          file.type ===
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          file.type === DOCX_MIME
             ? `DOCX exhibits are not supported yet. Convert to PDF first.`
             : `Unsupported file type: ${file.type}`,
       },

@@ -1,6 +1,7 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import * as React from "react";
 import { ImageWrapper } from "./renderers/image-wrapper";
+import { convertDocxToPdf, DocxConversionError } from "./docx-converter";
 import { DocxExhibitNotSupportedError, UnsupportedMimeTypeError } from "./types";
 
 const IMAGE_MIMES = new Set(["image/png", "image/jpeg", "image/webp"]);
@@ -24,7 +25,21 @@ export async function normalizeExhibitToPdf(input: NormalizeInput): Promise<Buff
     return Buffer.from(pdfBuf as unknown as Uint8Array);
   }
   if (input.mimeType === DOCX_MIME) {
-    throw new DocxExhibitNotSupportedError(input.originalFilename);
+    // Graceful degradation: if ConvertAPI isn't configured in this env,
+    // fall back to the original "please export to PDF first" UX message.
+    if (!process.env.CONVERTAPI_SECRET) {
+      throw new DocxExhibitNotSupportedError(input.originalFilename);
+    }
+    const docxBuf = await input.getContent();
+    try {
+      return await convertDocxToPdf(docxBuf, input.originalFilename);
+    } catch (err) {
+      if (err instanceof DocxConversionError) throw err;
+      throw new DocxConversionError(
+        `Conversion failed: ${input.originalFilename}`,
+        err,
+      );
+    }
   }
   throw new UnsupportedMimeTypeError(input.mimeType, input.originalFilename);
 }
