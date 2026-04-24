@@ -4,6 +4,7 @@ import { TitlePage } from "@/server/services/packages/renderers/title-page";
 import { ExhibitDivider } from "@/server/services/packages/renderers/exhibit-divider";
 import { ProposedOrder } from "@/server/services/packages/renderers/proposed-order";
 import { CertificateOfService } from "@/server/services/packages/renderers/certificate-of-service";
+import { MotionPdf } from "@/server/services/packages/renderers/motion-pdf";
 import { PDFDocument } from "pdf-lib";
 
 const caption = {
@@ -49,5 +50,34 @@ describe("package renderers", () => {
       ) as unknown as Uint8Array,
     );
     expect(buf.byteLength).toBeGreaterThan(500);
+  });
+
+  it("MotionPdf renders a non-empty multi-section PDF", async () => {
+    const skeleton = {
+      sections: [
+        { key: "caption", type: "merge" as const, required: true },
+        { key: "facts" as const, type: "ai" as const, heading: "STATEMENT OF FACTS" },
+        { key: "argument" as const, type: "ai" as const, heading: "ARGUMENT" },
+        { key: "conclusion" as const, type: "ai" as const, heading: "CONCLUSION" },
+      ],
+    };
+    const sections = {
+      facts: { text: "Plaintiff alleges X.", aiGenerated: true, citations: [] },
+      argument: { text: "Under Rule 12(b)(6)...", aiGenerated: true, citations: [] },
+      conclusion: { text: "Motion should be granted.", aiGenerated: true, citations: [] },
+    };
+    const buf = Buffer.from(
+      await renderToBuffer(
+        MotionPdf({
+          caption,
+          skeleton,
+          sections,
+          signer: { name: "Jane Lawyer", date: "April 23, 2026" },
+        }) as RenderArg,
+      ) as unknown as Uint8Array,
+    );
+    expect(buf.byteLength).toBeGreaterThan(1000);
+    const doc = await PDFDocument.load(buf);
+    expect(doc.getPageCount()).toBeGreaterThanOrEqual(1);
   });
 });
