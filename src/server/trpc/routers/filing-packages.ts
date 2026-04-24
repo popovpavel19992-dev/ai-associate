@@ -300,4 +300,98 @@ export const filingPackagesRouter = router({
         );
       return { ok: true };
     }),
+
+  updateProposedOrder: protectedProcedure
+    .input(z.object({ packageId: z.string().uuid(), text: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const pkg = await loadPackage(ctx, input.packageId);
+      if (pkg.status === "finalized") {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      await ctx.db
+        .update(caseFilingPackages)
+        .set({ proposedOrderText: input.text, updatedAt: new Date() })
+        .where(eq(caseFilingPackages.id, pkg.id));
+      return { ok: true };
+    }),
+
+  finalize: protectedProcedure
+    .input(z.object({ packageId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const pkg = await loadPackage(ctx, input.packageId);
+      if (pkg.status === "finalized") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Already finalized",
+        });
+      }
+
+      const { buildPackagePdf } = await import(
+        "@/server/services/packages/build"
+      );
+      const { putObject } = await import("@/server/services/s3");
+
+      let buffer: Buffer;
+      try {
+        const result = await buildPackagePdf({ packageId: pkg.id });
+        buffer = result.buffer;
+      } catch (e) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: (e as Error).message,
+        });
+      }
+
+      const slug = "filing-package";
+      const today = new Date().toISOString().slice(0, 10);
+      const s3Key = `filing-packages/exports/${ctx.user.orgId}/${pkg.caseId}/${pkg.id}/${slug}-${today}.pdf`;
+      await putObject(s3Key, buffer, "application/pdf");
+
+      await ctx.db
+        .update(caseFilingPackages)
+        .set({
+          status: "finalized",
+          exportedPdfPath: s3Key,
+          exportedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(caseFilingPackages.id, pkg.id));
+
+      return { ok: true, s3Key };
+    }),
+
+  getDownloadUrl: protectedProcedure
+    .input(z.object({ packageId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const pkg = await loadPackage(ctx, input.packageId);
+      if (pkg.status !== "finalized" || !pkg.exportedPdfPath) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Package not finalized",
+        });
+      }
+      const { generateDownloadUrl } = await import("@/server/services/s3");
+      return { url: await generateDownloadUrl(pkg.exportedPdfPath) };
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ packageId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const pkg = await loadPackage(ctx, input.packageId);
+      const { deleteObject } = await import("@/server/services/s3");
+      const adHocKeys = await ctx.db
+        .select({ k: caseFilingPackageExhibits.adHocS3Key })
+        .from(caseFilingPackageExhibits)
+        .where(eq(caseFilingPackageExhibits.packageId, pkg.id));
+      for (const row of adHocKeys) {
+        if (row.k) await deleteObject(row.k).catch(() => undefined);
+      }
+      if (pkg.exportedPdfPath) {
+        await deleteObject(pkg.exportedPdfPath).catch(() => undefined);
+      }
+      await ctx.db
+        .delete(caseFilingPackages)
+        .where(eq(caseFilingPackages.id, pkg.id));
+      return { ok: true };
+    }),
 });
