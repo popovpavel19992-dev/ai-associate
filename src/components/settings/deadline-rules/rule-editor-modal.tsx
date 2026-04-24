@@ -25,11 +25,23 @@ export function RuleEditorModal({
   const [jurisdiction, setJurisdiction] = React.useState("FRCP");
   const [citation, setCitation] = React.useState("");
   const [remindersStr, setRemindersStr] = React.useState("7,3,1");
+  const [appliesMode, setAppliesMode] = React.useState<"all" | "specific">("all");
+  const [selectedMotionTypes, setSelectedMotionTypes] = React.useState<string[]>([]);
+
+  const { data: templates } = trpc.motions.listTemplates.useQuery();
+  const motionTypeOptions = React.useMemo(() => {
+    const active = (templates ?? []).filter((t) => t.active);
+    const deduped = Array.from(
+      new Map(active.map((t) => [t.motionType, { slug: t.motionType, label: t.name }])).values(),
+    );
+    return deduped;
+  }, [templates]);
 
   React.useEffect(() => {
     if (open && !ruleId) {
       setTriggerEvent(""); setName(""); setDays("21"); setDayType("calendar");
       setJurisdiction("FRCP"); setCitation(""); setRemindersStr("7,3,1");
+      setAppliesMode("all"); setSelectedMotionTypes([]);
     }
   }, [open, ruleId]);
 
@@ -50,7 +62,20 @@ export function RuleEditorModal({
     if (ruleId) {
       update.mutate({ ruleId, name, days: daysN, dayType, defaultReminders: reminders });
     } else {
-      create.mutate({ triggerEvent, name, days: daysN, dayType, shiftIfHoliday: true, defaultReminders: reminders, jurisdiction, citation: citation || undefined });
+      const appliesToMotionTypes =
+        triggerEvent === "motion_filed" && appliesMode === "specific"
+          ? selectedMotionTypes
+          : null;
+      if (appliesToMotionTypes && appliesToMotionTypes.length === 0) {
+        toast.error("Pick at least one motion type or choose All motions");
+        return;
+      }
+      create.mutate({
+        triggerEvent, name, days: daysN, dayType,
+        shiftIfHoliday: true, defaultReminders: reminders,
+        jurisdiction, citation: citation || undefined,
+        appliesToMotionTypes,
+      });
     }
   }
 
@@ -82,6 +107,42 @@ export function RuleEditorModal({
             </div>
           </div>
           <div><Label>Default reminders</Label><Input value={remindersStr} onChange={(e) => setRemindersStr(e.target.value)} placeholder="7,3,1" /></div>
+          {!ruleId && triggerEvent === "motion_filed" && (
+            <div>
+              <Label>Applies to motion types</Label>
+              <div className="flex gap-3 mt-1">
+                <label className="flex items-center gap-1 text-sm">
+                  <input type="radio" checked={appliesMode === "all"} onChange={() => setAppliesMode("all")} />
+                  All motions
+                </label>
+                <label className="flex items-center gap-1 text-sm">
+                  <input type="radio" checked={appliesMode === "specific"} onChange={() => setAppliesMode("specific")} />
+                  Specific types
+                </label>
+              </div>
+              {appliesMode === "specific" && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {motionTypeOptions.length === 0 ? (
+                    <span className="text-xs text-muted-foreground">No active motion templates available.</span>
+                  ) : motionTypeOptions.map((opt) => {
+                    const checked = selectedMotionTypes.includes(opt.slug);
+                    return (
+                      <button
+                        type="button"
+                        key={opt.slug}
+                        onClick={() =>
+                          setSelectedMotionTypes((s) => (checked ? s.filter((x) => x !== opt.slug) : [...s, opt.slug]))
+                        }
+                        className={`rounded-full border px-3 py-1 text-xs ${checked ? "bg-blue-600 text-white border-blue-600" : "border-gray-300"}`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>

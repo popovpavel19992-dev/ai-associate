@@ -9,10 +9,12 @@ export function RulesTable({
   rules,
   onEdit,
 }: {
-  rules: Array<{ id: string; orgId: string | null; name: string; triggerEvent: string; days: number; dayType: string; jurisdiction: string; citation: string | null; active: boolean }>;
+  rules: Array<{ id: string; orgId: string | null; name: string; triggerEvent: string; days: number; dayType: string; jurisdiction: string; citation: string | null; active: boolean; appliesToMotionTypes: string[] | null }>;
   onEdit: (id: string) => void;
 }) {
   const utils = trpc.useUtils();
+  const { data: templates } = trpc.motions.listTemplates.useQuery();
+  const templateBySlug = new Map((templates ?? []).map((t) => [t.motionType, t.name]));
   const del = trpc.deadlines.deleteRule.useMutation({
     onSuccess: async () => { toast.success("Rule deleted"); await utils.deadlines.listRules.invalidate(); },
     onError: (e) => toast.error(e.message),
@@ -57,7 +59,22 @@ export function RulesTable({
           return (
             <tr key={r.id} className="border-t">
               <td className="p-2 font-medium">{r.name}</td>
-              <td className="p-2">{r.triggerEvent}</td>
+              <td className="p-2">
+                {r.triggerEvent}
+                {r.triggerEvent === "motion_filed" && (
+                  <span className="ml-2">
+                    {r.appliesToMotionTypes === null || r.appliesToMotionTypes.length === 0 ? (
+                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">All motions</span>
+                    ) : (
+                      r.appliesToMotionTypes.map((slug) => (
+                        <span key={slug} className="mr-1 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800">
+                          {templateBySlug.get(slug) ?? slug}
+                        </span>
+                      ))
+                    )}
+                  </span>
+                )}
+              </td>
               <td className="p-2">{r.days}</td>
               <td className="p-2">{r.dayType}</td>
               <td className="p-2">{r.jurisdiction}</td>

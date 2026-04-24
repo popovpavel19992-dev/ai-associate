@@ -16,6 +16,7 @@ export const deadlineRules = pgTable(
     defaultReminders: jsonb("default_reminders").notNull().default(sql`'[7,3,1]'::jsonb`),
     jurisdiction: text("jurisdiction").notNull().default("FRCP"),
     citation: text("citation"),
+    appliesToMotionTypes: text("applies_to_motion_types").array(),
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },

@@ -1,5 +1,5 @@
 // src/server/services/deadlines/service.ts
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 import { db as defaultDb } from "@/server/db";
 import { deadlineRules } from "@/server/db/schema/deadline-rules";
 import { caseTriggerEvents, type NewCaseTriggerEvent } from "@/server/db/schema/case-trigger-events";
@@ -46,6 +46,7 @@ export class DeadlinesService {
     notes?: string;
     createdBy: string;
     publishedMilestoneId?: string | null;
+    motionType?: string;
   }): Promise<{ triggerEventId: string; deadlinesCreated: number }> {
     const newTrigger: NewCaseTriggerEvent = {
       caseId: input.caseId,
@@ -66,6 +67,12 @@ export class DeadlinesService {
           eq(deadlineRules.triggerEvent, input.triggerEvent),
           eq(deadlineRules.jurisdiction, input.jurisdiction),
           eq(deadlineRules.active, true),
+          input.motionType
+            ? or(
+                isNull(deadlineRules.appliesToMotionTypes),
+                sql`${input.motionType} = ANY(${deadlineRules.appliesToMotionTypes})`,
+              )
+            : undefined,
         ),
       );
 
