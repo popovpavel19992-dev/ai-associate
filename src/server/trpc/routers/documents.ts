@@ -6,7 +6,7 @@ import { documents } from "../../db/schema/documents";
 import { documentAnalyses } from "../../db/schema/document-analyses";
 import { cases } from "../../db/schema/cases";
 import { caseEvents } from "../../db/schema/case-stages";
-import { deleteObject } from "../../services/s3";
+import { deleteObject, generateDownloadUrl } from "../../services/s3";
 import { assertCaseAccess } from "../lib/permissions";
 
 export const documentsRouter = router({
@@ -133,6 +133,22 @@ export const documentsRouter = router({
         .limit(1);
 
       return { ...doc, analysis: analysis ?? null };
+    }),
+
+  getDownloadUrl: protectedProcedure
+    .input(z.object({ documentId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const [doc] = await ctx.db
+        .select({ id: documents.id, caseId: documents.caseId, s3Key: documents.s3Key })
+        .from(documents)
+        .where(eq(documents.id, input.documentId))
+        .limit(1);
+      if (!doc) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Document not found" });
+      }
+      await assertCaseAccess(ctx, doc.caseId);
+      const url = await generateDownloadUrl(doc.s3Key);
+      return { url };
     }),
 
   moveToCase: protectedProcedure

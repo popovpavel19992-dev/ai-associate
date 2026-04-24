@@ -12,7 +12,51 @@ import { clientContacts } from "@/server/db/schema/client-contacts";
 import { documents } from "@/server/db/schema/documents";
 import { putObject } from "@/server/services/s3";
 import { notifications } from "@/server/db/schema/notifications";
-import type { DropboxSignClient } from "./dropbox-sign-client";
+import type { DropboxSignClient, RawFormField } from "./dropbox-sign-client";
+
+/**
+ * A signer on a multi-party signature request.
+ *
+ * `order` is optional — when ANY signer has a numeric order, Dropbox Sign
+ * will enforce sequential routing; when all orders are omitted the request
+ * is sent to every signer in parallel.
+ *
+ * `role` is free-form metadata ("Client", "Lawyer", "Opposing Counsel", …)
+ * that we persist locally to drive UI labelling. Roles map to our existing
+ * `signerRole` enum ("client" | "lawyer" | other) via simple lowercasing —
+ * anything that is not exactly "lawyer" is treated as "client" today.
+ */
+export interface MultiPartySigner {
+  role: string;
+  email: string;
+  name: string;
+  order?: number;
+  /** When present, persist as clientContactId on the local signer row. */
+  clientContactId?: string;
+  /** When present, persist as userId on the local signer row (e.g. lawyer user). */
+  userId?: string;
+}
+
+/**
+ * Form-field placement forwarded to Dropbox Sign as `formFieldsPerDocument`.
+ * Coordinates are PDF points with a top-left origin; UI callers that
+ * compute coordinates from a drag-and-drop overlay are responsible for
+ * converting to this coordinate system before calling the service.
+ */
+export interface MultiPartyFormField {
+  apiId: string;
+  /** Index into the `signers` array — 0-based. */
+  signerIndex: number;
+  type: "signature" | "date_signed" | "text" | "initials";
+  page: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  required: boolean;
+}
+
+export type { RawFormField };
 
 const DEFAULT_SIG_WIDTH = 200;
 const DEFAULT_SIG_HEIGHT = 40;
@@ -33,6 +77,32 @@ export interface CreateInput {
   templateId?: string;
   sourceDocumentId?: string;
   testMode?: boolean;
+  /**
+   * OPTIONAL multi-party override. When provided, replaces the hardcoded
+   * 1-client (+ optional lawyer countersign) signer list with an arbitrary
+   * N signers (caller must pre-validate 1 ≤ N ≤ 5). When omitted, the
+   * legacy client/lawyer path is used and `clientContactId` /
+   * `lawyerEmail` / `requiresCountersign` drive signer construction.
+   *
+   * Not yet wired through the tRPC router — 2.3.6b wave 1 task 2 only.
+   */
+  signers?: MultiPartySigner[];
+  /**
+   * OPTIONAL custom placement for raw-PDF signature requests (no effect
+   * for template-based requests). When omitted together with a legacy
+   * signer list, we fall back to the previous auto-placed
+   * client/lawyer fields; when `signers` is supplied but this is not,
+   * we forward `undefined` to the SDK so Dropbox Sign auto-places
+   * fields for every signer.
+   */
+  formFields?: MultiPartyFormField[];
+  /**
+   * OPTIONAL explicit toggle. When true, signer `order` values are
+   * forwarded; when false, they are stripped (parallel routing). When
+   * omitted, presence of any `order` on a supplied signer determines
+   * the mode automatically (SDK-native behaviour).
+   */
+  signingOrder?: boolean;
 }
 
 export interface CreateResult {
@@ -98,22 +168,61 @@ export class EsignatureService {
     }
     const apiKey = this.decryptKey(org.hellosignApiKeyEncrypted);
 
-    const [contact] = await this.db
-      .select({ id: clientContacts.id, email: clientContacts.email, name: clientContacts.name, clientId: clientContacts.clientId })
-      .from(clientContacts)
-      .where(eq(clientContacts.id, input.clientContactId))
-      .limit(1);
-    if (!contact || contact.clientId !== caseRow.clientId) {
-      throw new TRPCError({ code: "BAD_REQUEST", message: "Client contact not on this case" });
+    // In multi-party mode (signers[] supplied) the top-level
+    // clientContactId is an optional best-effort fallback — each signer
+    // carries its own contact/name/email. Only validate it when we're on
+    // the legacy single-contact path; otherwise an all-manual-entry
+    // multi-party request (or a case with no client contacts at all)
+    // would explode here.
+    const isMultiParty = !!(input.signers && input.signers.length > 0);
+    let contact: { id: string; email: string | null; name: string | null; clientId: string | null } | null = null;
+    if (!isMultiParty) {
+      const [row] = await this.db
+        .select({ id: clientContacts.id, email: clientContacts.email, name: clientContacts.name, clientId: clientContacts.clientId })
+        .from(clientContacts)
+        .where(eq(clientContacts.id, input.clientContactId))
+        .limit(1);
+      if (!row || row.clientId !== caseRow.clientId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Client contact not on this case" });
+      }
+      if (!row.email) throw new TRPCError({ code: "BAD_REQUEST", message: "Client contact has no email" });
+      contact = row;
     }
-    if (!contact.email) throw new TRPCError({ code: "BAD_REQUEST", message: "Client contact has no email" });
 
     const client = this.buildClient(apiKey);
-    const signers = [
-      { role: "Client", email: contact.email, name: contact.name ?? contact.email, order: 0 },
-    ];
-    if (input.requiresCountersign) {
-      signers.push({ role: "Lawyer", email: input.lawyerEmail, name: input.lawyerName, order: 1 });
+
+    // TODO(2.3.6b): tRPC router still passes legacy shape — update it to
+    // forward `input.signers` / `input.formFields` / `input.signingOrder`
+    // and drop the `clientContactId` / `lawyerEmail` / `requiresCountersign`
+    // fallback once the multi-party UI lands.
+    type LocalSigner = {
+      role: string;
+      email: string;
+      name: string;
+      order?: number;
+      clientContactId?: string;
+      userId?: string;
+    };
+    let signers: LocalSigner[];
+    if (input.signers && input.signers.length > 0) {
+      // Multi-party override. Respect explicit `signingOrder` toggle when
+      // provided; otherwise trust per-signer `order` as-is.
+      const forceParallel = input.signingOrder === false;
+      signers = input.signers.map((s) => ({
+        role: s.role,
+        email: s.email,
+        name: s.name,
+        order: forceParallel ? undefined : s.order,
+        clientContactId: s.clientContactId,
+        userId: s.userId,
+      }));
+    } else {
+      signers = [
+        { role: "Client", email: contact!.email!, name: contact!.name ?? contact!.email!, order: 0, clientContactId: input.clientContactId },
+      ];
+      if (input.requiresCountersign) {
+        signers.push({ role: "Lawyer", email: input.lawyerEmail, name: input.lawyerName, order: 1, userId: input.createdBy });
+      }
     }
 
     const appBase = process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -131,7 +240,12 @@ export class EsignatureService {
         title: input.title,
         subject: input.title,
         message: input.message,
-        signers,
+        signers: signers.map((s) => ({
+          role: s.role,
+          email: s.email,
+          name: s.name,
+          order: s.order,
+        })),
         customFields: [{ name: "caseId", value: input.caseId }],
         testMode,
         signingRedirectUrl: redirectUrl,
@@ -149,23 +263,43 @@ export class EsignatureService {
       const pdfBuffer = await this.fetchS3(doc.s3Key);
       const pageCount = await this.getPageCount(pdfBuffer);
 
-      const formFields: Array<{
-        api_id: string; name: string; type: "signature" | "date_signed" | "text";
-        signer: number; page: number; x: number; y: number; width: number; height: number; required?: boolean;
-      }> = [
-        {
-          api_id: "client_sig", name: "Client Signature", type: "signature", signer: 0,
-          page: pageCount, x: CLIENT_SIG_X, y: CLIENT_SIG_Y,
-          width: DEFAULT_SIG_WIDTH, height: DEFAULT_SIG_HEIGHT, required: true,
-        },
-      ];
-      if (input.requiresCountersign) {
-        formFields.push({
-          api_id: "lawyer_sig", name: "Lawyer Signature", type: "signature", signer: 1,
-          page: pageCount, x: LAWYER_SIG_X, y: LAWYER_SIG_Y,
-          width: DEFAULT_SIG_WIDTH, height: DEFAULT_SIG_HEIGHT, required: true,
-        });
+      // Build formFields:
+      //   1) caller-provided multi-party placements (translate from our
+      //      `MultiPartyFormField` shape into the SDK's snake-cased shape); or
+      //   2) legacy auto-placed client/lawyer signature fields.
+      let rawFormFields: RawFormField[] | undefined;
+      if (input.formFields && input.formFields.length > 0) {
+        rawFormFields = input.formFields.map((f) => ({
+          api_id: f.apiId,
+          type: f.type,
+          signer: f.signerIndex,
+          page: f.page,
+          x: f.x,
+          y: f.y,
+          width: f.width,
+          height: f.height,
+          required: f.required,
+        }));
+      } else if (!input.signers) {
+        // Legacy path: hardcoded client (+ optional lawyer countersign).
+        // TODO(2.3.6b): remove once the router passes explicit fields.
+        rawFormFields = [
+          {
+            api_id: "client_sig", name: "Client Signature", type: "signature", signer: 0,
+            page: pageCount, x: CLIENT_SIG_X, y: CLIENT_SIG_Y,
+            width: DEFAULT_SIG_WIDTH, height: DEFAULT_SIG_HEIGHT, required: true,
+          },
+        ];
+        if (input.requiresCountersign) {
+          rawFormFields.push({
+            api_id: "lawyer_sig", name: "Lawyer Signature", type: "signature", signer: 1,
+            page: pageCount, x: LAWYER_SIG_X, y: LAWYER_SIG_Y,
+            width: DEFAULT_SIG_WIDTH, height: DEFAULT_SIG_HEIGHT, required: true,
+          });
+        }
       }
+      // else: multi-party signers but no explicit placements → let Dropbox
+      // Sign auto-place fields for each signer (pass undefined).
 
       result = await client.sendRaw({
         fileBuffer: pdfBuffer,
@@ -173,8 +307,8 @@ export class EsignatureService {
         title: input.title,
         subject: input.title,
         message: input.message,
-        signers: signers.map((s) => ({ email: s.email, name: s.name, order: s.order! })),
-        formFields,
+        signers: signers.map((s) => ({ email: s.email, name: s.name, order: s.order })),
+        formFields: rawFormFields,
         testMode,
         signingRedirectUrl: redirectUrl,
       });
@@ -192,26 +326,54 @@ export class EsignatureService {
       hellosignRequestId: result.signatureRequestId,
       testMode,
       sentAt: new Date(),
+      // Default row to parallel; router overrides for sequential multi-party
+      // after insert. Set explicitly so we never depend on Drizzle's default
+      // inference behaviour.
+      signingOrder: "parallel",
     };
     const [insertedRequest] = await this.db
       .insert(caseSignatureRequests)
       .values(newRequest)
       .returning();
 
+    // Lowercase-normalize email keys/values so that any casing drift
+    // introduced by Dropbox Sign (which historically has normalized
+    // signer emails) cannot break signatureId → signer row resolution.
     const sigIdByEmail = new Map(
       result.signatures.map((s) => [s.signerEmailAddress.toLowerCase(), s.signatureId]),
     );
-    const signerRows: NewCaseSignatureRequestSigner[] = signers.map((s, i) => ({
-      requestId: insertedRequest.id,
-      signerRole: s.role.toLowerCase() === "lawyer" ? "lawyer" : "client",
-      signerOrder: s.order!,
-      email: s.email,
-      name: s.name,
-      userId: s.role.toLowerCase() === "lawyer" ? input.createdBy : null,
-      clientContactId: s.role.toLowerCase() === "client" ? input.clientContactId : null,
-      status: i === 0 ? "awaiting_signature" : "awaiting_turn",
-      hellosignSignatureId: sigIdByEmail.get(s.email.toLowerCase()) ?? null,
-    }));
+    // When routing is parallel (no `order` on any signer), every signer
+    // is immediately "awaiting_signature". When sequential, only the
+    // first (by order, falling back to array position) starts active and
+    // the rest wait their turn.
+    const anyOrder = signers.some((s) => typeof s.order === "number");
+    const signerRows: NewCaseSignatureRequestSigner[] = signers.map((s, i) => {
+      const isLawyer = s.role.toLowerCase() === "lawyer";
+      const active = !anyOrder ? true : (s.order ?? i) === 0;
+      const emailLower = s.email.toLowerCase();
+      return {
+        requestId: insertedRequest.id,
+        signerRole: isLawyer ? "lawyer" : "client",
+        signerOrder: s.order ?? i,
+        email: emailLower,
+        name: s.name,
+        userId: s.userId ?? (isLawyer ? input.createdBy : null),
+        clientContactId: s.clientContactId ?? (!isMultiParty && !isLawyer ? input.clientContactId : null),
+        status: active ? "awaiting_signature" : "awaiting_turn",
+        hellosignSignatureId: sigIdByEmail.get(emailLower) ?? null,
+      };
+    });
+
+    // If DBS returns any signer we can't match back to our list, abort —
+    // downstream webhooks (keyed by hellosignSignatureId) and reminders
+    // would silently break otherwise.
+    const unmatched = signerRows.filter((r) => !r.hellosignSignatureId).map((r) => r.email);
+    if (unmatched.length > 0) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: `Dropbox Sign returned signers we couldn't match: ${unmatched.join(", ")}`,
+      });
+    }
     await this.db.insert(caseSignatureRequestSigners).values(signerRows);
 
     return { requestId: insertedRequest.id, hellosignRequestId: result.signatureRequestId };
@@ -363,7 +525,7 @@ export class EsignatureService {
           .where(
             and(
               eq(caseSignatureRequestSigners.requestId, req.id),
-              eq(caseSignatureRequestSigners.email, viewedSig.signer_email_address),
+              eq(caseSignatureRequestSigners.email, String(viewedSig.signer_email_address).toLowerCase()),
             ),
           );
       }

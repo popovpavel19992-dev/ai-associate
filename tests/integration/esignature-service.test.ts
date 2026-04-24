@@ -47,11 +47,17 @@ function makeMockDb(existingOrgKey: string | null = "encrypted_key") {
 function makeMockClient(): DropboxSignClient {
   const sendFromTemplate = vi.fn(async (): Promise<SignatureRequestResult> => ({
     signatureRequestId: "sr_test_1",
-    signatures: [{ signatureId: "sig_c", signerEmailAddress: "jane@client.com" }],
+    signatures: [
+      { signatureId: "sig_c", signerEmailAddress: "jane@client.com" },
+      { signatureId: "sig_l", signerEmailAddress: "lawyer@firm.com" },
+    ],
   }));
   const sendRaw = vi.fn(async (): Promise<SignatureRequestResult> => ({
     signatureRequestId: "sr_test_2",
-    signatures: [{ signatureId: "sig_c2", signerEmailAddress: "jane@client.com" }],
+    signatures: [
+      { signatureId: "sig_c2", signerEmailAddress: "jane@client.com" },
+      { signatureId: "sig_l2", signerEmailAddress: "lawyer@firm.com" },
+    ],
   }));
   return {
     sendFromTemplate,
