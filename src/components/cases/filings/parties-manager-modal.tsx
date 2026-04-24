@@ -49,7 +49,7 @@ export function PartiesManagerModal({
         </p>
 
         {parties && parties.length === 0 && (
-          <p className="text-sm text-gray-500">No parties yet. Add parties from the "Add service" modal.</p>
+          <p className="text-sm text-gray-500">No parties yet. Add parties from the &ldquo;Add service&rdquo; modal.</p>
         )}
 
         <ul className="divide-y rounded border">
