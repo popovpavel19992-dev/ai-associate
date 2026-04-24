@@ -5,10 +5,54 @@ import { caseEmailReplies, type NewCaseEmailReply } from "@/server/db/schema/cas
 import { caseEmailReplyAttachments, type NewCaseEmailReplyAttachment } from "@/server/db/schema/case-email-reply-attachments";
 import { notifications } from "@/server/db/schema/notifications";
 import { notificationPreferences } from "@/server/db/schema/notification-preferences";
+import { cases } from "@/server/db/schema/cases";
+import { clientContacts } from "@/server/db/schema/client-contacts";
+import { cancelEnrollmentsForContact } from "@/server/services/drip-sequences/service";
 import { classifyReplyKind, isBounce } from "./classify";
 import { isSenderMismatch } from "./sender-match";
 import { sanitizeHtml } from "./render";
 import { randomUUID } from "crypto";
+
+/**
+ * Resolve a clientContactId for a reply: look up the case's client, then find a
+ * client_contacts row with a matching email (case-insensitive). Returns null if
+ * the case has no client or no contact email matches the sender.
+ *
+ * Exported for unit testing of drip auto-cancel hooks.
+ */
+export async function resolveClientContactIdForReply(
+  db: typeof defaultDb,
+  caseId: string,
+  fromEmail: string,
+): Promise<string | null> {
+  const [caseRow] = await db
+    .select({ clientId: cases.clientId })
+    .from(cases)
+    .where(eq(cases.id, caseId))
+    .limit(1);
+  if (!caseRow?.clientId) return null;
+  const normalized = fromEmail.trim().toLowerCase();
+  const [contact] = await db
+    .select({ id: clientContacts.id })
+    .from(clientContacts)
+    .where(
+      and(
+        eq(clientContacts.clientId, caseRow.clientId),
+        // case-insensitive email match
+        eq(clientContacts.email, normalized),
+      ),
+    )
+    .limit(1);
+  if (contact) return contact.id;
+  // Try matching by lowercasing the stored email column via SQL fallback.
+  // (clientContacts.email may be stored with mixed case.)
+  const all = await db
+    .select({ id: clientContacts.id, email: clientContacts.email })
+    .from(clientContacts)
+    .where(eq(clientContacts.clientId, caseRow.clientId));
+  const match = all.find((c: { email: string | null }) => (c.email ?? "").trim().toLowerCase() === normalized);
+  return match?.id ?? null;
+}
 
 const REPLY_DOMAIN = process.env.REPLY_DOMAIN ?? "reply.clearterms.ai";
 const MAX_ATTACHMENTS_BYTES = 25 * 1024 * 1024;
@@ -164,6 +208,23 @@ export class EmailInboundService {
       receivedAt: payload.receivedAt,
     };
     await this.db.insert(caseEmailReplies).values(newReply);
+
+    // Auto-cancel any active drip enrollments for this contact when a HUMAN
+    // reply is received. Auto-replies do not trigger cancellation.
+    if (replyKind === "human") {
+      try {
+        const contactId = await resolveClientContactIdForReply(
+          this.db,
+          outreach.caseId,
+          payload.from.email,
+        );
+        if (contactId) {
+          await cancelEnrollmentsForContact(this.db, contactId, "reply");
+        }
+      } catch (e) {
+        console.error("[inbound] drip auto-cancel on reply failed", e);
+      }
+    }
 
     if (accepted.length > 0) {
       const rows: NewCaseEmailReplyAttachment[] = accepted.map((a) => ({
