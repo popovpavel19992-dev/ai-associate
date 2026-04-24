@@ -264,6 +264,7 @@ export const deadlinesRouter = router({
       defaultReminders: z.array(z.number().int().min(0).max(365)).max(5).default([7, 3, 1]),
       jurisdiction: z.string().min(1).max(50),
       citation: z.string().max(500).optional(),
+      appliesToMotionTypes: z.array(z.string()).nullable().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const orgId = requireOrgId(ctx);
@@ -278,6 +279,7 @@ export const deadlinesRouter = router({
         defaultReminders: input.defaultReminders,
         jurisdiction: input.jurisdiction,
         citation: input.citation ?? null,
+        appliesToMotionTypes: input.appliesToMotionTypes ?? null,
       }).returning();
       return { ruleId: row.id };
     }),
@@ -292,6 +294,7 @@ export const deadlinesRouter = router({
       shiftIfHoliday: z.boolean().optional(),
       defaultReminders: z.array(z.number().int().min(0).max(365)).max(5).optional(),
       active: z.boolean().optional(),
+      appliesToMotionTypes: z.array(z.string()).nullable().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const orgId = requireOrgId(ctx);
@@ -311,6 +314,7 @@ export const deadlinesRouter = router({
       if (input.shiftIfHoliday !== undefined) patch.shiftIfHoliday = input.shiftIfHoliday;
       if (input.defaultReminders !== undefined) patch.defaultReminders = input.defaultReminders;
       if (input.active !== undefined) patch.active = input.active;
+      if (input.appliesToMotionTypes !== undefined) patch.appliesToMotionTypes = input.appliesToMotionTypes;
 
       await ctx.db.update(deadlineRules).set(patch).where(eq(deadlineRules.id, input.ruleId));
       return { ok: true as const };
