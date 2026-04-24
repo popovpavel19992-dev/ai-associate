@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { stripe, PLAN_FROM_PRICE } from "@/lib/stripe";
+import { PLAN_FROM_PRICE } from "@/lib/stripe";
+import { getStripe } from "@/server/services/stripe";
 import { db } from "@/server/db";
 import { subscriptions } from "@/server/db/schema/subscriptions";
 import { users } from "@/server/db/schema/users";
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(
+    event = getStripe().webhooks.constructEvent(
       body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!,
@@ -108,7 +109,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       ? session.subscription
       : session.subscription.id;
 
-  const subscription = await stripe.subscriptions.retrieve(subId);
+  const subscription = await getStripe().subscriptions.retrieve(subId);
   const plan = getPlanFromSubscription(subscription);
   const customerId =
     typeof session.customer === "string"
