@@ -79,7 +79,7 @@ describe("drip auto-cancel hooks", () => {
     });
 
     it("does NOT cancel when contact cannot be resolved", async () => {
-      resolveClientContactIdForReplyMock.mockResolvedValueOnce(null);
+      resolveClientContactIdForReplyMock.mockResolvedValueOnce(null as unknown as string);
       await simulateInboundCancelDecision("human", "case-1", "stranger@example.com");
       expect(cancelEnrollmentsForContactMock).not.toHaveBeenCalled();
     });
