@@ -6,7 +6,7 @@ import { protectedProcedure, router } from "@/server/trpc/trpc";
 import { assertCaseAccess } from "@/server/trpc/lib/permissions";
 import { EsignatureService, type MultiPartySigner, type MultiPartyFormField } from "@/server/services/esignature/service";
 import { DropboxSignClient } from "@/server/services/esignature/dropbox-sign-client";
-import { getPageCount } from "@/server/services/esignature/pdf-page-count";
+import { getPageCount, getPageSizes } from "@/server/services/esignature/pdf-page-count";
 import { getObject, generateDownloadUrl } from "@/server/services/s3";
 import { decrypt, encrypt } from "@/server/lib/crypto";
 import { organizations } from "@/server/db/schema/organizations";
@@ -19,15 +19,13 @@ import { documents } from "@/server/db/schema/documents";
 import { randomUUID } from "crypto";
 
 /**
- * US Letter (612 x 792 pt) — the default page size used when converting
- * normalized UI fractions into PDF points for Dropbox Sign's
- * signatureRequestSend endpoint. Every supported court filing flow in
- * ClearTerms uses US Letter, so a fixed constant is acceptable for 2.3.6b.
- * If/when we support other page sizes, this should be derived from the
- * actual PDF page MediaBox.
+ * Fallback page size (US Letter, 612 x 792 pt). Only used if the source
+ * PDF cannot be parsed for a page's real MediaBox — every normal flow
+ * reads the actual size from pdf-lib so legal-size, A4, and mixed-size
+ * documents are handled correctly.
  */
-const US_LETTER_WIDTH_PT = 612;
-const US_LETTER_HEIGHT_PT = 792;
+const FALLBACK_WIDTH_PT = 612;
+const FALLBACK_HEIGHT_PT = 792;
 
 const SIGNER_INPUT_SCHEMA = z
   .object({
@@ -157,6 +155,18 @@ export const caseSignaturesRouter = router({
       const signers = input.signers;
       const signingOrder = input.signingOrder;
 
+      // Reject duplicate emails — signer → DB row resolution for form fields
+      // is keyed on email (see idByEmail below), so collisions would misroute fields.
+      {
+        const emails = signers.map((s) => s.emailAddress.toLowerCase());
+        if (new Set(emails).size !== emails.length) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Signers must have unique email addresses",
+          });
+        }
+      }
+
       // Cross-validation: sequential order coverage must be 0..n-1 and unique.
       if (signingOrder === "sequential" && signers.length > 1) {
         const orders = signers.map((s) => s.order);
@@ -232,19 +242,53 @@ export const caseSignaturesRouter = router({
         };
       });
 
-      // Convert normalized fractions → PDF points (top-left origin, US Letter).
-      // The service / SDK layer treats these as raw points.
-      const svcFormFields: MultiPartyFormField[] | undefined = input.formFields?.map((f) => ({
-        apiId: `f_${randomUUID().replace(/-/g, "").slice(0, 16)}`,
-        signerIndex: f.signerIndex,
-        type: f.fieldType,
-        page: f.page,
-        x: f.x * US_LETTER_WIDTH_PT,
-        y: f.y * US_LETTER_HEIGHT_PT,
-        width: f.width * US_LETTER_WIDTH_PT,
-        height: f.height * US_LETTER_HEIGHT_PT,
-        required: f.required,
-      }));
+      // Convert normalized fractions → PDF points using each page's actual
+      // MediaBox size (parsed server-side with pdf-lib). Supports letter,
+      // legal, A4, and mixed-size documents. Templates skip this branch
+      // because Dropbox Sign templates carry their own field placements.
+      let pageSizes: { width: number; height: number }[] | null = null;
+      if (input.formFields && input.formFields.length > 0 && input.sourceDocumentId) {
+        const [doc] = await ctx.db
+          .select({ s3Key: documents.s3Key, caseId: documents.caseId })
+          .from(documents)
+          .where(eq(documents.id, input.sourceDocumentId))
+          .limit(1);
+        if (!doc || doc.caseId !== input.caseId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Document not on this case" });
+        }
+        const pdfBuffer = await fetchS3ToBuffer(doc.s3Key);
+        pageSizes = await getPageSizes(pdfBuffer);
+        for (const f of input.formFields) {
+          if (f.page < 1 || f.page > pageSizes.length) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `formFields.page ${f.page} out of range (document has ${pageSizes.length} pages)`,
+            });
+          }
+          if (f.x + f.width > 1 + 1e-6 || f.y + f.height > 1 + 1e-6) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Field coordinates exceed page bounds (x+width or y+height > 1)",
+            });
+          }
+        }
+      }
+      const svcFormFields: MultiPartyFormField[] | undefined = input.formFields?.map((f) => {
+        const size = pageSizes?.[f.page - 1];
+        const w = size?.width ?? FALLBACK_WIDTH_PT;
+        const h = size?.height ?? FALLBACK_HEIGHT_PT;
+        return {
+          apiId: `f_${randomUUID().replace(/-/g, "").slice(0, 16)}`,
+          signerIndex: f.signerIndex,
+          type: f.fieldType,
+          page: f.page,
+          x: f.x * w,
+          y: f.y * h,
+          width: f.width * w,
+          height: f.height * h,
+          required: f.required,
+        };
+      });
 
       const result = await svc.create({
         caseId: input.caseId,
