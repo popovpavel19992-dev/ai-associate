@@ -1,0 +1,168 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "ClearTerms" [ref=e6] [cursor=pointer]:
+            - /url: /dashboard
+          - button [ref=e8]:
+            - img
+        - separator [ref=e9]
+        - navigation [ref=e10]:
+          - link "Dashboard" [ref=e11] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e12]
+            - text: Dashboard
+          - link "Contracts" [ref=e17] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e18]
+            - text: Contracts
+          - link "Drafts" [ref=e22] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e23]
+            - text: Drafts
+          - link "Quick Analysis" [ref=e25] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e26]
+            - text: Quick Analysis
+          - link "Cases" [ref=e28] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e29]
+            - text: Cases
+          - link "Filings" [ref=e32] [cursor=pointer]:
+            - /url: /filings
+            - img [ref=e33]
+            - text: Filings
+          - link "Research" [ref=e36] [cursor=pointer]:
+            - /url: /research
+            - img [ref=e37]
+            - text: Research
+          - link "Collections" [ref=e40] [cursor=pointer]:
+            - /url: /research/collections
+            - img [ref=e41]
+            - text: Collections
+          - link "Clients" [ref=e43] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e44]
+            - text: Clients
+          - link "Calendar" [ref=e49] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e50]
+            - text: Calendar
+          - link "Notifications" [ref=e52] [cursor=pointer]:
+            - /url: /notifications
+            - img [ref=e53]
+            - text: Notifications
+          - link "Templates" [ref=e56] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e57]
+            - text: Templates
+          - link "Email templates" [ref=e60] [cursor=pointer]:
+            - /url: /settings/email-templates
+            - img [ref=e61]
+            - text: Email templates
+          - link "Deadline rules" [ref=e64] [cursor=pointer]:
+            - /url: /settings/deadline-rules
+            - img [ref=e65]
+            - text: Deadline rules
+          - link "Settings" [ref=e68] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e69]
+            - text: Settings
+        - separator [ref=e76]
+        - button "Open user menu" [ref=e95] [cursor=pointer]:
+          - img "Pavel Popov's logo" [ref=e98]
+    - main [ref=e79]:
+      - generic [ref=e81]:
+        - generic [ref=e100]:
+          - generic [ref=e101]:
+            - generic [ref=e102]: Intake
+            - generic [ref=e104]: →
+          - generic [ref=e105]:
+            - generic [ref=e106]: Research
+            - generic [ref=e107]: →
+          - generic [ref=e108]:
+            - generic [ref=e109]: Active Work
+            - generic [ref=e110]: →
+          - generic [ref=e111]:
+            - generic [ref=e112]: Resolution
+            - generic [ref=e113]: →
+          - generic [ref=e115]: Closed
+        - generic [ref=e116]:
+          - generic [ref=e117]:
+            - button "Overview" [ref=e118]
+            - button "Tasks" [ref=e119]
+            - button "Calendar" [ref=e120]
+            - button "Time" [ref=e121]
+            - button "Report" [ref=e122]
+            - button "Timeline" [ref=e123]
+            - button "Contracts" [ref=e124]
+            - button "Research" [ref=e125]
+            - button "Messages" [ref=e126]
+            - button "Requests" [ref=e127]
+            - button "Intake" [ref=e128]
+            - button "Updates" [ref=e129]
+            - button "Emails" [ref=e130]
+            - button "Signatures" [ref=e131]
+            - button "Deadlines" [ref=e132]
+            - button "Motions" [ref=e133]
+            - button "Filings" [ref=e134]
+          - generic [ref=e135]:
+            - button "Mute" [ref=e136]:
+              - img
+              - text: Mute
+            - button "Change Stage" [ref=e138]:
+              - text: Change Stage
+              - img
+        - generic [ref=e140]:
+          - generic [ref=e142]:
+            - complementary [ref=e143]:
+              - generic [ref=e144]:
+                - heading "Signatures" [level=2] [ref=e145]
+                - button "New" [ref=e146]:
+                  - img
+                  - text: New
+              - paragraph [ref=e148]: No signature requests yet.
+            - paragraph [ref=e150]: Select a request or start a new one.
+          - generic [ref=e151]:
+            - generic [ref=e152]:
+              - heading "Client" [level=3] [ref=e153]
+              - link "Acme Corporation" [ref=e154] [cursor=pointer]:
+                - /url: /clients/7f2daf74-e485-4875-874a-54af227cedf5
+              - generic [ref=e155]:
+                - img [ref=e156]
+                - text: Organization
+            - generic [ref=e160]:
+              - heading "Case Team" [level=3] [ref=e162]
+              - generic [ref=e185]:
+                - generic [ref=e186]: PP
+                - generic [ref=e187]:
+                  - generic [ref=e188]: Pavel Popov
+                  - generic [ref=e189]: Lead
+            - generic [ref=e165]:
+              - generic [ref=e167]: Portal Visibility
+              - generic [ref=e168]:
+                - generic [ref=e169]:
+                  - generic [ref=e170]: Documents
+                  - button "Visible" [ref=e171]
+                - generic [ref=e172]:
+                  - generic [ref=e173]: Tasks
+                  - button "Visible" [ref=e174]
+                - generic [ref=e175]:
+                  - generic [ref=e176]: Calendar
+                  - button "Visible" [ref=e177]
+                - generic [ref=e178]:
+                  - generic [ref=e179]: Billing
+                  - button "Visible" [ref=e180]
+                - generic [ref=e181]:
+                  - generic [ref=e182]: Messages
+                  - button "Visible" [ref=e183]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e190] [cursor=pointer]:
+    - generic [ref=e193]:
+      - text: Compiling
+      - generic [ref=e194]:
+        - generic [ref=e195]: .
+        - generic [ref=e196]: .
+        - generic [ref=e197]: .
+  - alert [ref=e93]
