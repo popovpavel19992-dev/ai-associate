@@ -6,6 +6,7 @@ import { seedDiscoveryRequestTemplates } from "./seed/discovery-request-template
 import { seedJuryInstructionTemplates } from "./seed/jury-instruction-templates";
 import { seedVoirDireQuestionTemplates } from "./seed/voir-dire-question-templates";
 import { seedDepositionTopicTemplates } from "./seed/deposition-topic-templates";
+import { seedMotionInLimineTemplates } from "./seed/motion-in-limine-templates";
 
 const SYSTEM_PRESETS = [
   {
@@ -63,6 +64,10 @@ async function seed() {
   const depRes = await seedDepositionTopicTemplates();
   console.log(
     `Seeded deposition topic templates: ${depRes.inserted} inserted, ${depRes.skipped} skipped`,
+  );
+  const milRes = await seedMotionInLimineTemplates();
+  console.log(
+    `Seeded motion in limine templates: ${milRes.inserted} inserted, ${milRes.skipped} skipped`,
   );
   process.exit(0);
 }
