@@ -13,7 +13,7 @@ function slugify(input: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 80) || "interrogatories";
+    .slice(0, 80) || "discovery";
 }
 
 export async function GET(
