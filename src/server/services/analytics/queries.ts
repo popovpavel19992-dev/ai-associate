@@ -331,7 +331,10 @@ export async function getDeadlineCompliance(
   const ids = await scopedCaseIds(db, scope);
   if (!ids.length) return { met: 0, overdue: 0, upcoming: 0 };
 
-  // Pull deadlines whose due_date falls in the range. due_date is a date column.
+  // Pull deadlines whose due_date falls in the range. due_date is a date column
+  // stored as ISO string (YYYY-MM-DD) in this schema.
+  const startStr = range.startDate.toISOString().slice(0, 10);
+  const endStr = range.endDate.toISOString().slice(0, 10);
   const rows = await db
     .select({
       dueDate: caseDeadlines.dueDate,
@@ -341,8 +344,8 @@ export async function getDeadlineCompliance(
     .where(
       and(
         inArray(caseDeadlines.caseId, ids),
-        gte(caseDeadlines.dueDate, range.startDate),
-        lte(caseDeadlines.dueDate, range.endDate),
+        gte(caseDeadlines.dueDate, startStr),
+        lte(caseDeadlines.dueDate, endStr),
       ),
     );
 
