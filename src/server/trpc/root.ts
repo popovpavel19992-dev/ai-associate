@@ -59,6 +59,7 @@ import { witnessListsRouter } from "./routers/witness-lists";
 import { exhibitListsRouter } from "./routers/exhibit-lists";
 import { juryInstructionsRouter } from "./routers/jury-instructions";
 import { voirDireRouter } from "./routers/voir-dire";
+import { analyticsRouter } from "./routers/analytics";
 
 export const appRouter = router({
   users: usersRouter,
@@ -121,6 +122,7 @@ export const appRouter = router({
   exhibitLists: exhibitListsRouter,
   juryInstructions: juryInstructionsRouter,
   voirDire: voirDireRouter,
+  analytics: analyticsRouter,
 });
 
 export type AppRouter = typeof appRouter;

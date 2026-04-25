@@ -20,6 +20,7 @@ import {
   Library,
   Mail,
   Clock,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -32,6 +33,7 @@ import { TimerIndicator } from "@/components/time-billing/timer-indicator";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/contracts", label: "Contracts", icon: FileCheck },
   { href: "/drafts", label: "Drafts", icon: PenLine },
   { href: "/quick-analysis", label: "Quick Analysis", icon: Zap },
