@@ -3,6 +3,7 @@ import { db } from "./index";
 import { sectionPresets } from "./schema/section-presets";
 import { seedMotionTemplates } from "./seed/motion-templates";
 import { seedDiscoveryRequestTemplates } from "./seed/discovery-request-templates";
+import { seedJuryInstructionTemplates } from "./seed/jury-instruction-templates";
 
 const SYSTEM_PRESETS = [
   {
@@ -49,6 +50,10 @@ async function seed() {
   console.log("Seeded motion templates");
   await seedDiscoveryRequestTemplates();
   console.log("Seeded discovery request templates");
+  const juryRes = await seedJuryInstructionTemplates();
+  console.log(
+    `Seeded jury instruction templates: ${juryRes.inserted} inserted, ${juryRes.skipped} skipped`,
+  );
   process.exit(0);
 }
 
