@@ -7,6 +7,7 @@ import {
   NewDiscoveryWizard,
   type DiscoveryRequestType,
 } from "./new-discovery-wizard";
+import { PrivilegeLogSection } from "./privilege-log-section";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -121,6 +122,8 @@ export function DiscoveryTab({ caseId }: { caseId: string }) {
             </section>
           );
         })}
+
+      <PrivilegeLogSection caseId={caseId} />
 
       {wizardType && (
         <NewDiscoveryWizard
