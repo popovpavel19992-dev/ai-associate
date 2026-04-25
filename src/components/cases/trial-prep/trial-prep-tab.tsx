@@ -7,6 +7,7 @@ import { NewWitnessListDialog } from "./new-witness-list-dialog";
 import { NewExhibitListDialog } from "./new-exhibit-list-dialog";
 import { NewJuryInstructionSetDialog } from "./new-jury-instruction-set-dialog";
 import { NewVoirDireSetDialog } from "./new-voir-dire-set-dialog";
+import { NewDepositionOutlineDialog } from "./new-deposition-outline-dialog";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -21,6 +22,7 @@ export function TrialPrepTab({ caseId }: { caseId: string }) {
   const [showNewExhibit, setShowNewExhibit] = useState(false);
   const [showNewJury, setShowNewJury] = useState(false);
   const [showNewVoirDire, setShowNewVoirDire] = useState(false);
+  const [showNewDeposition, setShowNewDeposition] = useState(false);
   const { data: witnessLists, isLoading: witnessLoading } =
     trpc.witnessLists.listForCase.useQuery({ caseId });
   const { data: exhibitLists, isLoading: exhibitLoading } =
@@ -29,6 +31,8 @@ export function TrialPrepTab({ caseId }: { caseId: string }) {
     trpc.juryInstructions.listForCase.useQuery({ caseId });
   const { data: voirDireSets, isLoading: voirLoading } =
     trpc.voirDire.listForCase.useQuery({ caseId });
+  const { data: depositionOutlines, isLoading: depLoading } =
+    trpc.depositionPrep.listForCase.useQuery({ caseId });
 
   const groupedWitness = (witnessLists ?? []).reduce<
     Record<string, NonNullable<typeof witnessLists>>
@@ -112,6 +116,13 @@ export function TrialPrepTab({ caseId }: { caseId: string }) {
             className="inline-flex items-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
           >
             New Voir Dire Set
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowNewDeposition(true)}
+            className="inline-flex items-center rounded-md bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-700"
+          >
+            New Deposition Outline
           </button>
         </div>
       </div>
@@ -339,6 +350,63 @@ export function TrialPrepTab({ caseId }: { caseId: string }) {
         })}
       </section>
 
+      <section className="space-y-4">
+        <h3 className="text-sm font-semibold text-zinc-300">Depositions</h3>
+
+        {depLoading && <p className="text-sm text-gray-500">Loading…</p>}
+
+        {!depLoading && (depositionOutlines ?? []).length === 0 && (
+          <p className="text-sm text-zinc-500">
+            No deposition outlines yet. Create one to draft questions for a
+            deponent.
+          </p>
+        )}
+
+        {(depositionOutlines ?? []).length > 0 && (
+          <ul className="divide-y divide-zinc-800 rounded-md border border-zinc-800">
+            {[...(depositionOutlines ?? [])]
+              .sort((a, b) => {
+                const n = a.deponentName.localeCompare(b.deponentName);
+                if (n !== 0) return n;
+                return a.outlineNumber - b.outlineNumber;
+              })
+              .map((o) => (
+                <li key={o.id} className="hover:bg-zinc-900/40">
+                  <Link
+                    href={`/cases/${caseId}/trial-prep/depositions/${o.id}`}
+                    className="block p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{o.title}</span>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          STATUS_BADGE[o.status] ?? "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {o.status}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap gap-3 text-xs text-gray-500">
+                      <span>Deponent: {o.deponentName}</span>
+                      <span>Outline {o.outlineNumber}</span>
+                      <span>
+                        {o.topicCount} topic{o.topicCount === 1 ? "" : "s"}
+                      </span>
+                      <span>
+                        {o.questionCount} question
+                        {o.questionCount === 1 ? "" : "s"}
+                      </span>
+                      {o.scheduledDate && (
+                        <span>Scheduled {o.scheduledDate}</span>
+                      )}
+                    </div>
+                  </Link>
+                </li>
+              ))}
+          </ul>
+        )}
+      </section>
+
       {showNewWitness && (
         <NewWitnessListDialog
           caseId={caseId}
@@ -361,6 +429,12 @@ export function TrialPrepTab({ caseId }: { caseId: string }) {
         <NewVoirDireSetDialog
           caseId={caseId}
           onClose={() => setShowNewVoirDire(false)}
+        />
+      )}
+      {showNewDeposition && (
+        <NewDepositionOutlineDialog
+          caseId={caseId}
+          onClose={() => setShowNewDeposition(false)}
         />
       )}
     </div>

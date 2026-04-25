@@ -59,6 +59,7 @@ import { witnessListsRouter } from "./routers/witness-lists";
 import { exhibitListsRouter } from "./routers/exhibit-lists";
 import { juryInstructionsRouter } from "./routers/jury-instructions";
 import { voirDireRouter } from "./routers/voir-dire";
+import { depositionPrepRouter } from "./routers/deposition-prep";
 import { analyticsRouter } from "./routers/analytics";
 
 export const appRouter = router({
@@ -122,6 +123,7 @@ export const appRouter = router({
   exhibitLists: exhibitListsRouter,
   juryInstructions: juryInstructionsRouter,
   voirDire: voirDireRouter,
+  depositionPrep: depositionPrepRouter,
   analytics: analyticsRouter,
 });
 
