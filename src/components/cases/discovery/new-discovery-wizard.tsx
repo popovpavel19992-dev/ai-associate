@@ -7,7 +7,7 @@ import { trpc } from "@/lib/trpc";
 
 type Source = "library" | "ai" | "blank";
 type Party = "plaintiff" | "defendant";
-export type DiscoveryRequestType = "interrogatories" | "rfp";
+export type DiscoveryRequestType = "interrogatories" | "rfp" | "rfa";
 
 function ordinal(n: number): string {
   switch (n) {
@@ -35,6 +35,9 @@ function defaultTitle(
   if (requestType === "rfp") {
     return `${partyLabel}'s ${ordinal(setNumber)} Requests for Production`;
   }
+  if (requestType === "rfa") {
+    return `${partyLabel}'s ${ordinal(setNumber)} Set of Requests for Admission`;
+  }
   return `${partyLabel}'s ${ordinal(setNumber)} Set of Interrogatories`;
 }
 
@@ -59,12 +62,23 @@ export function NewDiscoveryWizard({
 
   // AI
   const [aiContext, setAiContext] = useState("");
-  const aiDefault = requestType === "rfp" ? 12 : 15;
-  const aiMax = requestType === "rfp" ? 30 : 25;
+  const aiDefault =
+    requestType === "rfp" ? 12 : requestType === "rfa" ? 15 : 15;
+  // FRCP 33: 25 cap on interrogatories. FRCP 34/36 have no federal numerical
+  // cap; we ceiling at 30 in the UI for sanity.
+  const aiMax =
+    requestType === "rfp" ? 30 : requestType === "rfa" ? 30 : 25;
   const [desiredCount, setDesiredCount] = useState(aiDefault);
 
   const isRfp = requestType === "rfp";
-  const labelNounPlural = isRfp ? "Requests for Production" : "Interrogatories";
+  const isRfa = requestType === "rfa";
+  const isInterrogatory = requestType === "interrogatories";
+  const labelNounPlural = isRfp
+    ? "Requests for Production"
+    : isRfa
+      ? "Requests for Admission"
+      : "Interrogatories";
+  const aiItemNounPlural = isRfp ? "requests" : isRfa ? "admissions" : "questions";
 
   const { data: caseData } = trpc.cases.getById.useQuery({ caseId });
   const { data: setNumberData } = trpc.discovery.getNextSetNumber.useQuery({
@@ -154,7 +168,12 @@ export function NewDiscoveryWizard({
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-md border border-zinc-700 bg-zinc-950 p-6 text-zinc-100">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">
-            New {isRfp ? "Request for Production" : "Interrogatory Set"}
+            New{" "}
+            {isRfp
+              ? "Request for Production"
+              : isRfa
+                ? "Request for Admission"
+                : "Interrogatory Set"}
           </h2>
           <button
             type="button"
@@ -256,8 +275,7 @@ export function NewDiscoveryWizard({
                   >
                     <div className="font-medium">{t.title}</div>
                     <div className="mt-1 text-xs text-zinc-400">
-                      {t.caseType} · {t.questionCount}{" "}
-                      {isRfp ? "requests" : "questions"}
+                      {t.caseType} · {t.questionCount} {aiItemNounPlural}
                     </div>
                     {t.description && (
                       <div className="mt-1 text-xs text-zinc-500">
@@ -281,7 +299,9 @@ export function NewDiscoveryWizard({
                   placeholder={
                     isRfp
                       ? "All documents relating to...\nAll communications between..."
-                      : "Identify each communication you had with...\nDescribe in detail..."
+                      : isRfa
+                        ? "Admit that the contract was executed on [date].\nAdmit that no notice of breach was provided."
+                        : "Identify each communication you had with...\nDescribe in detail..."
                   }
                 />
               </div>
@@ -302,13 +322,15 @@ export function NewDiscoveryWizard({
                   placeholder={
                     isRfp
                       ? "e.g., focus on email custodians, financial records, comparator personnel files..."
-                      : "e.g., focus on damages timeline, emails between Alice and Bob, ..."
+                      : isRfa
+                        ? "e.g., focus on contract authentication, performance dates, damages amounts..."
+                        : "e.g., focus on damages timeline, emails between Alice and Bob, ..."
                   }
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium">
-                  Number of {isRfp ? "requests" : "questions"}: {desiredCount}
+                  Number of {aiItemNounPlural}: {desiredCount}
                 </label>
                 <input
                   type="range"
@@ -322,7 +344,7 @@ export function NewDiscoveryWizard({
                   <span>5</span>
                   <span>
                     {aiMax}
-                    {isRfp ? "" : " (federal cap)"}
+                    {isInterrogatory ? " (federal cap)" : ""}
                   </span>
                 </div>
               </div>

@@ -120,14 +120,19 @@ export function DiscoveryRequestDetail({
 
   const isInterrogatory = req.requestType === "interrogatories";
   const isRfp = req.requestType === "rfp";
+  const isRfa = req.requestType === "rfa";
   const count = editable.length;
-  // 25-cap only applies to interrogatories (FRCP 33). RFPs (FRCP 34) have no
-  // federal numerical cap.
+  // 25-cap only applies to interrogatories (FRCP 33). RFPs (FRCP 34) and
+  // RFAs (FRCP 36) have no federal numerical cap.
   const overSoftCap = isInterrogatory && count > SOFT_CAP;
   const atSoftCap = isInterrogatory && count >= SOFT_CAP;
-  const itemNounSingular = isRfp ? "Request" : "Interrogatory";
-  const itemNounPlural = isRfp ? "Requests" : "Questions";
-  const itemHeaderLabel = isRfp ? "REQUEST FOR PRODUCTION NO." : "INTERROGATORY NO.";
+  const itemNounSingular = isRfp ? "Request" : isRfa ? "Admission" : "Interrogatory";
+  const itemNounPlural = isRfp ? "Requests" : isRfa ? "Admissions" : "Questions";
+  const itemHeaderLabel = isRfp
+    ? "REQUEST FOR PRODUCTION NO."
+    : isRfa
+      ? "REQUEST FOR ADMISSION NO."
+      : "INTERROGATORY NO.";
 
   const updateQuestion = (idx: number, text: string) => {
     setEditable((prev) =>

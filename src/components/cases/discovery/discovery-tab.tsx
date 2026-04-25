@@ -26,12 +26,15 @@ export function DiscoveryTab({ caseId }: { caseId: string }) {
     return acc;
   }, {} as Record<string, typeof requests>);
 
-  // Ensure both sections render even when empty.
+  // Ensure all three sections render even when empty.
   if (!grouped.interrogatories) {
     grouped.interrogatories = [] as unknown as typeof requests;
   }
   if (!grouped.rfp) {
     grouped.rfp = [] as unknown as typeof requests;
+  }
+  if (!grouped.rfa) {
+    grouped.rfa = [] as unknown as typeof requests;
   }
 
   const sectionLabel = (key: string) => {
@@ -59,6 +62,13 @@ export function DiscoveryTab({ caseId }: { caseId: string }) {
             className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             New Request for Production
+          </button>
+          <button
+            type="button"
+            onClick={() => setWizardType("rfa")}
+            className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            New Request for Admission
           </button>
         </div>
       </div>
