@@ -10,7 +10,10 @@ import { protectedProcedure, router } from "@/server/trpc/trpc";
 import { assertCaseAccess } from "@/server/trpc/lib/permissions";
 import { cases } from "@/server/db/schema/cases";
 import * as discoveryService from "@/server/services/discovery/service";
-import { generateInterrogatoriesFromCase } from "@/server/services/discovery/ai-generate";
+import {
+  generateInterrogatoriesFromCase,
+  generateRfpsFromCase,
+} from "@/server/services/discovery/ai-generate";
 import type { DiscoveryQuestion } from "@/server/db/schema/case-discovery-requests";
 
 function requireOrgId(ctx: { user: { orgId: string | null } }): string {
@@ -20,6 +23,22 @@ function requireOrgId(ctx: { user: { orgId: string | null } }): string {
 }
 
 const SERVING_PARTY = z.enum(["plaintiff", "defendant"]);
+const REQUEST_TYPE = z.enum(["interrogatories", "rfp"]);
+
+function defaultTitleFor(
+  requestType: "interrogatories" | "rfp",
+  party: "plaintiff" | "defendant",
+  setNumber: number,
+  suffix: "" | " (AI)" = "",
+): string {
+  const partyLabel = party === "plaintiff" ? "Plaintiff" : "Defendant";
+  const ordinals = ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"];
+  const ordinal = ordinals[setNumber - 1] ?? `${setNumber}th`;
+  if (requestType === "rfp") {
+    return `${partyLabel}'s ${ordinal} Requests for Production${suffix}`;
+  }
+  return `${partyLabel}'s ${ordinal} Set of Interrogatories${suffix}`;
+}
 
 const QUESTION_INPUT = z.object({
   number: z.number().int().min(1).optional(),
@@ -55,10 +74,22 @@ function resolveCaseType(caseRow: {
 
 export const discoveryRouter = router({
   listLibraryTemplates: protectedProcedure
-    .input(z.object({ caseType: z.string().optional() }).optional())
+    .input(
+      z
+        .object({
+          caseType: z.string().optional(),
+          requestType: REQUEST_TYPE.optional(),
+        })
+        .optional(),
+    )
     .query(async ({ ctx, input }) => {
       const orgId = requireOrgId(ctx);
-      return discoveryService.listLibraryTemplates(ctx.db, orgId, input?.caseType);
+      return discoveryService.listLibraryTemplates(
+        ctx.db,
+        orgId,
+        input?.caseType,
+        input?.requestType,
+      );
     }),
 
   getTemplate: protectedProcedure
@@ -102,6 +133,7 @@ export const discoveryRouter = router({
     .input(
       z.object({
         caseId: z.string().uuid(),
+        requestType: REQUEST_TYPE.default("interrogatories"),
         servingParty: SERVING_PARTY,
         templateId: z.string().uuid(),
         title: z.string().min(1).max(200).optional(),
@@ -115,7 +147,7 @@ export const discoveryRouter = router({
       const tpl = await discoveryService.getTemplate(ctx.db, input.templateId).catch(() => null);
       if (!tpl) throw new TRPCError({ code: "NOT_FOUND", message: "Template not found" });
 
-      const setNumber = await discoveryService.getNextSetNumber(ctx.db, input.caseId, "interrogatories");
+      const setNumber = await discoveryService.getNextSetNumber(ctx.db, input.caseId, input.requestType);
       const questions: DiscoveryQuestion[] = [
         ...tpl.questions.map((text, i) => ({ number: i + 1, text, source: "library" as const })),
         ...(input.additionalQuestions ?? []).map((text, i) => ({
@@ -130,6 +162,7 @@ export const discoveryRouter = router({
       return discoveryService.createDiscoveryRequest(ctx.db, {
         orgId,
         caseId: input.caseId,
+        requestType: input.requestType,
         servingParty: input.servingParty,
         setNumber,
         title: input.title ?? `${tpl.title} (Set ${setNumber})`,
@@ -143,8 +176,9 @@ export const discoveryRouter = router({
     .input(
       z.object({
         caseId: z.string().uuid(),
+        requestType: REQUEST_TYPE.default("interrogatories"),
         servingParty: SERVING_PARTY,
-        desiredCount: z.number().int().min(1).max(25).optional(),
+        desiredCount: z.number().int().min(1).max(50).optional(),
         additionalContext: z.string().max(2000).optional(),
         title: z.string().min(1).max(200).optional(),
       }),
@@ -163,12 +197,26 @@ export const discoveryRouter = router({
 
       let questions: DiscoveryQuestion[];
       try {
-        questions = await generateInterrogatoriesFromCase({
-          caseFacts,
-          caseType: resolveCaseType(caseRow),
-          servingParty: input.servingParty,
-          desiredCount: input.desiredCount,
-        });
+        if (input.requestType === "rfp") {
+          questions = await generateRfpsFromCase({
+            caseFacts,
+            caseType: resolveCaseType(caseRow),
+            servingParty: input.servingParty,
+            desiredCount: input.desiredCount,
+          });
+        } else {
+          // FRCP 33: cap user-requested interrogatory count at 25.
+          const cappedCount =
+            input.desiredCount !== undefined
+              ? Math.min(25, input.desiredCount)
+              : undefined;
+          questions = await generateInterrogatoriesFromCase({
+            caseFacts,
+            caseType: resolveCaseType(caseRow),
+            servingParty: input.servingParty,
+            desiredCount: cappedCount,
+          });
+        }
       } catch (e) {
         const msg = e instanceof Error ? e.message : "AI generation failed";
         if (msg.includes("ANTHROPIC_API_KEY")) {
@@ -177,13 +225,18 @@ export const discoveryRouter = router({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: msg });
       }
 
-      const setNumber = await discoveryService.getNextSetNumber(ctx.db, input.caseId, "interrogatories");
+      const setNumber = await discoveryService.getNextSetNumber(ctx.db, input.caseId, input.requestType);
+      const fallbackTitle =
+        input.requestType === "rfp"
+          ? defaultTitleFor("rfp", input.servingParty, setNumber, " (AI)")
+          : defaultTitleFor("interrogatories", input.servingParty, setNumber, " (AI)");
       return discoveryService.createDiscoveryRequest(ctx.db, {
         orgId,
         caseId: input.caseId,
+        requestType: input.requestType,
         servingParty: input.servingParty,
         setNumber,
-        title: input.title ?? `Interrogatories (AI, Set ${setNumber})`,
+        title: input.title ?? fallbackTitle,
         templateSource: "ai",
         questions,
         createdBy: ctx.user.id,
@@ -194,6 +247,7 @@ export const discoveryRouter = router({
     .input(
       z.object({
         caseId: z.string().uuid(),
+        requestType: REQUEST_TYPE.default("interrogatories"),
         servingParty: SERVING_PARTY,
         title: z.string().min(1).max(200).optional(),
       }),
@@ -201,13 +255,15 @@ export const discoveryRouter = router({
     .mutation(async ({ ctx, input }) => {
       const orgId = requireOrgId(ctx);
       await assertCaseAccess(ctx, input.caseId);
-      const setNumber = await discoveryService.getNextSetNumber(ctx.db, input.caseId, "interrogatories");
+      const setNumber = await discoveryService.getNextSetNumber(ctx.db, input.caseId, input.requestType);
+      const fallbackTitle = defaultTitleFor(input.requestType, input.servingParty, setNumber);
       return discoveryService.createDiscoveryRequest(ctx.db, {
         orgId,
         caseId: input.caseId,
+        requestType: input.requestType,
         servingParty: input.servingParty,
         setNumber,
-        title: input.title ?? `Interrogatories (Set ${setNumber})`,
+        title: input.title ?? fallbackTitle,
         templateSource: "manual",
         questions: [],
         createdBy: ctx.user.id,
