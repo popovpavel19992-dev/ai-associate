@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 
 type Source = "library" | "ai" | "blank";
 type Party = "plaintiff" | "defendant";
+export type DiscoveryRequestType = "interrogatories" | "rfp";
 
 function ordinal(n: number): string {
   switch (n) {
@@ -25,16 +26,25 @@ function ordinal(n: number): string {
   }
 }
 
-function defaultTitle(servingParty: Party, setNumber: number): string {
+function defaultTitle(
+  requestType: DiscoveryRequestType,
+  servingParty: Party,
+  setNumber: number,
+): string {
   const partyLabel = servingParty === "plaintiff" ? "Plaintiff" : "Defendant";
+  if (requestType === "rfp") {
+    return `${partyLabel}'s ${ordinal(setNumber)} Requests for Production`;
+  }
   return `${partyLabel}'s ${ordinal(setNumber)} Set of Interrogatories`;
 }
 
-export function NewInterrogatoryWizard({
+export function NewDiscoveryWizard({
   caseId,
+  requestType,
   onClose,
 }: {
   caseId: string;
+  requestType: DiscoveryRequestType;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -49,12 +59,17 @@ export function NewInterrogatoryWizard({
 
   // AI
   const [aiContext, setAiContext] = useState("");
-  const [desiredCount, setDesiredCount] = useState(15);
+  const aiDefault = requestType === "rfp" ? 12 : 15;
+  const aiMax = requestType === "rfp" ? 30 : 25;
+  const [desiredCount, setDesiredCount] = useState(aiDefault);
+
+  const isRfp = requestType === "rfp";
+  const labelNounPlural = isRfp ? "Requests for Production" : "Interrogatories";
 
   const { data: caseData } = trpc.cases.getById.useQuery({ caseId });
   const { data: setNumberData } = trpc.discovery.getNextSetNumber.useQuery({
     caseId,
-    requestType: "interrogatories",
+    requestType,
   });
   const setNumber = setNumberData?.setNumber ?? 1;
 
@@ -63,13 +78,14 @@ export function NewInterrogatoryWizard({
     (caseData?.detectedCaseType as string | null | undefined) ??
     undefined;
 
-  const { data: templates } = trpc.discovery.listLibraryTemplates.useQuery(
-    caseType ? { caseType } : undefined,
-  );
+  const { data: templates } = trpc.discovery.listLibraryTemplates.useQuery({
+    ...(caseType ? { caseType } : {}),
+    requestType,
+  });
 
   const computedTitle = useMemo(
-    () => defaultTitle(servingParty, setNumber),
-    [servingParty, setNumber],
+    () => defaultTitle(requestType, servingParty, setNumber),
+    [requestType, servingParty, setNumber],
   );
   const effectiveTitle = titleEdited ? title : computedTitle;
 
@@ -108,6 +124,7 @@ export function NewInterrogatoryWizard({
         .filter((s) => s.length > 0);
       createFromLibrary.mutate({
         caseId,
+        requestType,
         servingParty,
         templateId,
         title: effectiveTitle,
@@ -116,6 +133,7 @@ export function NewInterrogatoryWizard({
     } else if (source === "ai") {
       createFromAi.mutate({
         caseId,
+        requestType,
         servingParty,
         title: effectiveTitle,
         desiredCount,
@@ -124,6 +142,7 @@ export function NewInterrogatoryWizard({
     } else {
       createBlank.mutate({
         caseId,
+        requestType,
         servingParty,
         title: effectiveTitle,
       });
@@ -134,7 +153,9 @@ export function NewInterrogatoryWizard({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-md border border-zinc-700 bg-zinc-950 p-6 text-zinc-100">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">New Interrogatory Set</h2>
+          <h2 className="text-lg font-semibold">
+            New {isRfp ? "Request for Production" : "Interrogatory Set"}
+          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -235,7 +256,8 @@ export function NewInterrogatoryWizard({
                   >
                     <div className="font-medium">{t.title}</div>
                     <div className="mt-1 text-xs text-zinc-400">
-                      {t.caseType} · {t.questionCount} questions
+                      {t.caseType} · {t.questionCount}{" "}
+                      {isRfp ? "requests" : "questions"}
                     </div>
                     {t.description && (
                       <div className="mt-1 text-xs text-zinc-500">
@@ -248,14 +270,19 @@ export function NewInterrogatoryWizard({
 
               <div>
                 <label className="block text-sm font-medium">
-                  Add custom questions to template (one per line, optional)
+                  Add custom {labelNounPlural.toLowerCase()} to template (one per
+                  line, optional)
                 </label>
                 <textarea
                   value={additionalQuestionsText}
                   onChange={(e) => setAdditionalQuestionsText(e.target.value)}
                   rows={4}
                   className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-900 p-2 text-sm"
-                  placeholder={"Identify each communication you had with...\nDescribe in detail..."}
+                  placeholder={
+                    isRfp
+                      ? "All documents relating to...\nAll communications between..."
+                      : "Identify each communication you had with...\nDescribe in detail..."
+                  }
                 />
               </div>
             </div>
@@ -272,24 +299,31 @@ export function NewInterrogatoryWizard({
                   onChange={(e) => setAiContext(e.target.value)}
                   rows={4}
                   className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-900 p-2 text-sm"
-                  placeholder="e.g., focus on damages timeline, emails between Alice and Bob, ..."
+                  placeholder={
+                    isRfp
+                      ? "e.g., focus on email custodians, financial records, comparator personnel files..."
+                      : "e.g., focus on damages timeline, emails between Alice and Bob, ..."
+                  }
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium">
-                  Number of questions: {desiredCount}
+                  Number of {isRfp ? "requests" : "questions"}: {desiredCount}
                 </label>
                 <input
                   type="range"
                   min={5}
-                  max={25}
+                  max={aiMax}
                   value={desiredCount}
                   onChange={(e) => setDesiredCount(Number(e.target.value))}
                   className="mt-2 w-full"
                 />
                 <div className="mt-1 flex justify-between text-xs text-zinc-500">
                   <span>5</span>
-                  <span>25 (federal cap)</span>
+                  <span>
+                    {aiMax}
+                    {isRfp ? "" : " (federal cap)"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -297,7 +331,8 @@ export function NewInterrogatoryWizard({
 
           {source === "blank" && (
             <p className="text-sm text-zinc-400">
-              Start with an empty set. You can add questions on the next screen.
+              Start with an empty set. You can add{" "}
+              {labelNounPlural.toLowerCase()} on the next screen.
             </p>
           )}
         </div>
@@ -328,3 +363,6 @@ export function NewInterrogatoryWizard({
     </div>
   );
 }
+
+// Backwards-compat alias for any lingering imports.
+export const NewInterrogatoryWizard = NewDiscoveryWizard;
