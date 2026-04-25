@@ -7,6 +7,7 @@ import { cases } from "@/server/db/schema/cases";
 import { users } from "@/server/db/schema/users";
 import { InterrogatoriesPdf } from "./renderers/interrogatories-pdf";
 import { RfpsPdf } from "./renderers/rfps-pdf";
+import { RfasPdf } from "./renderers/rfas-pdf";
 import type { MotionCaption } from "@/server/services/motions/types";
 import type { SignerInfo } from "@/server/services/packages/types";
 
@@ -72,7 +73,12 @@ export async function buildDiscoveryPdf(input: {
   const servingParty =
     request.servingParty === "defendant" ? "defendant" : "plaintiff";
 
-  const Renderer = request.requestType === "rfp" ? RfpsPdf : InterrogatoriesPdf;
+  const Renderer =
+    request.requestType === "rfp"
+      ? RfpsPdf
+      : request.requestType === "rfa"
+        ? RfasPdf
+        : InterrogatoriesPdf;
 
   const buf = await renderToBuffer(
     React.createElement(Renderer, {
