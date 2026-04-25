@@ -54,6 +54,7 @@ import { partiesRouter } from "./routers/parties";
 import { servicesRouter } from "./routers/services";
 import { dripSequencesRouter } from "./routers/drip-sequences";
 import { discoveryRouter } from "./routers/discovery";
+import { privilegeLogRouter } from "./routers/privilege-log";
 
 export const appRouter = router({
   users: usersRouter,
@@ -111,6 +112,7 @@ export const appRouter = router({
   services: servicesRouter,
   dripSequences: dripSequencesRouter,
   discovery: discoveryRouter,
+  privilegeLog: privilegeLogRouter,
 });
 
 export type AppRouter = typeof appRouter;
