@@ -57,6 +57,7 @@ import { discoveryRouter } from "./routers/discovery";
 import { privilegeLogRouter } from "./routers/privilege-log";
 import { witnessListsRouter } from "./routers/witness-lists";
 import { exhibitListsRouter } from "./routers/exhibit-lists";
+import { juryInstructionsRouter } from "./routers/jury-instructions";
 
 export const appRouter = router({
   users: usersRouter,
@@ -117,6 +118,7 @@ export const appRouter = router({
   privilegeLog: privilegeLogRouter,
   witnessLists: witnessListsRouter,
   exhibitLists: exhibitListsRouter,
+  juryInstructions: juryInstructionsRouter,
 });
 
 export type AppRouter = typeof appRouter;
