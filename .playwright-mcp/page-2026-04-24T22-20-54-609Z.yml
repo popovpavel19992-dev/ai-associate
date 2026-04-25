@@ -1,0 +1,92 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "ClearTerms" [ref=e6] [cursor=pointer]:
+            - /url: /dashboard
+          - button [ref=e8]:
+            - img
+        - separator [ref=e9]
+        - navigation [ref=e10]:
+          - link "Dashboard" [ref=e11] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e12]
+            - text: Dashboard
+          - link "Contracts" [ref=e17] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e18]
+            - text: Contracts
+          - link "Drafts" [ref=e22] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e23]
+            - text: Drafts
+          - link "Quick Analysis" [ref=e25] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e26]
+            - text: Quick Analysis
+          - link "Cases" [ref=e28] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e29]
+            - text: Cases
+          - link "Filings" [ref=e32] [cursor=pointer]:
+            - /url: /filings
+            - img [ref=e33]
+            - text: Filings
+          - link "Research" [ref=e36] [cursor=pointer]:
+            - /url: /research
+            - img [ref=e37]
+            - text: Research
+          - link "Collections" [ref=e40] [cursor=pointer]:
+            - /url: /research/collections
+            - img [ref=e41]
+            - text: Collections
+          - link "Clients" [ref=e43] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e44]
+            - text: Clients
+          - link "Calendar" [ref=e49] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e50]
+            - text: Calendar
+          - link "Notifications" [ref=e52] [cursor=pointer]:
+            - /url: /notifications
+            - img [ref=e53]
+            - text: Notifications
+          - link "Templates" [ref=e56] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e57]
+            - text: Templates
+          - link "Email templates" [ref=e60] [cursor=pointer]:
+            - /url: /settings/email-templates
+            - img [ref=e61]
+            - text: Email templates
+          - link "Deadline rules" [ref=e64] [cursor=pointer]:
+            - /url: /settings/deadline-rules
+            - img [ref=e65]
+            - text: Deadline rules
+          - link "Settings" [ref=e68] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e69]
+            - text: Settings
+        - separator [ref=e76]
+        - button "Open user menu" [ref=e103] [cursor=pointer]:
+          - img "Pavel Popov's logo" [ref=e106]
+    - main [ref=e79]:
+      - generic [ref=e81]:
+        - heading "Dropbox Sign" [level=1] [ref=e82]
+        - paragraph [ref=e83]: Paste your Dropbox Sign API key. Find it at app.hellosign.com → API → Production API Key.
+        - generic [ref=e84]:
+          - generic [ref=e85]: API key
+          - textbox "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" [ref=e86]
+        - generic [ref=e87]:
+          - generic [ref=e88]: Sender name (optional)
+          - textbox "Your Firm Name" [ref=e89]: ClearTerms Dev
+        - generic [ref=e90]:
+          - button "Test connection" [disabled]
+          - button "Save" [disabled]
+          - button "Disconnect" [ref=e91]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e97] [cursor=pointer]:
+    - img [ref=e98]
+  - alert [ref=e101]

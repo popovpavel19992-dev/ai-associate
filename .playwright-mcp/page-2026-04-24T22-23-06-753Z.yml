@@ -1,0 +1,204 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link [ref=e189] [cursor=pointer]:
+            - /url: /dashboard
+            - text: ClearTerms
+          - button [ref=e8]:
+            - img
+        - separator [ref=e9]
+        - navigation [ref=e10]:
+          - link [ref=e190] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e12]
+            - text: Dashboard
+          - link [ref=e191] [cursor=pointer]:
+            - /url: /contracts
+            - img [ref=e18]
+            - text: Contracts
+          - link [ref=e192] [cursor=pointer]:
+            - /url: /drafts
+            - img [ref=e23]
+            - text: Drafts
+          - link [ref=e193] [cursor=pointer]:
+            - /url: /quick-analysis
+            - img [ref=e26]
+            - text: Quick Analysis
+          - link [ref=e194] [cursor=pointer]:
+            - /url: /cases
+            - img [ref=e29]
+            - text: Cases
+          - link [ref=e195] [cursor=pointer]:
+            - /url: /filings
+            - img [ref=e33]
+            - text: Filings
+          - link [ref=e196] [cursor=pointer]:
+            - /url: /research
+            - img [ref=e37]
+            - text: Research
+          - link [ref=e197] [cursor=pointer]:
+            - /url: /research/collections
+            - img [ref=e41]
+            - text: Collections
+          - link [ref=e198] [cursor=pointer]:
+            - /url: /clients
+            - img [ref=e44]
+            - text: Clients
+          - link [ref=e199] [cursor=pointer]:
+            - /url: /calendar
+            - img [ref=e50]
+            - text: Calendar
+          - link [ref=e200] [cursor=pointer]:
+            - /url: /notifications
+            - img [ref=e53]
+            - text: Notifications
+          - link [ref=e201] [cursor=pointer]:
+            - /url: /settings/templates
+            - img [ref=e57]
+            - text: Templates
+          - link [ref=e202] [cursor=pointer]:
+            - /url: /settings/email-templates
+            - img [ref=e61]
+            - text: Email templates
+          - link [ref=e203] [cursor=pointer]:
+            - /url: /settings/deadline-rules
+            - img [ref=e65]
+            - text: Deadline rules
+          - link [ref=e204] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e69]
+            - text: Settings
+        - separator [ref=e76]
+        - button [ref=e205] [cursor=pointer]:
+          - img [ref=e206]
+    - main [ref=e79]:
+      - generic [ref=e81]:
+        - generic [ref=e100]:
+          - generic [ref=e101]:
+            - generic [ref=e102]: Intake
+            - generic [ref=e104]: →
+          - generic [ref=e105]:
+            - generic [ref=e106]: Research
+            - generic [ref=e107]: →
+          - generic [ref=e108]:
+            - generic [ref=e109]: Active Work
+            - generic [ref=e110]: →
+          - generic [ref=e111]:
+            - generic [ref=e112]: Resolution
+            - generic [ref=e113]: →
+          - generic [ref=e115]: Closed
+        - generic [ref=e116]:
+          - generic [ref=e117]:
+            - button [ref=e207]: Overview
+            - button [ref=e208]: Tasks
+            - button [ref=e209]: Calendar
+            - button [ref=e210]: Time
+            - button [ref=e211]: Report
+            - button [ref=e212]: Timeline
+            - button [ref=e213]: Contracts
+            - button [ref=e214]: Research
+            - button [ref=e215]: Messages
+            - button [ref=e216]: Requests
+            - button [ref=e217]: Intake
+            - button [ref=e218]: Updates
+            - button [ref=e219]: Emails
+            - button [ref=e220]: Signatures
+            - button [ref=e221]: Deadlines
+            - button [ref=e222]: Motions
+            - button [ref=e223]: Filings
+          - generic [ref=e135]:
+            - button [ref=e224]:
+              - img
+              - text: Mute
+            - button [ref=e225]:
+              - text: Change Stage
+              - img
+        - generic [ref=e140]:
+          - generic [ref=e142]:
+            - complementary [ref=e143]:
+              - generic [ref=e144]:
+                - heading [level=2] [ref=e226]: Signatures
+                - button [ref=e227]:
+                  - img
+                  - text: New
+              - paragraph [ref=e148]: No signature requests yet.
+            - paragraph [ref=e150]: Select a request or start a new one.
+          - generic [ref=e151]:
+            - generic [ref=e152]:
+              - heading [level=3] [ref=e228]: Client
+              - link [ref=e229] [cursor=pointer]:
+                - /url: /clients/7f2daf74-e485-4875-874a-54af227cedf5
+                - text: Acme Corporation
+              - generic [ref=e155]:
+                - img [ref=e156]
+                - text: Organization
+            - generic [ref=e160]:
+              - heading [level=3] [ref=e230]: Case Team
+              - generic [ref=e165]:
+                - generic [ref=e166]: PP
+                - generic [ref=e167]:
+                  - generic [ref=e168]: Pavel Popov
+                  - generic [ref=e169]: Lead
+            - generic [ref=e170]:
+              - generic [ref=e172]: Portal Visibility
+              - generic [ref=e173]:
+                - generic [ref=e174]:
+                  - generic [ref=e175]: Documents
+                  - button [ref=e231]: Visible
+                - generic [ref=e177]:
+                  - generic [ref=e178]: Tasks
+                  - button [ref=e232]: Visible
+                - generic [ref=e180]:
+                  - generic [ref=e181]: Calendar
+                  - button [ref=e233]: Visible
+                - generic [ref=e183]:
+                  - generic [ref=e184]: Billing
+                  - button [ref=e234]: Visible
+                - generic [ref=e186]:
+                  - generic [ref=e187]: Messages
+                  - button [ref=e235]: Visible
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e89] [cursor=pointer]:
+    - img [ref=e90]
+  - alert [ref=e93]
+  - dialog "New signature request" [ref=e239]:
+    - heading "New signature request" [level=2] [ref=e241]
+    - generic [ref=e242]:
+      - generic [ref=e243]:
+        - generic [ref=e244]: Source
+        - generic [ref=e245]:
+          - generic [ref=e246]:
+            - radio "Saved template" [checked] [active] [ref=e247]
+            - text: Saved template
+          - generic [ref=e248]:
+            - radio "Case document" [ref=e249]
+            - text: Case document
+      - generic [ref=e250]:
+        - generic [ref=e251]: Template
+        - combobox [ref=e252]:
+          - option "Pick a template…" [selected]
+      - generic [ref=e253]:
+        - generic [ref=e254]: Title
+        - textbox "Retainer Agreement — Acme" [ref=e255]
+      - generic [ref=e256]:
+        - generic [ref=e257]: Cover message (optional)
+        - textbox [ref=e258]
+      - generic [ref=e259]:
+        - checkbox "Use drag-drop editor (custom field placement, up to 5 signers)" [ref=e260]
+        - text: Use drag-drop editor (custom field placement, up to 5 signers)
+      - generic [ref=e261]:
+        - generic [ref=e262]: Client contact
+        - combobox [ref=e263]:
+          - option "Pick contact…" [selected]
+          - option "Jane Doe — jane@acmecorp.com"
+      - generic [ref=e264]:
+        - checkbox "Also require my signature" [checked] [ref=e265]
+        - text: Also require my signature
+    - generic [ref=e266]:
+      - button "Cancel" [ref=e267]
+      - button "Send" [disabled]
+    - button "Close" [ref=e268]:
+      - img
+      - generic [ref=e269]: Close

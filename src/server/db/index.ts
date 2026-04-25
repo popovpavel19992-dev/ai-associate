@@ -35,6 +35,8 @@ import * as emailDripEnrollmentsSchema from "./schema/email-drip-enrollments";
 import * as discoveryRequestTemplatesSchema from "./schema/discovery-request-templates";
 import * as caseDiscoveryRequestsSchema from "./schema/case-discovery-requests";
 import * as casePrivilegeLogEntriesSchema from "./schema/case-privilege-log-entries";
+import * as caseWitnessListsSchema from "./schema/case-witness-lists";
+import * as caseWitnessesSchema from "./schema/case-witnesses";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -75,5 +77,7 @@ export const db = drizzle(client, {
     ...discoveryRequestTemplatesSchema,
     ...caseDiscoveryRequestsSchema,
     ...casePrivilegeLogEntriesSchema,
+    ...caseWitnessListsSchema,
+    ...caseWitnessesSchema,
   },
 });
