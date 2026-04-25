@@ -125,6 +125,63 @@ const TEMPLATES: SeedTemplate[] = [
       "All documents you intend to use at trial, in any deposition, or in any dispositive motion.",
     ],
   },
+  {
+    caseType: "employment",
+    requestType: "rfa",
+    title: "Standard Employment Discrimination RFAs — First Set",
+    description:
+      "Canned set of plaintiff-side requests for admission for employment discrimination, retaliation, and wrongful termination matters.",
+    questions: [
+      "Admit that Plaintiff was employed by Defendant from [start date] until [end date].",
+      "Admit that Plaintiff's employment with Defendant was terminated by Defendant on [date].",
+      "Admit that Defendant did not provide Plaintiff with a written reason for termination at the time of termination.",
+      "Admit that Plaintiff received satisfactory or above performance evaluations during the twelve (12) months preceding termination.",
+      "Admit that Plaintiff complained, formally or informally, to Defendant about discrimination or harassment prior to termination.",
+      "Admit that no investigation of Plaintiff's complaint was conducted by Defendant prior to termination.",
+      "Admit that Plaintiff is a member of a protected class under Title VII of the Civil Rights Act of 1964.",
+      "Admit that Defendant employs more than fifteen (15) employees.",
+      "Admit that the documents attached as Exhibit A are true and accurate copies of Plaintiff's personnel file.",
+      "Admit that Defendant did not offer Plaintiff a reasonable accommodation for any disclosed disability.",
+      "Admit that the policies attached as Exhibit B were in effect during Plaintiff's employment.",
+      "Admit that Defendant's stated reason for termination is pretextual.",
+    ],
+  },
+  {
+    caseType: "contract",
+    requestType: "rfa",
+    title: "Standard Breach of Contract RFAs — First Set",
+    description:
+      "Canned set of requests for admission for breach of contract litigation, focused on formation, performance, breach, and authentication of documents.",
+    questions: [
+      "Admit that Defendant executed the contract attached as Exhibit A on [date].",
+      "Admit that the contract attached as Exhibit A is a true and correct copy of the parties' agreement.",
+      "Admit that Plaintiff performed all material conditions and obligations of Plaintiff under the contract prior to the alleged breach.",
+      "Admit that Defendant failed to make payment of $[amount] when due under Section [X] of the contract.",
+      "Admit that Defendant did not provide written notice of any alleged defect in Plaintiff's performance.",
+      "Admit that the contract contains no provision excusing Defendant's performance under the circumstances of this case.",
+      "Admit that the documents attached as Exhibit B are true and correct copies of correspondence between the parties.",
+      "Admit that Defendant has retained the goods/services delivered by Plaintiff.",
+      "Admit that Defendant has not paid Plaintiff any amount under the contract since [date].",
+      "Admit that Defendant's interpretation of Section [X] of the contract is contradicted by the plain language thereof.",
+    ],
+  },
+  {
+    caseType: "general",
+    requestType: "rfa",
+    title: "Standard Civil Litigation RFAs — First Set",
+    description:
+      "Generic set of requests for admission suitable for most civil litigation matters when no case-type-specific template applies.",
+    questions: [
+      "Admit that the events alleged in the Complaint occurred on or about [date].",
+      "Admit that the events alleged in the Complaint occurred at the location identified in Paragraph [X] of the Complaint.",
+      "Admit that the documents attached as Exhibit A are true and correct copies of records maintained by Defendant in the ordinary course of business.",
+      "Admit that Defendant carries liability insurance that may apply to the claims in this action.",
+      "Admit that Defendant has not preserved evidence relevant to this action since receiving notice of the claim.",
+      "Admit that no person from Defendant's organization has personal knowledge contradicting the material facts alleged in the Complaint.",
+      "Admit that Defendant did not retain an expert prior to the deadline for expert disclosures.",
+      "Admit that the genuineness of the documents in Plaintiff's exhibit list has not been challenged by Defendant.",
+    ],
+  },
 ];
 
 /**

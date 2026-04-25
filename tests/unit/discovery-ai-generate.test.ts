@@ -4,6 +4,7 @@ import { describe, it, expect, vi } from "vitest";
 import {
   generateInterrogatoriesFromCase,
   generateRfpsFromCase,
+  generateRfasFromCase,
 } from "@/server/services/discovery/ai-generate";
 
 function makeMockAnthropic(responseText: string) {
@@ -166,6 +167,91 @@ describe("generateRfpsFromCase", () => {
     try {
       await expect(
         generateRfpsFromCase({ caseFacts: "x", caseType: "general", servingParty: "plaintiff" }),
+      ).rejects.toThrow(/ANTHROPIC_API_KEY not configured/);
+    } finally {
+      if (prev !== undefined) process.env.ANTHROPIC_API_KEY = prev;
+    }
+  });
+});
+
+describe("generateRfasFromCase", () => {
+  it("parses { admissions: [...] } JSON shape and tags source=ai", async () => {
+    const create = vi.fn().mockResolvedValue({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            admissions: [
+              "Admit that Defendant executed the contract on January 1, 2026.",
+              "Admit that Plaintiff fully performed under the contract.",
+            ],
+          }),
+        },
+      ],
+    });
+    const client = { messages: { create } } as unknown as import("@anthropic-ai/sdk").default;
+    const out = await generateRfasFromCase(
+      {
+        caseFacts: "Contract dispute over unpaid invoice.",
+        caseType: "contract",
+        servingParty: "plaintiff",
+        desiredCount: 2,
+      },
+      { client },
+    );
+    expect(out).toHaveLength(2);
+    expect(out.map((q) => q.number)).toEqual([1, 2]);
+    expect(out.every((q) => q.source === "ai")).toBe(true);
+    expect(out[0].text).toMatch(/Admit that/);
+  });
+
+  it("uses an FRCP-36-flavored system prompt (mentions Rule 36 and 'Admit that')", async () => {
+    const create = vi.fn().mockResolvedValue({
+      content: [{ type: "text", text: '{"admissions":["Admit that X."]}' }],
+    });
+    const client = { messages: { create } } as unknown as import("@anthropic-ai/sdk").default;
+    await generateRfasFromCase(
+      { caseFacts: "x", caseType: "employment", servingParty: "defendant" },
+      { client },
+    );
+    const call = create.mock.calls[0][0];
+    expect(call.model).toBe("claude-opus-4-7");
+    expect(call.system).toMatch(/Rule[\s\S]{0,10}36/);
+    expect(call.system).toMatch(/Admit that/);
+    expect(call.system).toMatch(/single discrete/i);
+  });
+
+  it("caps returned count at 50 even if model overshoots (UI sanity)", async () => {
+    const overflow = Array.from({ length: 80 }, (_, i) => `Admit that ${i + 1}.`);
+    const create = vi.fn().mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify({ admissions: overflow }) }],
+    });
+    const client = { messages: { create } } as unknown as import("@anthropic-ai/sdk").default;
+    const out = await generateRfasFromCase(
+      { caseFacts: "x", caseType: "general", servingParty: "plaintiff", desiredCount: 100 },
+      { client },
+    );
+    expect(out).toHaveLength(50);
+  });
+
+  it("falls back to 'requests' or 'questions' keys for resilience", async () => {
+    const create = vi.fn().mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify({ requests: ["Admit A.", "Admit B."] }) }],
+    });
+    const client = { messages: { create } } as unknown as import("@anthropic-ai/sdk").default;
+    const out = await generateRfasFromCase(
+      { caseFacts: "x", caseType: "general", servingParty: "plaintiff" },
+      { client },
+    );
+    expect(out.map((q) => q.text)).toEqual(["Admit A.", "Admit B."]);
+  });
+
+  it("throws clean error when ANTHROPIC_API_KEY is missing and no client provided", async () => {
+    const prev = process.env.ANTHROPIC_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    try {
+      await expect(
+        generateRfasFromCase({ caseFacts: "x", caseType: "general", servingParty: "plaintiff" }),
       ).rejects.toThrow(/ANTHROPIC_API_KEY not configured/);
     } finally {
       if (prev !== undefined) process.env.ANTHROPIC_API_KEY = prev;
