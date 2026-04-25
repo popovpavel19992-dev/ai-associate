@@ -118,9 +118,16 @@ export function DiscoveryRequestDetail({
     return <p className="p-6 text-sm text-gray-500">Loading…</p>;
   }
 
+  const isInterrogatory = req.requestType === "interrogatories";
+  const isRfp = req.requestType === "rfp";
   const count = editable.length;
-  const overSoftCap = count > SOFT_CAP;
-  const atSoftCap = count >= SOFT_CAP;
+  // 25-cap only applies to interrogatories (FRCP 33). RFPs (FRCP 34) have no
+  // federal numerical cap.
+  const overSoftCap = isInterrogatory && count > SOFT_CAP;
+  const atSoftCap = isInterrogatory && count >= SOFT_CAP;
+  const itemNounSingular = isRfp ? "Request" : "Interrogatory";
+  const itemNounPlural = isRfp ? "Requests" : "Questions";
+  const itemHeaderLabel = isRfp ? "REQUEST FOR PRODUCTION NO." : "INTERROGATORY NO.";
 
   const updateQuestion = (idx: number, text: string) => {
     setEditable((prev) =>
@@ -175,7 +182,9 @@ export function DiscoveryRequestDetail({
 
   const onFinalize = () => {
     if (overSoftCap) {
-      toast.error(`Federal cap exceeded: ${count} interrogatories (max ${SOFT_CAP})`);
+      toast.error(
+        `Federal cap exceeded: ${count} interrogatories (max ${SOFT_CAP})`,
+      );
       return;
     }
     if (dirty) {
@@ -323,12 +332,12 @@ export function DiscoveryRequestDetail({
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">
-            Questions ({count})
+            {itemNounPlural} ({count})
           </h2>
         </div>
 
         {editable.length === 0 && !isDraft && (
-          <p className="text-sm text-zinc-500">No questions.</p>
+          <p className="text-sm text-zinc-500">No {itemNounPlural.toLowerCase()}.</p>
         )}
 
         <ol className="space-y-3">
@@ -342,6 +351,9 @@ export function DiscoveryRequestDetail({
                   {idx + 1}.
                 </div>
                 <div className="flex-1">
+                  <div className="mb-1 text-[10px] font-semibold tracking-wide text-zinc-500">
+                    {itemHeaderLabel} {idx + 1}
+                  </div>
                   {isDraft ? (
                     <textarea
                       value={q.text}
@@ -398,7 +410,7 @@ export function DiscoveryRequestDetail({
             disabled={count >= UI_HARD_LIMIT}
             className="rounded-md border border-zinc-700 px-3 py-2 text-sm hover:bg-zinc-900 disabled:opacity-50"
           >
-            + Add Question
+            + Add {itemNounSingular}
           </button>
         )}
       </section>

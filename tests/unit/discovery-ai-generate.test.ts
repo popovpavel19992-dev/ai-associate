@@ -1,7 +1,10 @@
 // tests/unit/discovery-ai-generate.test.ts
 
 import { describe, it, expect, vi } from "vitest";
-import { generateInterrogatoriesFromCase } from "@/server/services/discovery/ai-generate";
+import {
+  generateInterrogatoriesFromCase,
+  generateRfpsFromCase,
+} from "@/server/services/discovery/ai-generate";
 
 function makeMockAnthropic(responseText: string) {
   return {
@@ -79,6 +82,90 @@ describe("generateInterrogatoriesFromCase", () => {
     try {
       await expect(
         generateInterrogatoriesFromCase({ caseFacts: "x", caseType: "general", servingParty: "plaintiff" }),
+      ).rejects.toThrow(/ANTHROPIC_API_KEY not configured/);
+    } finally {
+      if (prev !== undefined) process.env.ANTHROPIC_API_KEY = prev;
+    }
+  });
+});
+
+describe("generateRfpsFromCase", () => {
+  it("parses { requests: [...] } JSON shape and tags source=ai", async () => {
+    const create = vi.fn().mockResolvedValue({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            requests: [
+              "All documents relating to the alleged breach.",
+              "All communications between the parties regarding performance.",
+            ],
+          }),
+        },
+      ],
+    });
+    const client = { messages: { create } } as unknown as import("@anthropic-ai/sdk").default;
+    const out = await generateRfpsFromCase(
+      {
+        caseFacts: "Contract dispute over $50k delivery shortfall.",
+        caseType: "contract",
+        servingParty: "plaintiff",
+        desiredCount: 2,
+      },
+      { client },
+    );
+    expect(out).toHaveLength(2);
+    expect(out.map((q) => q.number)).toEqual([1, 2]);
+    expect(out.every((q) => q.source === "ai")).toBe(true);
+    expect(out[0].text).toMatch(/documents/);
+  });
+
+  it("uses an FRCP-34-flavored system prompt (mentions Rule 34)", async () => {
+    const create = vi.fn().mockResolvedValue({
+      content: [{ type: "text", text: '{"requests":["All documents."]}' }],
+    });
+    const client = { messages: { create } } as unknown as import("@anthropic-ai/sdk").default;
+    await generateRfpsFromCase(
+      { caseFacts: "x", caseType: "employment", servingParty: "defendant" },
+      { client },
+    );
+    const call = create.mock.calls[0][0];
+    expect(call.model).toBe("claude-opus-4-7");
+    expect(call.system).toMatch(/Rule 34/);
+    expect(call.system).toMatch(/document/i);
+  });
+
+  it("caps returned count at 50 even if model overshoots (UI sanity)", async () => {
+    const overflow = Array.from({ length: 80 }, (_, i) => `All documents ${i + 1}`);
+    const create = vi.fn().mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify({ requests: overflow }) }],
+    });
+    const client = { messages: { create } } as unknown as import("@anthropic-ai/sdk").default;
+    const out = await generateRfpsFromCase(
+      { caseFacts: "x", caseType: "general", servingParty: "plaintiff", desiredCount: 100 },
+      { client },
+    );
+    expect(out).toHaveLength(50);
+  });
+
+  it("falls back to 'questions' key for resilience", async () => {
+    const create = vi.fn().mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify({ questions: ["Doc 1", "Doc 2"] }) }],
+    });
+    const client = { messages: { create } } as unknown as import("@anthropic-ai/sdk").default;
+    const out = await generateRfpsFromCase(
+      { caseFacts: "x", caseType: "general", servingParty: "plaintiff" },
+      { client },
+    );
+    expect(out.map((q) => q.text)).toEqual(["Doc 1", "Doc 2"]);
+  });
+
+  it("throws clean error when ANTHROPIC_API_KEY is missing and no client provided", async () => {
+    const prev = process.env.ANTHROPIC_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    try {
+      await expect(
+        generateRfpsFromCase({ caseFacts: "x", caseType: "general", servingParty: "plaintiff" }),
       ).rejects.toThrow(/ANTHROPIC_API_KEY not configured/);
     } finally {
       if (prev !== undefined) process.env.ANTHROPIC_API_KEY = prev;

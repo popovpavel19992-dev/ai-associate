@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { NewInterrogatoryWizard } from "./new-interrogatory-wizard";
+import {
+  NewDiscoveryWizard,
+  type DiscoveryRequestType,
+} from "./new-discovery-wizard";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -13,7 +16,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export function DiscoveryTab({ caseId }: { caseId: string }) {
-  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardType, setWizardType] = useState<DiscoveryRequestType | null>(null);
   const { data: requests, isLoading } = trpc.discovery.listForCase.useQuery({ caseId });
 
   const grouped = (requests ?? []).reduce<Record<string, typeof requests>>((acc, r) => {
@@ -23,9 +26,12 @@ export function DiscoveryTab({ caseId }: { caseId: string }) {
     return acc;
   }, {} as Record<string, typeof requests>);
 
-  // Ensure interrogatories section renders even when empty.
+  // Ensure both sections render even when empty.
   if (!grouped.interrogatories) {
     grouped.interrogatories = [] as unknown as typeof requests;
+  }
+  if (!grouped.rfp) {
+    grouped.rfp = [] as unknown as typeof requests;
   }
 
   const sectionLabel = (key: string) => {
@@ -37,15 +43,24 @@ export function DiscoveryTab({ caseId }: { caseId: string }) {
 
   return (
     <div className="space-y-6 px-4 py-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-semibold">Discovery</h2>
-        <button
-          type="button"
-          onClick={() => setWizardOpen(true)}
-          className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          New Interrogatory Set
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setWizardType("interrogatories")}
+            className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            New Interrogatory Set
+          </button>
+          <button
+            type="button"
+            onClick={() => setWizardType("rfp")}
+            className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            New Request for Production
+          </button>
+        </div>
       </div>
 
       {isLoading && <p className="text-sm text-gray-500">Loading…</p>}
@@ -97,10 +112,11 @@ export function DiscoveryTab({ caseId }: { caseId: string }) {
           );
         })}
 
-      {wizardOpen && (
-        <NewInterrogatoryWizard
+      {wizardType && (
+        <NewDiscoveryWizard
           caseId={caseId}
-          onClose={() => setWizardOpen(false)}
+          requestType={wizardType}
+          onClose={() => setWizardType(null)}
         />
       )}
     </div>

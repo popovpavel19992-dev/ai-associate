@@ -136,11 +136,21 @@ describe("discovery service", () => {
     it("throws when count > 25 (FRCP 33 cap)", async () => {
       const tooMany = Array.from({ length: 26 }, (_, i) => ({ number: i + 1, text: `Q${i + 1}` }));
       const { db } = makeMockDb({
-        selectRows: [[{ status: "draft", questions: tooMany }]],
+        selectRows: [[{ status: "draft", requestType: "interrogatories", questions: tooMany }]],
       });
       await expect(
         finalizeDiscoveryRequest(db, "req-1"),
       ).rejects.toThrow(/Federal cap exceeded/);
+    });
+
+    it("does NOT block RFP finalize when count > 25 (no FRCP 34 cap)", async () => {
+      const many = Array.from({ length: 40 }, (_, i) => ({ number: i + 1, text: `R${i + 1}` }));
+      const { db, ops } = makeMockDb({
+        selectRows: [[{ status: "draft", requestType: "rfp", questions: many }]],
+      });
+      await finalizeDiscoveryRequest(db, "req-1");
+      const upd = ops.find((o) => o.kind === "update")!;
+      expect(upd.set.status).toBe("final");
     });
 
     it("throws when status is not 'draft'", async () => {

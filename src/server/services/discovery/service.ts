@@ -23,6 +23,7 @@ const FEDERAL_INTERROGATORY_CAP = 25;
 export interface LibraryTemplateRow {
   id: string;
   caseType: string;
+  requestType: string;
   title: string;
   description: string | null;
   questionCount: number;
@@ -32,6 +33,7 @@ export async function listLibraryTemplates(
   db: Db,
   orgId: string,
   caseType?: string,
+  requestType?: string,
 ): Promise<LibraryTemplateRow[]> {
   // Visibility: global templates (orgId IS NULL) plus the caller's org-specific
   // templates. Active only.
@@ -39,14 +41,16 @@ export async function listLibraryTemplates(
     isNull(discoveryRequestTemplates.orgId),
     eq(discoveryRequestTemplates.orgId, orgId),
   );
-  const where = caseType
-    ? and(eq(discoveryRequestTemplates.isActive, true), orgScope, eq(discoveryRequestTemplates.caseType, caseType))
-    : and(eq(discoveryRequestTemplates.isActive, true), orgScope);
+  const filters = [eq(discoveryRequestTemplates.isActive, true), orgScope];
+  if (caseType) filters.push(eq(discoveryRequestTemplates.caseType, caseType));
+  if (requestType) filters.push(eq(discoveryRequestTemplates.requestType, requestType));
+  const where = and(...filters);
 
   const rows = await db
     .select({
       id: discoveryRequestTemplates.id,
       caseType: discoveryRequestTemplates.caseType,
+      requestType: discoveryRequestTemplates.requestType,
       title: discoveryRequestTemplates.title,
       description: discoveryRequestTemplates.description,
       questions: discoveryRequestTemplates.questions,
@@ -54,9 +58,10 @@ export async function listLibraryTemplates(
     .from(discoveryRequestTemplates)
     .where(where);
 
-  return rows.map((r: { id: string; caseType: string; title: string; description: string | null; questions: unknown }) => ({
+  return rows.map((r: { id: string; caseType: string; requestType: string; title: string; description: string | null; questions: unknown }) => ({
     id: r.id,
     caseType: r.caseType,
+    requestType: r.requestType,
     title: r.title,
     description: r.description,
     questionCount: Array.isArray(r.questions) ? r.questions.length : 0,
@@ -82,6 +87,7 @@ export async function getTemplate(
 export interface CreateDiscoveryRequestInput {
   orgId: string;
   caseId: string;
+  requestType?: "interrogatories" | "rfp" | "rfa";
   servingParty: "plaintiff" | "defendant";
   setNumber: number;
   title: string;
@@ -112,7 +118,7 @@ export async function createDiscoveryRequest(
     .values({
       orgId: input.orgId,
       caseId: input.caseId,
-      requestType: "interrogatories",
+      requestType: input.requestType ?? "interrogatories",
       servingParty: input.servingParty,
       setNumber: input.setNumber,
       title: input.title,
@@ -185,7 +191,11 @@ export async function finalizeDiscoveryRequest(
   // FRCP 33(a)(1): no more than 25 written interrogatories, including all
   // discrete subparts. We enforce on the question count only — subpart-aware
   // counting is left for a future revision since "discrete" is judgment-laden.
-  if (questions.length > FEDERAL_INTERROGATORY_CAP) {
+  // RFPs (FRCP 34) and RFAs have no federal numerical cap.
+  if (
+    row.requestType === "interrogatories" &&
+    questions.length > FEDERAL_INTERROGATORY_CAP
+  ) {
     throw new Error(
       `Federal cap exceeded: ${questions.length} interrogatories (max ${FEDERAL_INTERROGATORY_CAP})`,
     );

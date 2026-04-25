@@ -6,6 +6,7 @@ import { caseDiscoveryRequests } from "@/server/db/schema/case-discovery-request
 import { cases } from "@/server/db/schema/cases";
 import { users } from "@/server/db/schema/users";
 import { InterrogatoriesPdf } from "./renderers/interrogatories-pdf";
+import { RfpsPdf } from "./renderers/rfps-pdf";
 import type { MotionCaption } from "@/server/services/motions/types";
 import type { SignerInfo } from "@/server/services/packages/types";
 
@@ -18,7 +19,17 @@ export class DiscoveryRequestNotFoundError extends Error {
   }
 }
 
+/**
+ * @deprecated Use buildDiscoveryPdf, which dispatches by request_type.
+ * Kept as an alias for callers that still import the old name.
+ */
 export async function buildInterrogatoriesPdf(input: {
+  requestId: string;
+}): Promise<Buffer> {
+  return buildDiscoveryPdf(input);
+}
+
+export async function buildDiscoveryPdf(input: {
   requestId: string;
 }): Promise<Buffer> {
   const [request] = await db
@@ -61,8 +72,10 @@ export async function buildInterrogatoriesPdf(input: {
   const servingParty =
     request.servingParty === "defendant" ? "defendant" : "plaintiff";
 
+  const Renderer = request.requestType === "rfp" ? RfpsPdf : InterrogatoriesPdf;
+
   const buf = await renderToBuffer(
-    React.createElement(InterrogatoriesPdf, {
+    React.createElement(Renderer, {
       caption,
       request: {
         title: request.title,
