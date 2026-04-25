@@ -153,6 +153,19 @@ describe("discovery service", () => {
       expect(upd.set.status).toBe("final");
     });
 
+    it("does NOT block RFA finalize when count > 25 (no FRCP 36 cap)", async () => {
+      const many = Array.from({ length: 40 }, (_, i) => ({
+        number: i + 1,
+        text: `Admit that ${i + 1}.`,
+      }));
+      const { db, ops } = makeMockDb({
+        selectRows: [[{ status: "draft", requestType: "rfa", questions: many }]],
+      });
+      await finalizeDiscoveryRequest(db, "req-1");
+      const upd = ops.find((o) => o.kind === "update")!;
+      expect(upd.set.status).toBe("final");
+    });
+
     it("throws when status is not 'draft'", async () => {
       const { db } = makeMockDb({
         selectRows: [[{ status: "final", questions: [] }]],
