@@ -5,6 +5,7 @@ import { seedMotionTemplates } from "./seed/motion-templates";
 import { seedDiscoveryRequestTemplates } from "./seed/discovery-request-templates";
 import { seedJuryInstructionTemplates } from "./seed/jury-instruction-templates";
 import { seedVoirDireQuestionTemplates } from "./seed/voir-dire-question-templates";
+import { seedDepositionTopicTemplates } from "./seed/deposition-topic-templates";
 
 const SYSTEM_PRESETS = [
   {
@@ -58,6 +59,10 @@ async function seed() {
   const voirRes = await seedVoirDireQuestionTemplates();
   console.log(
     `Seeded voir dire question templates: ${voirRes.inserted} inserted, ${voirRes.skipped} skipped`,
+  );
+  const depRes = await seedDepositionTopicTemplates();
+  console.log(
+    `Seeded deposition topic templates: ${depRes.inserted} inserted, ${depRes.skipped} skipped`,
   );
   process.exit(0);
 }
