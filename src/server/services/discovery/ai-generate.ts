@@ -12,6 +12,8 @@ const DEFAULT_COUNT = 15;
 const MAX_COUNT = 25; // FRCP 33(a)(1) cap — never propose more than the law allows.
 const RFP_DEFAULT_COUNT = 12;
 const RFP_MAX_COUNT = 50; // No federal cap, but UI sanity ceiling.
+const RFA_DEFAULT_COUNT = 15;
+const RFA_MAX_COUNT = 50; // No federal cap (FRCP 36); UI sanity ceiling.
 
 export interface GenerateInterrogatoriesInput {
   caseFacts: string;
@@ -171,6 +173,96 @@ export async function generateRfpsFromCase(
   const { requests } = extractRfpJson(text);
 
   return requests.slice(0, RFP_MAX_COUNT).map((q, i) => ({
+    number: i + 1,
+    text: q.trim(),
+    source: "ai" as const,
+  }));
+}
+
+export interface GenerateRfasInput {
+  caseFacts: string;
+  caseType: string;
+  servingParty: "plaintiff" | "defendant";
+  desiredCount?: number;
+}
+
+const RFA_SYSTEM_PROMPT =
+  "You are an experienced litigation attorney drafting Requests for Admission " +
+  "under Federal Rule of Civil Procedure 36. Each RFA must be a single discrete " +
+  "factual proposition the opposing party can admit, deny, or claim lack of " +
+  "knowledge. Avoid compound or argumentative requests. Each item must address " +
+  "ONE fact only — never combine multiple facts with 'and' or 'or'. Cover the " +
+  "permissible subject matter under Rule 36(a)(1): facts, the application of " +
+  "law to facts, opinions about either, and the genuineness of documents. " +
+  "Structure each as 'Admit that [single fact].'";
+
+function buildRfaUserPrompt(input: GenerateRfasInput, count: number): string {
+  return [
+    `Case type: ${input.caseType}`,
+    `Serving party: ${input.servingParty}`,
+    `Number of admissions to draft: ${count}`,
+    "",
+    "Case facts:",
+    input.caseFacts.trim() || "(no facts provided)",
+    "",
+    "Each item must be a single factual proposition (NOT a question, NOT a document request).",
+    "Begin each with 'Admit that '.",
+    "",
+    "Respond with JSON ONLY in this exact shape (no markdown, no commentary):",
+    '{ "admissions": ["Admit that ...", "Admit that ...", ...] }',
+  ].join("\n");
+}
+
+function extractRfaJson(text: string): { admissions: string[] } {
+  const stripped = text.replace(/```(?:json)?\s*([\s\S]*?)```/g, "$1").trim();
+  const start = stripped.indexOf("{");
+  const end = stripped.lastIndexOf("}");
+  if (start === -1 || end === -1) {
+    throw new Error("AI response did not contain JSON");
+  }
+  const parsed = JSON.parse(stripped.slice(start, end + 1));
+  // Accept `admissions`, `requests`, or `questions` for resilience.
+  const arr =
+    Array.isArray(parsed?.admissions) ? parsed.admissions
+    : Array.isArray(parsed?.requests) ? parsed.requests
+    : Array.isArray(parsed?.questions) ? parsed.questions
+    : null;
+  if (!arr) {
+    throw new Error("AI response missing 'admissions' array");
+  }
+  return {
+    admissions: arr.filter(
+      (q: unknown): q is string => typeof q === "string" && q.trim().length > 0,
+    ),
+  };
+}
+
+export async function generateRfasFromCase(
+  input: GenerateRfasInput,
+  deps: { client?: Anthropic } = {},
+): Promise<DiscoveryQuestion[]> {
+  if (!deps.client && !process.env.ANTHROPIC_API_KEY) {
+    throw new Error("ANTHROPIC_API_KEY not configured");
+  }
+
+  const desired = Math.max(
+    1,
+    Math.min(RFA_MAX_COUNT, input.desiredCount ?? RFA_DEFAULT_COUNT),
+  );
+  const client = deps.client ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: 4096,
+    system: RFA_SYSTEM_PROMPT,
+    messages: [{ role: "user", content: buildRfaUserPrompt(input, desired) }],
+  });
+
+  const textBlock = response.content.find((b) => b.type === "text");
+  const text = textBlock && "text" in textBlock ? textBlock.text : "";
+  const { admissions } = extractRfaJson(text);
+
+  return admissions.slice(0, RFA_MAX_COUNT).map((q, i) => ({
     number: i + 1,
     text: q.trim(),
     source: "ai" as const,

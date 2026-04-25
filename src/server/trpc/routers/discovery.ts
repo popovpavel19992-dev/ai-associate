@@ -13,6 +13,7 @@ import * as discoveryService from "@/server/services/discovery/service";
 import {
   generateInterrogatoriesFromCase,
   generateRfpsFromCase,
+  generateRfasFromCase,
 } from "@/server/services/discovery/ai-generate";
 import type { DiscoveryQuestion } from "@/server/db/schema/case-discovery-requests";
 
@@ -23,10 +24,10 @@ function requireOrgId(ctx: { user: { orgId: string | null } }): string {
 }
 
 const SERVING_PARTY = z.enum(["plaintiff", "defendant"]);
-const REQUEST_TYPE = z.enum(["interrogatories", "rfp"]);
+const REQUEST_TYPE = z.enum(["interrogatories", "rfp", "rfa"]);
 
 function defaultTitleFor(
-  requestType: "interrogatories" | "rfp",
+  requestType: "interrogatories" | "rfp" | "rfa",
   party: "plaintiff" | "defendant",
   setNumber: number,
   suffix: "" | " (AI)" = "",
@@ -36,6 +37,9 @@ function defaultTitleFor(
   const ordinal = ordinals[setNumber - 1] ?? `${setNumber}th`;
   if (requestType === "rfp") {
     return `${partyLabel}'s ${ordinal} Requests for Production${suffix}`;
+  }
+  if (requestType === "rfa") {
+    return `${partyLabel}'s ${ordinal} Set of Requests for Admission${suffix}`;
   }
   return `${partyLabel}'s ${ordinal} Set of Interrogatories${suffix}`;
 }
@@ -204,6 +208,13 @@ export const discoveryRouter = router({
             servingParty: input.servingParty,
             desiredCount: input.desiredCount,
           });
+        } else if (input.requestType === "rfa") {
+          questions = await generateRfasFromCase({
+            caseFacts,
+            caseType: resolveCaseType(caseRow),
+            servingParty: input.servingParty,
+            desiredCount: input.desiredCount,
+          });
         } else {
           // FRCP 33: cap user-requested interrogatory count at 25.
           const cappedCount =
@@ -226,10 +237,12 @@ export const discoveryRouter = router({
       }
 
       const setNumber = await discoveryService.getNextSetNumber(ctx.db, input.caseId, input.requestType);
-      const fallbackTitle =
-        input.requestType === "rfp"
-          ? defaultTitleFor("rfp", input.servingParty, setNumber, " (AI)")
-          : defaultTitleFor("interrogatories", input.servingParty, setNumber, " (AI)");
+      const fallbackTitle = defaultTitleFor(
+        input.requestType,
+        input.servingParty,
+        setNumber,
+        " (AI)",
+      );
       return discoveryService.createDiscoveryRequest(ctx.db, {
         orgId,
         caseId: input.caseId,
