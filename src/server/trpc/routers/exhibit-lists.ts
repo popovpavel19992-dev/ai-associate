@@ -8,6 +8,8 @@ import { eq } from "drizzle-orm";
 import { protectedProcedure, router } from "@/server/trpc/trpc";
 import { assertCaseAccess } from "@/server/trpc/lib/permissions";
 import { caseExhibits } from "@/server/db/schema/case-exhibits";
+import { caseWitnesses } from "@/server/db/schema/case-witnesses";
+import { caseWitnessLists } from "@/server/db/schema/case-witness-lists";
 import * as exhibitListsService from "@/server/services/exhibit-lists/service";
 
 function requireOrgId(ctx: { user: { orgId: string | null } }): string {
@@ -78,6 +80,31 @@ const EXHIBIT_FIELDS = {
 };
 
 export const exhibitListsRouter = router({
+  // Aggregated list of witnesses across every witness list on this case —
+  // powers the sponsoring-witness autocomplete in the exhibit form.
+  witnessesForCase: protectedProcedure
+    .input(z.object({ caseId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      await assertCaseAccess(ctx, input.caseId);
+      const rows = await ctx.db
+        .select({
+          id: caseWitnesses.id,
+          fullName: caseWitnesses.fullName,
+          listId: caseWitnesses.listId,
+        })
+        .from(caseWitnesses)
+        .innerJoin(
+          caseWitnessLists,
+          eq(caseWitnesses.listId, caseWitnessLists.id),
+        )
+        .where(eq(caseWitnessLists.caseId, input.caseId));
+      const seen = new Map<string, { id: string; fullName: string }>();
+      for (const r of rows as { id: string; fullName: string }[]) {
+        if (!seen.has(r.id)) seen.set(r.id, { id: r.id, fullName: r.fullName });
+      }
+      return [...seen.values()].sort((a, b) => a.fullName.localeCompare(b.fullName));
+    }),
+
   listForCase: protectedProcedure
     .input(z.object({ caseId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {

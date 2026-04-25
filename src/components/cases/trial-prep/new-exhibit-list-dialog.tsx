@@ -1,0 +1,130 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
+
+type Party = "plaintiff" | "defendant";
+
+const ORDINAL: Record<number, string> = {
+  1: "Trial",
+  2: "First Amended Trial",
+  3: "Second Amended Trial",
+  4: "Third Amended Trial",
+  5: "Fourth Amended Trial",
+};
+
+function defaultTitle(party: Party, n: number): string {
+  const partyLabel = party === "plaintiff" ? "Plaintiff" : "Defendant";
+  const adj = ORDINAL[n] ?? `${n}th Amended Trial`;
+  return `${partyLabel}'s ${adj} Exhibit List`;
+}
+
+export function NewExhibitListDialog({
+  caseId,
+  onClose,
+}: {
+  caseId: string;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const utils = trpc.useUtils();
+  const [servingParty, setServingParty] = useState<Party>("plaintiff");
+  const [titleEdited, setTitleEdited] = useState(false);
+  const [title, setTitle] = useState("");
+
+  const { data: nextNumber } = trpc.exhibitLists.getNextListNumber.useQuery({
+    caseId,
+    servingParty,
+  });
+
+  const computedTitle = useMemo(() => {
+    if (!nextNumber) return "";
+    return defaultTitle(servingParty, nextNumber.listNumber);
+  }, [servingParty, nextNumber]);
+
+  const effectiveTitle = titleEdited ? title : computedTitle;
+
+  const create = trpc.exhibitLists.createList.useMutation({
+    onSuccess: ({ id }) => {
+      toast.success("Exhibit list created");
+      utils.exhibitLists.listForCase.invalidate({ caseId });
+      router.push(`/cases/${caseId}/trial-prep/exhibit-lists/${id}`);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const onSubmit = () => {
+    create.mutate({
+      caseId,
+      servingParty,
+      title: effectiveTitle.trim() || undefined,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-md border border-zinc-700 bg-zinc-950 p-6 text-zinc-100">
+        <h2 className="text-lg font-semibold">New Exhibit List</h2>
+
+        <div className="mt-4 space-y-4">
+          <fieldset>
+            <legend className="text-sm font-medium">Serving party</legend>
+            <div className="mt-2 flex gap-4 text-sm">
+              {(["plaintiff", "defendant"] as Party[]).map((p) => (
+                <label key={p} className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="exhibitServingParty"
+                    checked={servingParty === p}
+                    onChange={() => setServingParty(p)}
+                  />
+                  <span className="capitalize">{p}</span>
+                </label>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-zinc-500">
+              Exhibits will be auto-labeled{" "}
+              <span className="font-mono">
+                {servingParty === "plaintiff" ? "P-1, P-2, …" : "D-1, D-2, …"}
+              </span>
+            </p>
+          </fieldset>
+
+          <label className="block text-sm">
+            Title
+            <input
+              type="text"
+              value={effectiveTitle}
+              onChange={(e) => {
+                setTitleEdited(true);
+                setTitle(e.target.value);
+              }}
+              className="mt-1 block w-full rounded-md border border-zinc-700 bg-zinc-900 p-2 text-sm"
+              placeholder="Plaintiff's Trial Exhibit List"
+            />
+          </label>
+        </div>
+
+        <div className="mt-6 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-zinc-700 px-3 py-2 text-sm"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={create.isPending || !effectiveTitle}
+            onClick={onSubmit}
+            className="rounded-md bg-purple-600 px-3 py-2 text-sm text-white disabled:opacity-50"
+          >
+            {create.isPending ? "Creating…" : "Create"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
