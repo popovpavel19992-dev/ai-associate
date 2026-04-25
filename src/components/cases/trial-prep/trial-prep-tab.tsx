@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { NewWitnessListDialog } from "./new-witness-list-dialog";
 import { NewExhibitListDialog } from "./new-exhibit-list-dialog";
 import { NewJuryInstructionSetDialog } from "./new-jury-instruction-set-dialog";
+import { NewVoirDireSetDialog } from "./new-voir-dire-set-dialog";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -19,12 +20,15 @@ export function TrialPrepTab({ caseId }: { caseId: string }) {
   const [showNewWitness, setShowNewWitness] = useState(false);
   const [showNewExhibit, setShowNewExhibit] = useState(false);
   const [showNewJury, setShowNewJury] = useState(false);
+  const [showNewVoirDire, setShowNewVoirDire] = useState(false);
   const { data: witnessLists, isLoading: witnessLoading } =
     trpc.witnessLists.listForCase.useQuery({ caseId });
   const { data: exhibitLists, isLoading: exhibitLoading } =
     trpc.exhibitLists.listForCase.useQuery({ caseId });
   const { data: jurySets, isLoading: juryLoading } =
     trpc.juryInstructions.listForCase.useQuery({ caseId });
+  const { data: voirDireSets, isLoading: voirLoading } =
+    trpc.voirDire.listForCase.useQuery({ caseId });
 
   const groupedWitness = (witnessLists ?? []).reduce<
     Record<string, NonNullable<typeof witnessLists>>
@@ -53,6 +57,16 @@ export function TrialPrepTab({ caseId }: { caseId: string }) {
     return acc;
   }, {} as Record<string, NonNullable<typeof jurySets>>);
 
+  const groupedVoirDire = (voirDireSets ?? []).reduce<
+    Record<string, NonNullable<typeof voirDireSets>>
+  >((acc, l) => {
+    const key = l.servingParty;
+    if (!acc[key])
+      acc[key] = [] as unknown as NonNullable<typeof voirDireSets>;
+    (acc[key] as unknown as typeof l[]).push(l);
+    return acc;
+  }, {} as Record<string, NonNullable<typeof voirDireSets>>);
+
   const witnessSectionLabel = (k: string) =>
     k === "plaintiff" ? "Plaintiff's Witness Lists" : "Defendant's Witness Lists";
   const exhibitSectionLabel = (k: string) =>
@@ -61,6 +75,10 @@ export function TrialPrepTab({ caseId }: { caseId: string }) {
     k === "plaintiff"
       ? "Plaintiff's Jury Instruction Sets"
       : "Defendant's Jury Instruction Sets";
+  const voirDireSectionLabel = (k: string) =>
+    k === "plaintiff"
+      ? "Plaintiff's Voir Dire Sets"
+      : "Defendant's Voir Dire Sets";
 
   return (
     <div className="space-y-8 px-4 py-4">
@@ -87,6 +105,13 @@ export function TrialPrepTab({ caseId }: { caseId: string }) {
             className="inline-flex items-center rounded-md bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700"
           >
             New Jury Instruction Set
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowNewVoirDire(true)}
+            className="inline-flex items-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+          >
+            New Voir Dire Set
           </button>
         </div>
       </div>
@@ -258,6 +283,62 @@ export function TrialPrepTab({ caseId }: { caseId: string }) {
         })}
       </section>
 
+      <section className="space-y-4">
+        <h3 className="text-sm font-semibold text-zinc-300">Voir Dire Sets</h3>
+
+        {voirLoading && <p className="text-sm text-gray-500">Loading…</p>}
+
+        {!voirLoading && (voirDireSets ?? []).length === 0 && (
+          <p className="text-sm text-zinc-500">
+            No voir dire sets yet. Create one to draft jury selection questions.
+          </p>
+        )}
+
+        {(["plaintiff", "defendant"] as const).map((party) => {
+          const items = (groupedVoirDire[party] ?? []) as unknown as NonNullable<
+            typeof voirDireSets
+          >;
+          if (items.length === 0) return null;
+          const sorted = [...items].sort((a, b) => a.setNumber - b.setNumber);
+          return (
+            <div key={`v-${party}`} className="space-y-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                {voirDireSectionLabel(party)}
+              </h4>
+              <ul className="divide-y divide-zinc-800 rounded-md border border-zinc-800">
+                {sorted.map((s) => (
+                  <li key={s.id} className="hover:bg-zinc-900/40">
+                    <Link
+                      href={`/cases/${caseId}/trial-prep/voir-dire/${s.id}`}
+                      className="block p-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{s.title}</span>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            STATUS_BADGE[s.status] ?? "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {s.status}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex gap-3 text-xs text-gray-500">
+                        <span>Set {s.setNumber}</span>
+                        <span>
+                          {s.questionCount} question
+                          {s.questionCount === 1 ? "" : "s"}
+                        </span>
+                        <span>Created {new Date(s.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </section>
+
       {showNewWitness && (
         <NewWitnessListDialog
           caseId={caseId}
@@ -274,6 +355,12 @@ export function TrialPrepTab({ caseId }: { caseId: string }) {
         <NewJuryInstructionSetDialog
           caseId={caseId}
           onClose={() => setShowNewJury(false)}
+        />
+      )}
+      {showNewVoirDire && (
+        <NewVoirDireSetDialog
+          caseId={caseId}
+          onClose={() => setShowNewVoirDire(false)}
         />
       )}
     </div>
