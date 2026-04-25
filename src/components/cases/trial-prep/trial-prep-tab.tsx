@@ -5,21 +5,26 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { NewWitnessListDialog } from "./new-witness-list-dialog";
 import { NewExhibitListDialog } from "./new-exhibit-list-dialog";
+import { NewJuryInstructionSetDialog } from "./new-jury-instruction-set-dialog";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
   final: "bg-blue-100 text-blue-800",
   served: "bg-green-100 text-green-800",
+  submitted: "bg-green-100 text-green-800",
   closed: "bg-zinc-100 text-zinc-700",
 };
 
 export function TrialPrepTab({ caseId }: { caseId: string }) {
   const [showNewWitness, setShowNewWitness] = useState(false);
   const [showNewExhibit, setShowNewExhibit] = useState(false);
+  const [showNewJury, setShowNewJury] = useState(false);
   const { data: witnessLists, isLoading: witnessLoading } =
     trpc.witnessLists.listForCase.useQuery({ caseId });
   const { data: exhibitLists, isLoading: exhibitLoading } =
     trpc.exhibitLists.listForCase.useQuery({ caseId });
+  const { data: jurySets, isLoading: juryLoading } =
+    trpc.juryInstructions.listForCase.useQuery({ caseId });
 
   const groupedWitness = (witnessLists ?? []).reduce<
     Record<string, NonNullable<typeof witnessLists>>
@@ -39,16 +44,29 @@ export function TrialPrepTab({ caseId }: { caseId: string }) {
     return acc;
   }, {} as Record<string, NonNullable<typeof exhibitLists>>);
 
+  const groupedJury = (jurySets ?? []).reduce<
+    Record<string, NonNullable<typeof jurySets>>
+  >((acc, l) => {
+    const key = l.servingParty;
+    if (!acc[key]) acc[key] = [] as unknown as NonNullable<typeof jurySets>;
+    (acc[key] as unknown as typeof l[]).push(l);
+    return acc;
+  }, {} as Record<string, NonNullable<typeof jurySets>>);
+
   const witnessSectionLabel = (k: string) =>
     k === "plaintiff" ? "Plaintiff's Witness Lists" : "Defendant's Witness Lists";
   const exhibitSectionLabel = (k: string) =>
     k === "plaintiff" ? "Plaintiff's Exhibit Lists" : "Defendant's Exhibit Lists";
+  const jurySectionLabel = (k: string) =>
+    k === "plaintiff"
+      ? "Plaintiff's Jury Instruction Sets"
+      : "Defendant's Jury Instruction Sets";
 
   return (
     <div className="space-y-8 px-4 py-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-semibold">Trial Prep</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => setShowNewWitness(true)}
@@ -62,6 +80,13 @@ export function TrialPrepTab({ caseId }: { caseId: string }) {
             className="inline-flex items-center rounded-md bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700"
           >
             New Exhibit List
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowNewJury(true)}
+            className="inline-flex items-center rounded-md bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700"
+          >
+            New Jury Instruction Set
           </button>
         </div>
       </div>
@@ -176,6 +201,63 @@ export function TrialPrepTab({ caseId }: { caseId: string }) {
         })}
       </section>
 
+      <section className="space-y-4">
+        <h3 className="text-sm font-semibold text-zinc-300">Jury Instruction Sets</h3>
+
+        {juryLoading && <p className="text-sm text-gray-500">Loading…</p>}
+
+        {!juryLoading && (jurySets ?? []).length === 0 && (
+          <p className="text-sm text-zinc-500">
+            No proposed jury instructions yet. Create a set to draft instructions
+            for the judge.
+          </p>
+        )}
+
+        {(["plaintiff", "defendant"] as const).map((party) => {
+          const items = (groupedJury[party] ?? []) as unknown as NonNullable<
+            typeof jurySets
+          >;
+          if (items.length === 0) return null;
+          const sorted = [...items].sort((a, b) => a.setNumber - b.setNumber);
+          return (
+            <div key={`j-${party}`} className="space-y-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                {jurySectionLabel(party)}
+              </h4>
+              <ul className="divide-y divide-zinc-800 rounded-md border border-zinc-800">
+                {sorted.map((s) => (
+                  <li key={s.id} className="hover:bg-zinc-900/40">
+                    <Link
+                      href={`/cases/${caseId}/trial-prep/jury-instructions/${s.id}`}
+                      className="block p-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{s.title}</span>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            STATUS_BADGE[s.status] ?? "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {s.status}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex gap-3 text-xs text-gray-500">
+                        <span>Set {s.setNumber}</span>
+                        <span>
+                          {s.instructionCount} instruction
+                          {s.instructionCount === 1 ? "" : "s"}
+                        </span>
+                        <span>Created {new Date(s.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </section>
+
       {showNewWitness && (
         <NewWitnessListDialog
           caseId={caseId}
@@ -186,6 +268,12 @@ export function TrialPrepTab({ caseId }: { caseId: string }) {
         <NewExhibitListDialog
           caseId={caseId}
           onClose={() => setShowNewExhibit(false)}
+        />
+      )}
+      {showNewJury && (
+        <NewJuryInstructionSetDialog
+          caseId={caseId}
+          onClose={() => setShowNewJury(false)}
         />
       )}
     </div>

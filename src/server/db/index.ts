@@ -39,6 +39,9 @@ import * as caseWitnessListsSchema from "./schema/case-witness-lists";
 import * as caseWitnessesSchema from "./schema/case-witnesses";
 import * as caseExhibitListsSchema from "./schema/case-exhibit-lists";
 import * as caseExhibitsSchema from "./schema/case-exhibits";
+import * as juryInstructionTemplatesSchema from "./schema/jury-instruction-templates";
+import * as caseJuryInstructionSetsSchema from "./schema/case-jury-instruction-sets";
+import * as caseJuryInstructionsSchema from "./schema/case-jury-instructions";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -83,5 +86,8 @@ export const db = drizzle(client, {
     ...caseWitnessesSchema,
     ...caseExhibitListsSchema,
     ...caseExhibitsSchema,
+    ...juryInstructionTemplatesSchema,
+    ...caseJuryInstructionSetsSchema,
+    ...caseJuryInstructionsSchema,
   },
 });
