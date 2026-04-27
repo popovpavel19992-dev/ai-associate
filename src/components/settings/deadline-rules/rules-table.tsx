@@ -77,7 +77,11 @@ export function RulesTable({
               </td>
               <td className="p-2">{r.days}</td>
               <td className="p-2">{r.dayType}</td>
-              <td className="p-2">{r.jurisdiction}</td>
+              <td className="p-2">
+                <span className="inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
+                  {r.jurisdiction}
+                </span>
+              </td>
               <td className="p-2 truncate max-w-xs">{r.citation}</td>
               <td className="p-2">{isSeed ? "FRCP seed" : "Firm"}</td>
               <td className="p-2 text-right">
