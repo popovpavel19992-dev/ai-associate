@@ -62,6 +62,7 @@ import { voirDireRouter } from "./routers/voir-dire";
 import { depositionPrepRouter } from "./routers/deposition-prep";
 import { motionsInLimineRouter } from "./routers/motions-in-limine";
 import { subpoenasRouter } from "./routers/subpoenas";
+import { settlementRouter } from "./routers/settlement";
 import { analyticsRouter } from "./routers/analytics";
 
 export const appRouter = router({
@@ -128,6 +129,7 @@ export const appRouter = router({
   depositionPrep: depositionPrepRouter,
   motionsInLimine: motionsInLimineRouter,
   subpoenas: subpoenasRouter,
+  settlement: settlementRouter,
   analytics: analyticsRouter,
 });
 
