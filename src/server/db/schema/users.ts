@@ -24,5 +24,7 @@ export const users = pgTable("users", {
   barState: text("bar_state"),
   avatarUrl: text("avatar_url"),
   signatureImageUrl: text("signature_image_url"),
+  icalTokenHash: text("ical_token_hash"),
+  icalTokenCreatedAt: timestamp("ical_token_created_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
