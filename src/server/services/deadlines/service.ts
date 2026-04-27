@@ -38,6 +38,21 @@ export class DeadlinesService {
     this.db = deps.db ?? defaultDb;
   }
 
+  /**
+   * Multi-jurisdiction holiday lookup (Phase 3.7).
+   * For FRCP / FEDERAL we use the federal court calendar. For state codes (CA/TX/FL/NY/etc.)
+   * we use the state's own calendar if it has any rows, otherwise fall back to FEDERAL.
+   */
+  private async resolveHolidayJurisdiction(jurisdiction: string): Promise<string> {
+    if (jurisdiction === "FRCP" || jurisdiction === "FEDERAL") return "FEDERAL";
+    const rows = await this.db
+      .select({ id: courtHolidays.id })
+      .from(courtHolidays)
+      .where(eq(courtHolidays.jurisdiction, jurisdiction))
+      .limit(1);
+    return rows.length > 0 ? jurisdiction : "FEDERAL";
+  }
+
   async createTriggerEvent(input: {
     caseId: string;
     triggerEvent: string;
@@ -59,7 +74,8 @@ export class DeadlinesService {
     };
     const [trigger] = await this.db.insert(caseTriggerEvents).values(newTrigger).returning();
 
-    const rules = await this.db
+    // Multi-jurisdiction fallback (Phase 3.7): try state-specific rules first, then FRCP.
+    let rules = await this.db
       .select()
       .from(deadlineRules)
       .where(
@@ -76,12 +92,33 @@ export class DeadlinesService {
         ),
       );
 
+    if (rules.length === 0 && input.jurisdiction !== "FRCP") {
+      rules = await this.db
+        .select()
+        .from(deadlineRules)
+        .where(
+          and(
+            eq(deadlineRules.triggerEvent, input.triggerEvent),
+            eq(deadlineRules.jurisdiction, "FRCP"),
+            eq(deadlineRules.active, true),
+            input.motionType
+              ? or(
+                  isNull(deadlineRules.appliesToMotionTypes),
+                  sql`${input.motionType} = ANY(${deadlineRules.appliesToMotionTypes})`,
+                )
+              : undefined,
+          ),
+        );
+    }
+
     if (rules.length === 0) return { triggerEventId: trigger.id, deadlinesCreated: 0 };
 
+    // Holiday lookup: state-specific calendar first, fall back to FEDERAL.
+    const holidayJurisdiction = await this.resolveHolidayJurisdiction(input.jurisdiction);
     const holidayRows = await this.db
       .select({ observedDate: courtHolidays.observedDate, name: courtHolidays.name })
       .from(courtHolidays)
-      .where(eq(courtHolidays.jurisdiction, "FEDERAL"));
+      .where(eq(courtHolidays.jurisdiction, holidayJurisdiction));
     const { set: holidays, names: holidayNames } = toHolidayMaps(holidayRows);
 
     const triggerDate = toDateFromIso(input.eventDate);
@@ -147,10 +184,12 @@ export class DeadlinesService {
       .where(eq(deadlineRules.active, true));
     const rulesById = new Map(rules.map((r: any) => [r.id, r]));
 
+    const triggerJurisdiction = (trigger as { jurisdiction?: string | null }).jurisdiction ?? "FRCP";
+    const holidayJurisdiction = await this.resolveHolidayJurisdiction(triggerJurisdiction);
     const holidayRows = await this.db
       .select({ observedDate: courtHolidays.observedDate, name: courtHolidays.name })
       .from(courtHolidays)
-      .where(eq(courtHolidays.jurisdiction, "FEDERAL"));
+      .where(eq(courtHolidays.jurisdiction, holidayJurisdiction));
     const { set: holidays, names: holidayNames } = toHolidayMaps(holidayRows);
 
     const triggerDate = toDateFromIso(input.newEventDate);
