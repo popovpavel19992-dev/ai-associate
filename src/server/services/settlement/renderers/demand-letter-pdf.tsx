@@ -119,7 +119,13 @@ function formatLongDateFromIso(iso: string): string {
   const [y, m, day] = iso.split("-").map((s) => parseInt(s, 10));
   if (!y || !m || !day) return iso;
   const d = new Date(Date.UTC(y, m - 1, day));
-  return formatLongDate(d);
+  // Force UTC formatting so "2026-06-15" renders as June 15 regardless of host TZ.
+  return d.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 function paragraphsFrom(text: string): string[] {
