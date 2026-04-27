@@ -13,7 +13,7 @@ import { createTasksFromTemplatesInternal } from "./case-tasks";
 import { calculateCredits, checkCredits, decrementCredits, refundCredits } from "../../services/credits";
 import { generateDocx, generatePlainTextReport } from "../../services/export";
 import { inngest } from "../../inngest/client";
-import { CASE_TYPES, AUTO_DELETE_DAYS, CASE_TYPE_LABELS } from "@/lib/constants";
+import { CASE_TYPES, AUTO_DELETE_DAYS, CASE_TYPE_LABELS, CASE_JURISDICTIONS } from "@/lib/constants";
 import { assertCaseAccess, assertCaseDelete, assertClientRead } from "../lib/permissions";
 import type { CaseType } from "@/lib/case-stages";
 import type { AnalysisOutput } from "@/lib/schemas";
@@ -28,6 +28,7 @@ export const casesRouter = router({
         selectedSections: z.array(z.string()).optional(),
         opposingParty: z.string().max(200).optional(),
         opposingCounsel: z.string().max(200).optional(),
+        jurisdiction: z.enum(CASE_JURISDICTIONS).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -49,6 +50,7 @@ export const casesRouter = router({
           selectedSections: input.selectedSections ?? null,
           opposingParty: input.opposingParty ?? null,
           opposingCounsel: input.opposingCounsel ?? null,
+          jurisdictionOverride: input.jurisdiction ?? "FEDERAL",
           deleteAt,
         })
         .returning();
@@ -533,6 +535,7 @@ export const casesRouter = router({
         caseNumber: z.string().max(100).optional(),
         court: z.string().max(200).optional(),
         district: z.string().max(200).optional(),
+        jurisdiction: z.enum(CASE_JURISDICTIONS).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -554,6 +557,7 @@ export const casesRouter = router({
       if (input.caseNumber !== undefined) patch.caseNumber = input.caseNumber;
       if (input.court !== undefined) patch.court = input.court;
       if (input.district !== undefined) patch.district = input.district;
+      if (input.jurisdiction !== undefined) patch.jurisdictionOverride = input.jurisdiction;
 
       const [updated] = await ctx.db
         .update(cases)

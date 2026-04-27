@@ -164,3 +164,22 @@ export const CONTRACT_SECTION_LABELS: Record<string, string> = {
 export const CONTRACT_REVIEW_CREDITS = 2;
 export const COMPARISON_DIFF_CREDITS = 1;
 export const GENERATION_CREDITS = 3;
+
+// Multi-jurisdiction support (Phase 3.7).
+// FRCP = federal procedural rules. FEDERAL = federal-court holiday set.
+// State codes are 2-letter postal abbreviations.
+export const JURISDICTIONS = ["FEDERAL", "FRCP", "CA", "TX", "FL", "NY"] as const;
+export type Jurisdiction = (typeof JURISDICTIONS)[number];
+
+export const JURISDICTION_LABELS: Record<string, string> = {
+  FEDERAL: "Federal",
+  FRCP: "Federal (FRCP)",
+  CA: "California",
+  TX: "Texas",
+  FL: "Florida",
+  NY: "New York",
+};
+
+// Set of jurisdictions exposed in case-level dropdowns.
+export const CASE_JURISDICTIONS = ["FEDERAL", "CA", "TX", "FL", "NY"] as const;
+export type CaseJurisdiction = (typeof CASE_JURISDICTIONS)[number];

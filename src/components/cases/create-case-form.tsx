@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { AVAILABLE_SECTIONS, SECTION_LABELS, CASE_TYPES } from "@/lib/constants";
+import { AVAILABLE_SECTIONS, SECTION_LABELS, CASE_TYPES, CASE_JURISDICTIONS, JURISDICTION_LABELS, type CaseJurisdiction } from "@/lib/constants";
 import { CaseTypeSelector } from "./case-type-selector";
 import { UploadDropzone } from "@/components/documents/upload-dropzone";
 import { DocumentList } from "@/components/documents/document-list";
@@ -34,6 +34,7 @@ export function CreateCaseForm() {
   const [step, setStep] = useState<"details" | "upload">("details");
   const [opposingParty, setOpposingParty] = useState("");
   const [opposingCounsel, setOpposingCounsel] = useState("");
+  const [jurisdiction, setJurisdiction] = useState<CaseJurisdiction>("FEDERAL");
 
   const searchParams = useSearchParams();
   const preselectedId = searchParams.get("clientId");
@@ -97,6 +98,7 @@ export function CreateCaseForm() {
       selectedSections,
       opposingParty: opposingParty.trim() || undefined,
       opposingCounsel: opposingCounsel.trim() || undefined,
+      jurisdiction,
     });
   };
 
@@ -136,6 +138,25 @@ export function CreateCaseForm() {
             <CaseTypeSelector value={caseType} onChange={setCaseType} />
             <p className="text-xs text-muted-foreground">
               Auto-detect analyzes uploaded documents to determine the case type.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="jurisdiction">Jurisdiction</Label>
+            <select
+              id="jurisdiction"
+              value={jurisdiction}
+              onChange={(e) => setJurisdiction(e.target.value as CaseJurisdiction)}
+              className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:focus-visible:ring-zinc-300"
+            >
+              {CASE_JURISDICTIONS.map((j) => (
+                <option key={j} value={j}>
+                  {JURISDICTION_LABELS[j] ?? j}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Deadlines and court rules will use this jurisdiction&apos;s defaults. FRCP fallback applies when a state-specific rule is absent.
             </p>
           </div>
 
