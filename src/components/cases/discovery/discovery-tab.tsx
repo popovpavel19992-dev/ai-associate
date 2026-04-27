@@ -8,6 +8,7 @@ import {
   type DiscoveryRequestType,
 } from "./new-discovery-wizard";
 import { PrivilegeLogSection } from "./privilege-log-section";
+import { SubpoenasSection } from "./subpoenas-section";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -124,6 +125,8 @@ export function DiscoveryTab({ caseId }: { caseId: string }) {
         })}
 
       <PrivilegeLogSection caseId={caseId} />
+
+      <SubpoenasSection caseId={caseId} />
 
       {wizardType && (
         <NewDiscoveryWizard

@@ -61,6 +61,7 @@ import { juryInstructionsRouter } from "./routers/jury-instructions";
 import { voirDireRouter } from "./routers/voir-dire";
 import { depositionPrepRouter } from "./routers/deposition-prep";
 import { motionsInLimineRouter } from "./routers/motions-in-limine";
+import { subpoenasRouter } from "./routers/subpoenas";
 import { analyticsRouter } from "./routers/analytics";
 
 export const appRouter = router({
@@ -126,6 +127,7 @@ export const appRouter = router({
   voirDire: voirDireRouter,
   depositionPrep: depositionPrepRouter,
   motionsInLimine: motionsInLimineRouter,
+  subpoenas: subpoenasRouter,
   analytics: analyticsRouter,
 });
 
