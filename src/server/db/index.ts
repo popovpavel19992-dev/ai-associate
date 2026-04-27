@@ -53,6 +53,9 @@ import * as motionInLimineTemplatesSchema from "./schema/motion-in-limine-templa
 import * as caseMotionsInLimineSetsSchema from "./schema/case-motions-in-limine-sets";
 import * as caseMotionsInLimineSchema from "./schema/case-motions-in-limine";
 import * as caseSubpoenasSchema from "./schema/case-subpoenas";
+import * as caseSettlementOffersSchema from "./schema/case-settlement-offers";
+import * as caseMediationSessionsSchema from "./schema/case-mediation-sessions";
+import * as caseDemandLettersSchema from "./schema/case-demand-letters";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -111,5 +114,8 @@ export const db = drizzle(client, {
     ...caseMotionsInLimineSetsSchema,
     ...caseMotionsInLimineSchema,
     ...caseSubpoenasSchema,
+    ...caseSettlementOffersSchema,
+    ...caseMediationSessionsSchema,
+    ...caseDemandLettersSchema,
   },
 });
