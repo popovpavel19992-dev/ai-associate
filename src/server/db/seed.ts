@@ -7,6 +7,8 @@ import { seedJuryInstructionTemplates } from "./seed/jury-instruction-templates"
 import { seedVoirDireQuestionTemplates } from "./seed/voir-dire-question-templates";
 import { seedDepositionTopicTemplates } from "./seed/deposition-topic-templates";
 import { seedMotionInLimineTemplates } from "./seed/motion-in-limine-templates";
+import { seedStateDeadlineRules } from "./seed/deadline-rules-states";
+import { seedStateCourtHolidays } from "./seed/court-holidays-states";
 
 const SYSTEM_PRESETS = [
   {
@@ -68,6 +70,14 @@ async function seed() {
   const milRes = await seedMotionInLimineTemplates();
   console.log(
     `Seeded motion in limine templates: ${milRes.inserted} inserted, ${milRes.skipped} skipped`,
+  );
+  const stateRulesRes = await seedStateDeadlineRules();
+  console.log(
+    `Seeded state deadline rules (CA/TX/FL/NY): ${stateRulesRes.inserted} inserted, ${stateRulesRes.skipped} skipped`,
+  );
+  const stateHolidaysRes = await seedStateCourtHolidays();
+  console.log(
+    `Seeded state court holidays (CA/TX/FL/NY): ${stateHolidaysRes.inserted} inserted, ${stateHolidaysRes.skipped} skipped`,
   );
   process.exit(0);
 }
