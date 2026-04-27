@@ -200,6 +200,7 @@ export default function CaseDetailPage({
             stageTaskTemplates={stageTaskTemplatesList}
             opposingParty={caseData.opposingParty}
             opposingCounsel={caseData.opposingCounsel}
+            jurisdiction={caseData.jurisdictionOverride}
             caption={{
               plaintiffName: caseData.plaintiffName,
               defendantName: caseData.defendantName,
