@@ -52,6 +52,7 @@ import * as caseDepositionQuestionsSchema from "./schema/case-deposition-questio
 import * as motionInLimineTemplatesSchema from "./schema/motion-in-limine-templates";
 import * as caseMotionsInLimineSetsSchema from "./schema/case-motions-in-limine-sets";
 import * as caseMotionsInLimineSchema from "./schema/case-motions-in-limine";
+import * as caseSubpoenasSchema from "./schema/case-subpoenas";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -109,5 +110,6 @@ export const db = drizzle(client, {
     ...motionInLimineTemplatesSchema,
     ...caseMotionsInLimineSetsSchema,
     ...caseMotionsInLimineSchema,
+    ...caseSubpoenasSchema,
   },
 });
