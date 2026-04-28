@@ -13,6 +13,12 @@ import { CaseTypeSelector } from "./case-type-selector";
 import { UploadDropzone } from "@/components/documents/upload-dropzone";
 import { DocumentList } from "@/components/documents/document-list";
 import { ClientPicker } from "@/components/clients/client-picker";
+import {
+  ConflictReviewModal,
+  type ReviewHit,
+  type Severity,
+} from "@/components/conflict-checker/conflict-review-modal";
+import { toast } from "sonner";
 
 const DEFAULT_SECTIONS = [
   "timeline",
@@ -55,8 +61,24 @@ export function CreateCaseForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preselectedQuery.data]);
 
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewHits, setReviewHits] = useState<ReviewHit[]>([]);
+  const [reviewSeverity, setReviewSeverity] = useState<Severity | null>(null);
+  const [pendingLogId, setPendingLogId] = useState<string | null>(null);
+
+  const runConflictCheck = trpc.conflictChecker.runCheck.useMutation();
+  const recordOverride = trpc.conflictChecker.recordOverride.useMutation();
+  const attachTarget = trpc.conflictChecker.attachTarget.useMutation();
+
   const createCase = trpc.cases.create.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      if (pendingLogId) {
+        try {
+          await attachTarget.mutateAsync({ logId: pendingLogId, caseId: data.id });
+        } catch {
+          /* non-fatal */
+        }
+      }
       setCaseId(data.id);
       setStep("upload");
     },
@@ -89,16 +111,58 @@ export function CreateCaseForm() {
     );
   }, []);
 
-  const handleCreateCase = () => {
+  const buildCaseInput = () => ({
+    clientId: client!.id,
+    name: name.trim(),
+    caseType:
+      caseType === "auto" ? undefined : (caseType as (typeof CASE_TYPES)[number]),
+    selectedSections,
+    opposingParty: opposingParty.trim() || undefined,
+    opposingCounsel: opposingCounsel.trim() || undefined,
+    jurisdiction,
+  });
+
+  const handleCreateCase = async () => {
     if (!name.trim() || !client) return;
-    createCase.mutate({
-      clientId: client.id,
-      name: name.trim(),
-      caseType: caseType === "auto" ? undefined : (caseType as (typeof CASE_TYPES)[number]),
-      selectedSections,
-      opposingParty: opposingParty.trim() || undefined,
-      opposingCounsel: opposingCounsel.trim() || undefined,
-      jurisdiction,
+    const queryName = opposingParty.trim() || opposingCounsel.trim();
+    if (!queryName) {
+      // Nothing to check — proceed.
+      createCase.mutate(buildCaseInput());
+      return;
+    }
+    try {
+      const result = await runConflictCheck.mutateAsync({
+        name: queryName,
+        context: "case_create",
+      });
+      setPendingLogId(result.logId);
+      if (result.hits.length > 0) {
+        setReviewHits(result.hits as ReviewHit[]);
+        setReviewSeverity(result.highestSeverity);
+        setReviewOpen(true);
+        return;
+      }
+      createCase.mutate(buildCaseInput());
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const handleOverrideCase = (reason: string) => {
+    if (!pendingLogId) return;
+    createCase.mutate(buildCaseInput(), {
+      onSuccess: async (data) => {
+        try {
+          await recordOverride.mutateAsync({
+            logId: pendingLogId,
+            caseId: data.id,
+            reason,
+          });
+          setReviewOpen(false);
+        } catch (e) {
+          toast.error((e as Error).message);
+        }
+      },
     });
   };
 
@@ -218,6 +282,15 @@ export function CreateCaseForm() {
             <p className="text-sm text-red-500">{createCase.error.message}</p>
           )}
         </CardContent>
+        <ConflictReviewModal
+          open={reviewOpen}
+          onOpenChange={setReviewOpen}
+          hits={reviewHits}
+          highestSeverity={reviewSeverity}
+          onCancel={() => setReviewOpen(false)}
+          onOverride={handleOverrideCase}
+          isOverriding={createCase.isPending || recordOverride.isPending}
+        />
       </Card>
     );
   }

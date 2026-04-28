@@ -1,14 +1,18 @@
 // src/components/clients/quick-create-client-dialog.tsx
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
+import {
+  ConflictReviewModal,
+  type ReviewHit,
+  type Severity,
+} from "@/components/conflict-checker/conflict-review-modal";
 
 interface Props {
   open: boolean;
@@ -22,33 +26,88 @@ export function QuickCreateClientDialog({ open, onOpenChange, onCreated }: Props
   const [lastName, setLastName] = useState("");
   const [companyName, setCompanyName] = useState("");
 
-  const [conflictName, setConflictName] = useState("");
-  const conflictCheck = trpc.clients.checkConflict.useQuery(
-    { name: conflictName },
-    { enabled: conflictName.length >= 2 },
-  );
-  const conflictTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const triggerConflictCheck = (name: string) => {
-    if (conflictTimerRef.current) clearTimeout(conflictTimerRef.current);
-    conflictTimerRef.current = setTimeout(() => setConflictName(name), 500);
-  };
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewHits, setReviewHits] = useState<ReviewHit[]>([]);
+  const [reviewSeverity, setReviewSeverity] = useState<Severity | null>(null);
+  const [pendingLogId, setPendingLogId] = useState<string | null>(null);
+
+  const runConflictCheck = trpc.conflictChecker.runCheck.useMutation();
+  const recordOverride = trpc.conflictChecker.recordOverride.useMutation();
+  const attachTarget = trpc.conflictChecker.attachTarget.useMutation();
 
   const create = trpc.clients.create.useMutation({
-    onSuccess: ({ client }) => {
+    onSuccess: async ({ client }) => {
+      if (pendingLogId) {
+        try {
+          await attachTarget.mutateAsync({ logId: pendingLogId, clientId: client.id });
+        } catch {
+          /* non-fatal */
+        }
+      }
       toast.success("Client created");
       onCreated({ id: client.id, displayName: client.displayName, clientType: client.clientType });
       onOpenChange(false);
+      setReviewOpen(false);
     },
     onError: (e) => toast.error(e.message),
   });
 
-  const submit = () => {
+  const queryName = () =>
+    type === "individual" ? `${firstName} ${lastName}`.trim() : companyName.trim();
+
+  const doCreate = () => {
     if (type === "individual") {
       create.mutate({ clientType: "individual", firstName, lastName, country: "US" });
     } else {
       create.mutate({ clientType: "organization", companyName, country: "US" });
     }
   };
+
+  const submit = async () => {
+    const name = queryName();
+    if (!name) return;
+    try {
+      const result = await runConflictCheck.mutateAsync({
+        name,
+        context: "client_create",
+      });
+      setPendingLogId(result.logId);
+      if (result.hits.length > 0) {
+        setReviewHits(result.hits as ReviewHit[]);
+        setReviewSeverity(result.highestSeverity);
+        setReviewOpen(true);
+        return;
+      }
+      doCreate();
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const handleOverride = async (reason: string) => {
+    if (!pendingLogId) return;
+    // Create first, then record the override against the new clientId.
+    create.mutate(
+      type === "individual"
+        ? { clientType: "individual", firstName, lastName, country: "US" }
+        : { clientType: "organization", companyName, country: "US" },
+      {
+        onSuccess: async ({ client }) => {
+          try {
+            await recordOverride.mutateAsync({
+              logId: pendingLogId,
+              clientId: client.id,
+              reason,
+            });
+          } catch (e) {
+            toast.error((e as Error).message);
+          }
+        },
+      },
+    );
+  };
+
+  const isPending = create.isPending || runConflictCheck.isPending || recordOverride.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -64,41 +123,34 @@ export function QuickCreateClientDialog({ open, onOpenChange, onCreated }: Props
           {type === "individual" ? (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1"><Label>First name</Label><Input value={firstName} onChange={(e) => setFirstName(e.target.value)} /></div>
-              <div className="space-y-1"><Label>Last name</Label><Input value={lastName} onChange={(e) => setLastName(e.target.value)} onBlur={() => { const fullName = `${firstName} ${lastName}`.trim(); if (fullName.length >= 2) triggerConflictCheck(fullName); }} /></div>
+              <div className="space-y-1"><Label>Last name</Label><Input value={lastName} onChange={(e) => setLastName(e.target.value)} /></div>
             </div>
           ) : (
-            <div className="space-y-1"><Label>Company name</Label><Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} onBlur={() => { if (companyName.trim().length >= 2) triggerConflictCheck(companyName.trim()); }} /></div>
+            <div className="space-y-1"><Label>Company name</Label><Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} /></div>
           )}
         </div>
-        {conflictCheck.data?.matches && conflictCheck.data.matches.length > 0 && (
-          <div className="rounded-md border border-yellow-500/50 bg-yellow-500/10 p-3">
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-500" />
-              <div className="space-y-1 text-sm">
-                <p className="font-medium text-yellow-500">Potential conflict of interest</p>
-                {conflictCheck.data.matches.map((m) => (
-                  <p key={m.caseId} className="text-muted-foreground">
-                    &ldquo;{m.opposingParty || m.opposingCounsel}&rdquo; in case{" "}
-                    <span className="font-medium">{m.caseName}</span>
-                    {m.clientDisplayName && <> (client: {m.clientDisplayName})</>}
-                  </p>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
             onClick={submit}
             disabled={
-              create.isPending ||
+              isPending ||
               (type === "individual" ? !firstName.trim() || !lastName.trim() : !companyName.trim())
             }
           >
             Create
           </Button>
         </div>
+
+        <ConflictReviewModal
+          open={reviewOpen}
+          onOpenChange={setReviewOpen}
+          hits={reviewHits}
+          highestSeverity={reviewSeverity}
+          onCancel={() => setReviewOpen(false)}
+          onOverride={handleOverride}
+          isOverriding={isPending}
+        />
       </DialogContent>
     </Dialog>
   );

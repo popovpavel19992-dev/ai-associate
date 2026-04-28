@@ -21,6 +21,7 @@ import {
   Mail,
   Clock,
   BarChart3,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -49,6 +50,7 @@ const navItems = [
   { href: "/settings/email-sequences", label: "Email sequences", icon: Mail },
   { href: "/settings/deadline-rules", label: "Deadline rules", icon: Clock },
   { href: "/settings/calendar-sync", label: "Calendar Sync", icon: CalendarIcon },
+  { href: "/settings/conflict-checks", label: "Conflict Checks", icon: ShieldAlert },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

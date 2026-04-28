@@ -56,6 +56,8 @@ import * as caseSubpoenasSchema from "./schema/case-subpoenas";
 import * as caseSettlementOffersSchema from "./schema/case-settlement-offers";
 import * as caseMediationSessionsSchema from "./schema/case-mediation-sessions";
 import * as caseDemandLettersSchema from "./schema/case-demand-letters";
+import * as conflictCheckLogsSchema from "./schema/conflict-check-logs";
+import * as conflictOverridesSchema from "./schema/conflict-overrides";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -117,5 +119,7 @@ export const db = drizzle(client, {
     ...caseSettlementOffersSchema,
     ...caseMediationSessionsSchema,
     ...caseDemandLettersSchema,
+    ...conflictCheckLogsSchema,
+    ...conflictOverridesSchema,
   },
 });
