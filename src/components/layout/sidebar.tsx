@@ -22,6 +22,7 @@ import {
   Clock,
   BarChart3,
   ShieldAlert,
+  Inbox,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -45,7 +46,9 @@ const navItems = [
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/calendar", label: "Calendar", icon: CalendarIcon },
   { href: "/notifications", label: "Notifications", icon: Bell },
+  { href: "/intake-inbox", label: "Intake Inbox", icon: Inbox },
   { href: "/settings/templates", label: "Templates", icon: FileText },
+  { href: "/settings/intake-templates", label: "Intake Templates", icon: FileText },
   { href: "/settings/email-templates", label: "Email templates", icon: Mail },
   { href: "/settings/email-sequences", label: "Email sequences", icon: Mail },
   { href: "/settings/deadline-rules", label: "Deadline rules", icon: Clock },

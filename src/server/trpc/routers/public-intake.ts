@@ -40,6 +40,19 @@ function requireAdmin(ctx: { user: { role: string | null } }) {
 }
 
 export const publicIntakeRouter = router({
+  // Returns the current org's slug (used by the editor for public-URL preview).
+  myOrgSlug: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.user.orgId) return { slug: null as string | null };
+    const { organizations } = await import("@/server/db/schema/organizations");
+    const { eq } = await import("drizzle-orm");
+    const [row] = await ctx.db
+      .select({ slug: organizations.slug })
+      .from(organizations)
+      .where(eq(organizations.id, ctx.user.orgId))
+      .limit(1);
+    return { slug: row?.slug ?? null };
+  }),
+
   templates: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       const orgId = requireOrg(ctx);
