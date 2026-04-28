@@ -12,6 +12,8 @@ const isPublicRoute = createRouteMatcher([
   "/api/auth/google/callback",
   "/api/auth/outlook/callback",
   "/api/portal(.*)",
+  "/intake(.*)",
+  "/api/public-intake(.*)",
 ]);
 
 async function portalMiddleware(req: NextRequest) {
