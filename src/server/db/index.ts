@@ -61,6 +61,8 @@ import * as conflictOverridesSchema from "./schema/conflict-overrides";
 import * as trustAccountsSchema from "./schema/trust-accounts";
 import * as trustTransactionsSchema from "./schema/trust-transactions";
 import * as trustReconciliationsSchema from "./schema/trust-reconciliations";
+import * as caseActivityEventsSchema from "./schema/case-activity-events";
+import * as suggestedTimeEntriesSchema from "./schema/suggested-time-entries";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -127,5 +129,7 @@ export const db = drizzle(client, {
     ...trustAccountsSchema,
     ...trustTransactionsSchema,
     ...trustReconciliationsSchema,
+    ...caseActivityEventsSchema,
+    ...suggestedTimeEntriesSchema,
   },
 });
