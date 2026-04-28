@@ -1,6 +1,7 @@
 "use client";
 
-import { Archive, ArchiveRestore } from "lucide-react";
+import { Archive, ArchiveRestore, MessageSquare } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
@@ -45,9 +46,15 @@ export function ClientHeader({ client, canManage }: Props) {
           <ClientStatusPill status={client.status} />
         </div>
       </div>
-      {canManage && (
-        <div>
-          {client.status === "active" ? (
+      <div className="flex items-center gap-2">
+        <Link href={`/clients/${client.id}/comms`}>
+          <Button variant="outline" size="sm">
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Comms
+          </Button>
+        </Link>
+        {canManage ? (
+          client.status === "active" ? (
             <Button variant="outline" size="sm" onClick={() => archive.mutate({ id: client.id })}>
               <Archive className="mr-2 h-4 w-4" />
               Archive
@@ -57,9 +64,9 @@ export function ClientHeader({ client, canManage }: Props) {
               <ArchiveRestore className="mr-2 h-4 w-4" />
               Restore
             </Button>
-          )}
-        </div>
-      )}
+          )
+        ) : null}
+      </div>
     </div>
   );
 }
