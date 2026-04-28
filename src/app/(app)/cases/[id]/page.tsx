@@ -30,6 +30,7 @@ import { FilingsTab } from "@/components/cases/filings/filings-tab";
 import { DiscoveryTab } from "@/components/cases/discovery/discovery-tab";
 import { TrialPrepTab } from "@/components/cases/trial-prep/trial-prep-tab";
 import { SettlementTab } from "@/components/cases/settlement/settlement-tab";
+import { TrustTab } from "@/components/cases/trust-tab";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -37,6 +38,7 @@ const TABS = [
   { key: "tasks", label: "Tasks" },
   { key: "calendar", label: "Calendar" },
   { key: "settlement", label: "Settlement" },
+  { key: "trust", label: "Trust" },
   { key: "time", label: "Time" },
   { key: "report", label: "Report" },
   { key: "timeline", label: "Timeline" },
@@ -287,6 +289,12 @@ export default function CaseDetailPage({
         {activeTab === "discovery" && <DiscoveryTab caseId={caseData.id} />}
         {activeTab === "trial-prep" && <TrialPrepTab caseId={caseData.id} />}
         {activeTab === "settlement" && <SettlementTab caseId={caseData.id} />}
+        {activeTab === "trust" && (
+          <TrustTab
+            caseId={caseData.id}
+            clientId={caseData.client?.id ?? null}
+          />
+        )}
         </div>
         {(caseData.client || caseData.orgId) && (
           <div className="hidden w-56 shrink-0 space-y-4 overflow-y-auto border-l border-zinc-800 p-4 lg:block">
