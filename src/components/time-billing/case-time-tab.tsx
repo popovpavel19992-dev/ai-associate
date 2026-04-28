@@ -12,6 +12,7 @@ import { TimeEntriesTable } from "./time-entries-table";
 import { ExpensesTable } from "./expenses-table";
 import { ExpenseFormDialog } from "./expense-form-dialog";
 import { RateOverrideDialog } from "./rate-override-dialog";
+import { SuggestionsInbox } from "./suggestions-inbox";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
@@ -78,6 +79,11 @@ export function CaseTimeTab({ caseId }: CaseTimeTabProps) {
           Set Rates
         </Button>
       </div>
+
+      {/* Auto-billable suggestions for this case */}
+      <SuggestionsInbox caseId={caseId} />
+
+      <Separator className="border-zinc-800" />
 
       {/* Time Entries */}
       <TimeEntriesTable caseId={caseId} />
