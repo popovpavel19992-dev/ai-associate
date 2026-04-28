@@ -1,9 +1,9 @@
 // src/components/clients/client-form.tsx
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import type { CreateClientInput } from "@/lib/clients";
+import {
+  ConflictReviewModal,
+  type ReviewHit,
+  type Severity,
+} from "@/components/conflict-checker/conflict-review-modal";
 
 type Mode = "create";
 
@@ -42,19 +47,25 @@ export function ClientForm({ mode }: Props) {
 
   const [notes, setNotes] = useState("");
 
-  const [conflictName, setConflictName] = useState("");
-  const conflictCheck = trpc.clients.checkConflict.useQuery(
-    { name: conflictName },
-    { enabled: conflictName.length >= 2 },
-  );
-  const conflictTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const triggerConflictCheck = (name: string) => {
-    if (conflictTimerRef.current) clearTimeout(conflictTimerRef.current);
-    conflictTimerRef.current = setTimeout(() => setConflictName(name), 500);
-  };
+  // Conflict modal state
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewHits, setReviewHits] = useState<ReviewHit[]>([]);
+  const [reviewSeverity, setReviewSeverity] = useState<Severity | null>(null);
+  const [pendingLogId, setPendingLogId] = useState<string | null>(null);
+
+  const runConflictCheck = trpc.conflictChecker.runCheck.useMutation();
+  const recordOverride = trpc.conflictChecker.recordOverride.useMutation();
+  const attachTarget = trpc.conflictChecker.attachTarget.useMutation();
 
   const create = trpc.clients.create.useMutation({
-    onSuccess: ({ client }) => {
+    onSuccess: async ({ client }) => {
+      if (pendingLogId) {
+        try {
+          await attachTarget.mutateAsync({ logId: pendingLogId, clientId: client.id });
+        } catch {
+          /* non-fatal */
+        }
+      }
       utils.clients.list.invalidate();
       toast.success("Client created");
       router.push(`/clients/${client.id}`);
@@ -62,7 +73,7 @@ export function ClientForm({ mode }: Props) {
     onError: (err) => toast.error(err.message),
   });
 
-  const submit = () => {
+  const buildInput = (): CreateClientInput => {
     const base = {
       country,
       addressLine1: addressLine1 || undefined,
@@ -72,32 +83,83 @@ export function ClientForm({ mode }: Props) {
       zipCode: zipCode || undefined,
       notes: notes || undefined,
     };
+    return clientType === "individual"
+      ? {
+          clientType: "individual",
+          firstName,
+          lastName,
+          dateOfBirth: dateOfBirth || undefined,
+          ...base,
+        }
+      : {
+          clientType: "organization",
+          companyName,
+          ein: ein || undefined,
+          industry: industry || undefined,
+          website: website || undefined,
+          ...base,
+        };
+  };
 
-    const input: CreateClientInput =
-      clientType === "individual"
-        ? {
-            clientType: "individual",
-            firstName,
-            lastName,
-            dateOfBirth: dateOfBirth || undefined,
-            ...base,
-          }
-        : {
-            clientType: "organization",
-            companyName,
-            ein: ein || undefined,
-            industry: industry || undefined,
-            website: website || undefined,
-            ...base,
-          };
+  const queryName = (): string =>
+    clientType === "individual" ? `${firstName} ${lastName}`.trim() : companyName.trim();
 
-    create.mutate(input);
+  const submit = async () => {
+    const name = queryName();
+    if (!name) return;
+
+    try {
+      const result = await runConflictCheck.mutateAsync({
+        name,
+        address: addressLine1 || undefined,
+        context: "client_create",
+      });
+
+      if (result.hits.length > 0) {
+        setReviewHits(result.hits as ReviewHit[]);
+        setReviewSeverity(result.highestSeverity);
+        setPendingLogId(result.logId);
+        setReviewOpen(true);
+        return;
+      }
+
+      setPendingLogId(result.logId);
+      create.mutate(buildInput());
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const handleOverride = async (reason: string) => {
+    if (!pendingLogId) return;
+    try {
+      // Insert the client first so we have a clientId for the override row.
+      const created = await new Promise<{ id: string }>((resolve, reject) => {
+        create.mutate(buildInput(), {
+          onSuccess: ({ client }) => resolve({ id: client.id }),
+          onError: (e) => reject(e),
+        });
+      }).catch((e) => {
+        throw e;
+      });
+      await recordOverride.mutateAsync({
+        logId: pendingLogId,
+        clientId: created.id,
+        reason,
+      });
+      setReviewOpen(false);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   };
 
   const canSubmit =
     clientType === "individual"
       ? firstName.trim().length > 0 && lastName.trim().length > 0
       : companyName.trim().length > 0;
+
+  const isPending =
+    create.isPending || runConflictCheck.isPending || recordOverride.isPending;
 
   return (
     <Card>
@@ -130,7 +192,7 @@ export function ClientForm({ mode }: Props) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last name</Label>
-              <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} maxLength={100} onBlur={() => { const fullName = `${firstName} ${lastName}`.trim(); if (fullName.length >= 2) triggerConflictCheck(fullName); }} />
+              <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} maxLength={100} />
             </div>
             <div className="space-y-2 col-span-2">
               <Label htmlFor="dob">Date of birth</Label>
@@ -141,7 +203,7 @@ export function ClientForm({ mode }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2 col-span-2">
               <Label htmlFor="company">Company name</Label>
-              <Input id="company" value={companyName} onChange={(e) => setCompanyName(e.target.value)} maxLength={200} onBlur={() => { if (companyName.trim().length >= 2) triggerConflictCheck(companyName.trim()); }} />
+              <Input id="company" value={companyName} onChange={(e) => setCompanyName(e.target.value)} maxLength={200} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="ein">EIN</Label>
@@ -175,29 +237,21 @@ export function ClientForm({ mode }: Props) {
           <Textarea id="notes" rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={5000} />
         </div>
 
-        {conflictCheck.data?.matches && conflictCheck.data.matches.length > 0 && (
-          <div className="rounded-md border border-yellow-500/50 bg-yellow-500/10 p-3">
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-500" />
-              <div className="space-y-1 text-sm">
-                <p className="font-medium text-yellow-500">Potential conflict of interest</p>
-                {conflictCheck.data.matches.map((m) => (
-                  <p key={m.caseId} className="text-muted-foreground">
-                    &ldquo;{m.opposingParty || m.opposingCounsel}&rdquo; in case{" "}
-                    <span className="font-medium">{m.caseName}</span>
-                    {m.clientDisplayName && <> (client: {m.clientDisplayName})</>}
-                  </p>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <Button onClick={submit} disabled={!canSubmit || create.isPending} className="w-full">
-          {create.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Button onClick={submit} disabled={!canSubmit || isPending} className="w-full">
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Create Client
         </Button>
       </CardContent>
+
+      <ConflictReviewModal
+        open={reviewOpen}
+        onOpenChange={setReviewOpen}
+        hits={reviewHits}
+        highestSeverity={reviewSeverity}
+        onCancel={() => setReviewOpen(false)}
+        onOverride={handleOverride}
+        isOverriding={create.isPending || recordOverride.isPending}
+      />
     </Card>
   );
 }
