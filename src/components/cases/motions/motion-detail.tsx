@@ -5,11 +5,13 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { SectionEditor } from "./section-editor";
 import { BuildPackageButton } from "./build-package-button";
+import { useActivityTracker } from "@/lib/activity-tracker";
 
 export function MotionDetail({ caseId, motionId }: { caseId: string; motionId: string }) {
   const router = useRouter();
   const utils = trpc.useUtils();
   const { data: motion, refetch } = trpc.motions.get.useQuery({ motionId });
+  useActivityTracker(caseId, "motion_draft", { motionId });
   const [showFileModal, setShowFileModal] = useState(false);
   const [createTrigger, setCreateTrigger] = useState(true);
   const [filedAt, setFiledAt] = useState(() => new Date().toISOString().slice(0, 16));

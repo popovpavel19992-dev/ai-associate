@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { useActivityTracker } from "@/lib/activity-tracker";
 import {
   ExhibitFormDialog,
   type ExhibitFormValues,
@@ -86,6 +87,7 @@ export function ExhibitListDetail({
 }) {
   const router = useRouter();
   const utils = trpc.useUtils();
+  useActivityTracker(caseId, "exhibit_list_edit", { listId });
   const { data, isLoading, refetch } = trpc.exhibitLists.getList.useQuery({ listId });
 
   const [addOpen, setAddOpen] = useState(false);

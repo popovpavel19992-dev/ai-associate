@@ -31,6 +31,7 @@ import { DiscoveryTab } from "@/components/cases/discovery/discovery-tab";
 import { TrialPrepTab } from "@/components/cases/trial-prep/trial-prep-tab";
 import { SettlementTab } from "@/components/cases/settlement/settlement-tab";
 import { TrustTab } from "@/components/cases/trust-tab";
+import { useActivityTracker } from "@/lib/activity-tracker";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -81,6 +82,9 @@ export default function CaseDetailPage({
       return status === "processing" ? 5000 : false;
     }},
   );
+
+  // Phase 3.9 — passive activity tracking for time auto-capture.
+  useActivityTracker(caseData?.id ?? null, "case_view");
 
   const reanalyze = trpc.cases.analyze.useMutation({
     onSuccess: () => {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { useActivityTracker } from "@/lib/activity-tracker";
 
 type Category =
   | "background"
@@ -90,6 +91,7 @@ export function DepositionOutlineDetail({
 }) {
   const router = useRouter();
   const utils = trpc.useUtils();
+  useActivityTracker(caseId, "deposition_outline_edit", { outlineId });
   const { data, isLoading, refetch } = trpc.depositionPrep.getOutline.useQuery({
     outlineId,
   });

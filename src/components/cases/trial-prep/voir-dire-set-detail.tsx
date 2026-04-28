@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { useActivityTracker } from "@/lib/activity-tracker";
 import {
   VoirDireQuestionFormDialog,
   VoirDireLibraryPickerDialog,
@@ -71,6 +72,7 @@ export function VoirDireSetDetail({
 }) {
   const router = useRouter();
   const utils = trpc.useUtils();
+  useActivityTracker(caseId, "voir_dire_edit", { setId });
   const { data, isLoading, refetch } = trpc.voirDire.getSet.useQuery({ setId });
 
   const [addOpen, setAddOpen] = useState(false);

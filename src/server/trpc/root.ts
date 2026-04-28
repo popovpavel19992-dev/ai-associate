@@ -67,6 +67,7 @@ import { analyticsRouter } from "./routers/analytics";
 import { calendarExportRouter } from "./routers/calendar-export";
 import { conflictCheckerRouter } from "./routers/conflict-checker";
 import { trustAccountingRouter } from "./routers/trust-accounting";
+import { activityTrackingRouter } from "./routers/activity-tracking";
 
 export const appRouter = router({
   users: usersRouter,
@@ -137,6 +138,7 @@ export const appRouter = router({
   analytics: analyticsRouter,
   conflictChecker: conflictCheckerRouter,
   trustAccounting: trustAccountingRouter,
+  activityTracking: activityTrackingRouter,
 });
 
 export type AppRouter = typeof appRouter;

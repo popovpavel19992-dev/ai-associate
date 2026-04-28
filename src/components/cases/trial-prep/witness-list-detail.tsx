@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { useActivityTracker } from "@/lib/activity-tracker";
 import { WitnessFormDialog, type WitnessFormValues } from "./witness-form-dialog";
 
 const STATUS_BADGE: Record<string, string> = {
@@ -53,6 +54,7 @@ export function WitnessListDetail({
 }) {
   const router = useRouter();
   const utils = trpc.useUtils();
+  useActivityTracker(caseId, "witness_list_edit", { listId });
   const { data, isLoading, refetch } = trpc.witnessLists.getList.useQuery({ listId });
 
   const [addOpen, setAddOpen] = useState(false);

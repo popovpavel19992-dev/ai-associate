@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { useActivityTracker } from "@/lib/activity-tracker";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -37,6 +38,7 @@ export function SubpoenaDetail({
 }) {
   const router = useRouter();
   const utils = trpc.useUtils();
+  useActivityTracker(caseId, "subpoena_edit", { subpoenaId });
   const { data: s, isLoading } = trpc.subpoenas.get.useQuery({ subpoenaId });
 
   const issueMut = trpc.subpoenas.markIssued.useMutation({
