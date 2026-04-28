@@ -64,6 +64,7 @@ import { motionsInLimineRouter } from "./routers/motions-in-limine";
 import { subpoenasRouter } from "./routers/subpoenas";
 import { settlementRouter } from "./routers/settlement";
 import { analyticsRouter } from "./routers/analytics";
+import { calendarExportRouter } from "./routers/calendar-export";
 
 export const appRouter = router({
   users: usersRouter,
@@ -78,6 +79,7 @@ export const appRouter = router({
   caseTasks: caseTasksRouter,
   calendar: calendarRouter,
   calendarConnections: calendarConnectionsRouter,
+  calendarExport: calendarExportRouter,
   team: teamRouter,
   caseMembers: caseMembersRouter,
   clients: clientsRouter,
