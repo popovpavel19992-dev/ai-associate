@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { useActivityTracker } from "@/lib/activity-tracker";
 import type { DiscoveryQuestion } from "@/server/db/schema/case-discovery-requests";
 
 const STATUS_BADGE: Record<string, string> = {
@@ -50,6 +51,8 @@ export function DiscoveryRequestDetail({
 }) {
   const router = useRouter();
   const utils = trpc.useUtils();
+
+  useActivityTracker(caseId, "discovery_request_edit", { requestId });
 
   const { data: req, isLoading, refetch } = trpc.discovery.get.useQuery({ requestId });
 
