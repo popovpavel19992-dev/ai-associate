@@ -51,6 +51,7 @@ const navItems = [
   { href: "/settings/deadline-rules", label: "Deadline rules", icon: Clock },
   { href: "/settings/calendar-sync", label: "Calendar Sync", icon: CalendarIcon },
   { href: "/settings/conflict-checks", label: "Conflict Checks", icon: ShieldAlert },
+  { href: "/settings/trust-accounts", label: "Trust Accounts", icon: Receipt },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
