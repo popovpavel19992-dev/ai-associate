@@ -225,6 +225,20 @@ async function dispatchEmail(
       });
       break;
     }
+    case "public_intake_submission_new": {
+      const submissionId = (m?.submissionId as string) ?? "";
+      const templateName = (m?.templateName as string) ?? "Intake form";
+      const submitterName = (m?.submitterName as string) ?? "Someone";
+      const safeTemplate = templateName.replace(/[<>&]/g, "");
+      const safeSubmitter = submitterName.replace(/[<>&]/g, "");
+      const url = `/intake-inbox/${submissionId}`;
+      await sendEmail({
+        to: userEmail,
+        subject: `New intake: ${submitterName} via ${templateName}`,
+        html: `<p>${safeSubmitter} just submitted the public intake form "<strong>${safeTemplate}</strong>".</p><p><a href="${url}">Review submission</a></p>`,
+      });
+      break;
+    }
     default:
       console.warn("[handle-notification] No email template for type:", type);
   }
