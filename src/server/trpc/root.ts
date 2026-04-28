@@ -65,6 +65,7 @@ import { subpoenasRouter } from "./routers/subpoenas";
 import { settlementRouter } from "./routers/settlement";
 import { analyticsRouter } from "./routers/analytics";
 import { calendarExportRouter } from "./routers/calendar-export";
+import { conflictCheckerRouter } from "./routers/conflict-checker";
 
 export const appRouter = router({
   users: usersRouter,
@@ -133,6 +134,7 @@ export const appRouter = router({
   subpoenas: subpoenasRouter,
   settlement: settlementRouter,
   analytics: analyticsRouter,
+  conflictChecker: conflictCheckerRouter,
 });
 
 export type AppRouter = typeof appRouter;
