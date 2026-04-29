@@ -29,6 +29,7 @@ import { MotionsTab } from "@/components/cases/motions/motions-tab";
 import { FilingsTab } from "@/components/cases/filings/filings-tab";
 import { DiscoveryTab } from "@/components/cases/discovery/discovery-tab";
 import { TrialPrepTab } from "@/components/cases/trial-prep/trial-prep-tab";
+import { DocumentsTab } from "@/components/cases/documents/documents-tab";
 import { SettlementTab } from "@/components/cases/settlement/settlement-tab";
 import { TrustTab } from "@/components/cases/trust-tab";
 import { useActivityTracker } from "@/lib/activity-tracker";
@@ -56,6 +57,7 @@ const TABS = [
   { key: "filings", label: "Filings" },
   { key: "discovery", label: "Discovery" },
   { key: "trial-prep", label: "Trial Prep" },
+  { key: "documents", label: "Documents" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -292,6 +294,7 @@ export default function CaseDetailPage({
         {activeTab === "filings" && <FilingsTab caseId={caseData.id} highlightId={highlightParam} />}
         {activeTab === "discovery" && <DiscoveryTab caseId={caseData.id} />}
         {activeTab === "trial-prep" && <TrialPrepTab caseId={caseData.id} />}
+        {activeTab === "documents" && <DocumentsTab caseId={caseData.id} clientId={caseData.clientId ?? null} />}
         {activeTab === "settlement" && <SettlementTab caseId={caseData.id} />}
         {activeTab === "trust" && (
           <TrustTab
