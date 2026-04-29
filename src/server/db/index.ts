@@ -65,6 +65,8 @@ import * as caseActivityEventsSchema from "./schema/case-activity-events";
 import * as suggestedTimeEntriesSchema from "./schema/suggested-time-entries";
 import * as publicIntakeTemplatesSchema from "./schema/public-intake-templates";
 import * as publicIntakeSubmissionsSchema from "./schema/public-intake-submissions";
+import * as documentTemplatesSchema from "./schema/document-templates";
+import * as caseGeneratedDocumentsSchema from "./schema/case-generated-documents";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -135,5 +137,7 @@ export const db = drizzle(client, {
     ...suggestedTimeEntriesSchema,
     ...publicIntakeTemplatesSchema,
     ...publicIntakeSubmissionsSchema,
+    ...documentTemplatesSchema,
+    ...caseGeneratedDocumentsSchema,
   },
 });
