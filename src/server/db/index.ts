@@ -63,6 +63,8 @@ import * as trustTransactionsSchema from "./schema/trust-transactions";
 import * as trustReconciliationsSchema from "./schema/trust-reconciliations";
 import * as caseActivityEventsSchema from "./schema/case-activity-events";
 import * as suggestedTimeEntriesSchema from "./schema/suggested-time-entries";
+import * as publicIntakeTemplatesSchema from "./schema/public-intake-templates";
+import * as publicIntakeSubmissionsSchema from "./schema/public-intake-submissions";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -131,5 +133,7 @@ export const db = drizzle(client, {
     ...trustReconciliationsSchema,
     ...caseActivityEventsSchema,
     ...suggestedTimeEntriesSchema,
+    ...publicIntakeTemplatesSchema,
+    ...publicIntakeSubmissionsSchema,
   },
 });

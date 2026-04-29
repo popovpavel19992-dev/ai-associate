@@ -56,6 +56,7 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   deadline_due_today: "Deadline due today",
   deadline_overdue: "Deadline is overdue",
   filing_submitted: "Filing submitted to court",
+  public_intake_submission_new: "Public intake — new submission",
 };
 
 const CHANNEL_LABELS: Record<NotificationChannel, string> = {

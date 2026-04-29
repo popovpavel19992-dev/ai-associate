@@ -8,6 +8,7 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", [
 export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
+  slug: text("slug").notNull(),
   clerkOrgId: text("clerk_org_id").unique(),
   ownerUserId: uuid("owner_user_id").notNull(),
   plan: orgPlanEnum("plan").notNull(),

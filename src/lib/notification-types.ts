@@ -45,6 +45,7 @@ export const NOTIFICATION_TYPES = [
   "deadline_due_today",
   "deadline_overdue",
   "filing_submitted",
+  "public_intake_submission_new",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -85,6 +86,7 @@ export const NOTIFICATION_CATEGORIES = {
   research: ["research_bookmark_added", "research_session_linked", "research_memo_ready", "research_memo_failed", "research_collection_shared"],
   deadlines: ["deadline_upcoming", "deadline_due_today", "deadline_overdue"],
   filings: ["filing_submitted"],
+  intake: ["public_intake_submission_new"],
 } as const;
 
 export type NotificationCategory = keyof typeof NOTIFICATION_CATEGORIES;
@@ -261,6 +263,12 @@ export type NotificationMetadata = {
     court: string;
     confirmationNumber: string;
     submitterName: string;
+  };
+  public_intake_submission_new: {
+    submissionId: string;
+    templateId: string;
+    templateName: string;
+    submitterName: string | null;
   };
 };
 
