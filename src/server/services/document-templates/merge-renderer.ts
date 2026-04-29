@@ -140,9 +140,18 @@ export function autoFillFromContext(
     ? joinAddress([
         scope.client.addressLine1,
         scope.client.addressLine2,
-        [scope.client.city, scope.client.state, scope.client.zipCode]
-          .filter((p) => p && String(p).trim())
-          .join(", "),
+        // Format: "City, ST ZIP" — comma after city, space between state and zip.
+        (() => {
+          const cityPart = scope.client.city && String(scope.client.city).trim()
+            ? String(scope.client.city).trim()
+            : "";
+          const stateZip = [scope.client.state, scope.client.zipCode]
+            .filter((p): p is string => Boolean(p && String(p).trim()))
+            .map((p) => String(p).trim())
+            .join(" ");
+          if (cityPart && stateZip) return cityPart + ", " + stateZip;
+          return cityPart || stateZip;
+        })(),
       ])
     : "";
 
