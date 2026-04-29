@@ -70,6 +70,7 @@ import { trustAccountingRouter } from "./routers/trust-accounting";
 import { activityTrackingRouter } from "./routers/activity-tracking";
 import { clientCommsRouter } from "./routers/client-comms";
 import { publicIntakeRouter } from "./routers/public-intake";
+import { documentTemplatesRouter } from "./routers/document-templates";
 
 export const appRouter = router({
   users: usersRouter,
@@ -143,6 +144,7 @@ export const appRouter = router({
   activityTracking: activityTrackingRouter,
   clientComms: clientCommsRouter,
   publicIntake: publicIntakeRouter,
+  documentTemplates: documentTemplatesRouter,
 });
 
 export type AppRouter = typeof appRouter;
