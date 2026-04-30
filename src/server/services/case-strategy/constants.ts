@@ -1,23 +1,8 @@
-// Subset of `documents.kind` values worth eager-embedding for strategy RAG.
-// Anything outside this list embeds lazily on demand. Reconcile with the
-// actual documents.kind enum during integration; if a value here doesn't
-// exist in the enum it'll just never match — defensive.
-export const STRATEGIC_DOC_KINDS: readonly string[] = [
-  "pleading",
-  "motion",
-  "discovery_request",
-  "discovery_response",
-  "deposition_prep",
-  "deposition_transcript",
-  "settlement_offer",
-  "demand_letter",
-  "client_communication",
-  "court_order",
-  "filing",
-  "research_memo",
-  "expert_report",
-  "exhibit",
-] as const;
+// Note: `documents.kind` does not exist in the schema yet. v1 eagerly embeds
+// every successfully-extracted document (cost guard lives at the credits
+// layer). If/when a `kind` column is added, reintroduce a STRATEGIC_DOC_KINDS
+// filter here to skip irrelevant uploads (intake forms, billing attachments,
+// etc.) and reduce embedding spend.
 
 export const VOYAGE_MODEL = "voyage-law-2";
 export const VOYAGE_DIM = 1024;
