@@ -8,6 +8,8 @@ export function ContentWrapper({ children }: { children: React.ReactNode }) {
   return isFullBleed ? (
     <>{children}</>
   ) : (
-    <div className="mx-auto max-w-5xl px-6 py-8">{children}</div>
+    <div className="mx-auto max-w-5xl px-4 py-6 pt-16 sm:px-6 sm:py-8 lg:pt-8">
+      {children}
+    </div>
   );
 }

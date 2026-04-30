@@ -159,13 +159,13 @@ export default function CaseDetailPage({
       )}
 
       {/* Tab Navigation + Stage Selector */}
-      <div className="flex items-center justify-between border-b border-zinc-800 px-4">
-        <div className="flex gap-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 px-2 sm:px-4">
+        <div className="-mx-1 flex flex-1 gap-0 overflow-x-auto scroll-smooth [scrollbar-width:thin]">
           {TABS.map((tab) => (
             <button
               key={tab.key}
               className={cn(
-                "border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+                "shrink-0 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors sm:px-4",
                 activeTab === tab.key
                   ? "border-white text-white"
                   : "border-transparent text-zinc-500 hover:text-zinc-300",
