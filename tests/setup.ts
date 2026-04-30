@@ -29,6 +29,10 @@ process.env.GOOGLE_CLIENT_SECRET = "test-google-client-secret";
 process.env.MICROSOFT_CLIENT_ID = "test-ms-client-id";
 process.env.MICROSOFT_CLIENT_SECRET = "test-ms-client-secret";
 process.env.PORTAL_JWT_SECRET = "a".repeat(32);
+process.env.VOYAGE_API_KEY = "test-voyage-key";
+process.env.STRATEGY_BETA_ORG_IDS = "";
+process.env.STRATEGY_MODEL = "claude-sonnet-4-6";
+process.env.STRATEGY_TOP_K_CHUNKS = "12";
 
 // Mock external services by default
 vi.mock("@/server/services/s3", () => ({
