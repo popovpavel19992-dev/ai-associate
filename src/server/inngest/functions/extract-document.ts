@@ -5,6 +5,7 @@ import { documents } from "../../db/schema/documents";
 import { cases } from "../../db/schema/cases";
 import { getObject } from "../../services/s3";
 import { extractText } from "../../services/extraction";
+import { STRATEGIC_DOC_KINDS } from "@/server/services/case-strategy/constants";
 
 export const extractDocument = inngest.createFunction(
   {
@@ -113,6 +114,20 @@ export const extractDocument = inngest.createFunction(
     await inngest.send({
       name: "document/extracted",
       data: { documentId, caseId: doc.caseId },
+    });
+
+    // Fan out to strategy embedding pipeline for strategically relevant doc kinds.
+    // The `documents.kind` column may not yet exist in the schema; read it
+    // defensively so the gate is forward-compatible. STRATEGIC_DOC_KINDS exists
+    // explicitly to short-circuit when no kind is set.
+    await step.run("dispatch-strategic-embed", async () => {
+      const kind = (doc as { kind?: string | null }).kind ?? "";
+      if (STRATEGIC_DOC_KINDS.includes(kind)) {
+        await inngest.send({
+          name: "strategy/embed-document",
+          data: { documentId },
+        });
+      }
     });
 
     return { documentId, pageCount: extraction.pageCount };
