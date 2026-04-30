@@ -1,6 +1,8 @@
-// src/app/api/discovery-responses/[requestId]/pdf/route.ts
+// src/app/api/discovery-responses/internal/[requestId]/pdf/route.ts
 //
 // Lawyer-side download of the formal "Responses to..." PDF. Clerk-authed.
+// Lives under /internal/ to avoid a Next.js dynamic-slug conflict with the
+// opposing-party portal routes at /api/discovery-responses/[token]/...
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";

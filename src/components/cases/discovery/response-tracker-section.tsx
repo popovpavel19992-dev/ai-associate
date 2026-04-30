@@ -125,7 +125,7 @@ export function ResponseTrackerSection({
             Generate response link
           </button>
           <a
-            href={`/api/discovery-responses/${requestId}/pdf`}
+            href={`/api/discovery-responses/internal/${requestId}/pdf`}
             className="rounded-md border border-zinc-700 px-3 py-2 text-sm hover:bg-zinc-900"
           >
             Download responses PDF
