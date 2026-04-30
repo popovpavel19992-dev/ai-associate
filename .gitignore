@@ -46,3 +46,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# mobile (Expo) — has its own package install + build outputs
+mobile/node_modules
+mobile/.expo
+mobile/.env
+mobile/dist
+mobile/web-build
