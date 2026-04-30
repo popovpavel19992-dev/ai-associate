@@ -72,6 +72,7 @@ import { clientCommsRouter } from "./routers/client-comms";
 import { publicIntakeRouter } from "./routers/public-intake";
 import { documentTemplatesRouter } from "./routers/document-templates";
 import { courtRulesRouter } from "./routers/court-rules";
+import { outOfOfficeRouter } from "./routers/out-of-office";
 
 export const appRouter = router({
   users: usersRouter,
@@ -147,6 +148,7 @@ export const appRouter = router({
   publicIntake: publicIntakeRouter,
   documentTemplates: documentTemplatesRouter,
   courtRules: courtRulesRouter,
+  outOfOffice: outOfOfficeRouter,
 });
 
 export type AppRouter = typeof appRouter;

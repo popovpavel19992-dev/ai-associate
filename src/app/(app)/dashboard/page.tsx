@@ -5,10 +5,12 @@ import { CaseList } from "@/components/cases/case-list";
 import { ContractList } from "@/components/contracts/contract-list";
 import { DraftList } from "@/components/drafts/draft-list";
 import { cn } from "@/lib/utils";
+import { ActiveOooBanner } from "@/components/out-of-office/active-banner";
 
 export default function DashboardPage() {
   return (
     <div className="space-y-10">
+      <ActiveOooBanner />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
         <div className="flex flex-wrap gap-3">
