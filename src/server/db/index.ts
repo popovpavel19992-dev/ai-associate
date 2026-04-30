@@ -71,6 +71,8 @@ import * as courtRulesSchema from "./schema/court-rules";
 import * as userOooPeriodsSchema from "./schema/user-ooo-periods";
 import * as oooAutoResponsesLogSchema from "./schema/ooo-auto-responses-log";
 import * as bulkActionLogsSchema from "./schema/bulk-action-logs";
+import * as discoveryResponseTokensSchema from "./schema/discovery-response-tokens";
+import * as discoveryResponsesSchema from "./schema/discovery-responses";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -147,5 +149,7 @@ export const db = drizzle(client, {
     ...userOooPeriodsSchema,
     ...oooAutoResponsesLogSchema,
     ...bulkActionLogsSchema,
+    ...discoveryResponseTokensSchema,
+    ...discoveryResponsesSchema,
   },
 });
