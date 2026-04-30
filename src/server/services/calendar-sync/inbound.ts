@@ -8,6 +8,34 @@ import { calendarSyncPreferences } from "@/server/db/schema/calendar-sync-prefer
 import { getProvider } from "@/server/lib/calendar-providers/factory";
 import type { InboundEvent } from "@/server/lib/calendar-providers/types";
 
+const DEFAULT_DURATION_MS = 30 * 60 * 1000;
+
+export interface OverlapWindow {
+  startsAt: Date;
+  endsAt: Date | null;
+}
+
+/**
+ * Pure overlap calculator. Two events overlap iff
+ *   a.start < b.end AND b.start < a.end
+ * Open-ended events default to a 30-minute duration. Returns null if no overlap.
+ *
+ * Exported for unit testing and reuse.
+ */
+export function computeOverlap(
+  a: OverlapWindow,
+  b: OverlapWindow,
+): { startsAt: Date; endsAt: Date } | null {
+  const aEnd =
+    a.endsAt ?? new Date(a.startsAt.getTime() + DEFAULT_DURATION_MS);
+  const bEnd =
+    b.endsAt ?? new Date(b.startsAt.getTime() + DEFAULT_DURATION_MS);
+  const startsAt = a.startsAt > b.startsAt ? a.startsAt : b.startsAt;
+  const endsAt = aEnd < bEnd ? aEnd : bEnd;
+  if (startsAt >= endsAt) return null;
+  return { startsAt, endsAt };
+}
+
 export interface PullResult {
   fetched: number;
   upserted: number;
@@ -229,7 +257,7 @@ async function detectConflictsForInbound(
   // event scan. Default 30-min window for open-ended events.
   const windows = inbound.map((e) => {
     const start = e.startsAt;
-    const end = e.endsAt ?? new Date(start.getTime() + 30 * 60 * 1000);
+    const end = e.endsAt ?? new Date(start.getTime() + DEFAULT_DURATION_MS);
     return { id: e.id, start, end };
   });
   const minStart = new Date(
@@ -256,13 +284,11 @@ async function detectConflictsForInbound(
 
   for (const w of windows) {
     for (const ce of caseEvents) {
-      const ceStart = ce.startsAt;
-      const ceEnd =
-        ce.endsAt ?? new Date(ceStart.getTime() + 30 * 60 * 1000);
-
-      const overlapStart = w.start > ceStart ? w.start : ceStart;
-      const overlapEnd = w.end < ceEnd ? w.end : ceEnd;
-      if (overlapStart >= overlapEnd) continue;
+      const overlap = computeOverlap(
+        { startsAt: w.start, endsAt: w.end },
+        { startsAt: ce.startsAt, endsAt: ce.endsAt },
+      );
+      if (!overlap) continue;
 
       const inserted = await db
         .insert(inboundEventConflicts)
@@ -270,8 +296,8 @@ async function detectConflictsForInbound(
           userId,
           inboundEventId: w.id,
           caseEventId: ce.id,
-          overlapStartsAt: overlapStart,
-          overlapEndsAt: overlapEnd,
+          overlapStartsAt: overlap.startsAt,
+          overlapEndsAt: overlap.endsAt,
           resolution: "open",
         })
         .onConflictDoNothing({
