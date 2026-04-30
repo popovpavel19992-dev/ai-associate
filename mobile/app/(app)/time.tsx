@@ -33,7 +33,7 @@ export default function TimeEntryScreen() {
       utils.timeEntries.list.invalidate();
       utils.analytics.getKpis.invalidate();
     },
-    onError: (e) => {
+    onError: (e: { message: string }) => {
       setError(e.message);
       setSuccess(null);
     },

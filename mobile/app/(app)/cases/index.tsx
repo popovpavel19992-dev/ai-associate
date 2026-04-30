@@ -20,7 +20,7 @@ export default function CasesIndex() {
     const list = q.data ?? [];
     if (!search.trim()) return list;
     const needle = search.toLowerCase();
-    return list.filter((c) => c.name.toLowerCase().includes(needle));
+    return list.filter((c: { name: string }) => c.name.toLowerCase().includes(needle));
   }, [q.data, search]);
 
   return (

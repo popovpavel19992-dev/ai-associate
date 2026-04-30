@@ -27,9 +27,8 @@ export default function Dashboard() {
 
   const activeCases = casesQ.data?.length ?? 0;
   const billedHoursMonth =
-    kpisQ.data && 'billableHours' in kpisQ.data
-      ? // @ts-expect-error – server returns numeric hours; type inferred as unknown via superjson
-        Number(kpisQ.data.billableHours ?? 0)
+    kpisQ.data && typeof kpisQ.data === 'object' && 'billableHours' in kpisQ.data
+      ? Number((kpisQ.data as { billableHours?: number }).billableHours ?? 0)
       : null;
   const unread = unreadQ.data ?? 0;
 

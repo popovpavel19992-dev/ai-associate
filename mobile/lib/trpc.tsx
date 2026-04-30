@@ -3,9 +3,22 @@ import { createTRPCReact, httpBatchLink } from '@trpc/react-query';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import superjson from 'superjson';
 import { useAuth } from '@clerk/clerk-expo';
-import type { AppRouter } from '../../src/server/trpc/root';
 
-export const trpc = createTRPCReact<AppRouter>();
+/**
+ * AppRouter type bridge.
+ *
+ * Importing the server's `AppRouter` from `../../src/server/trpc/root` pulls
+ * every server router source file into mobile's TypeScript program, which
+ * then fails on Drizzle and `@/server/*` path aliases that only resolve in
+ * the Next.js context. End-to-end inference will be wired up later by either
+ * emitting `.d.ts` artifacts from the server or moving the API into a shared
+ * workspace package.
+ *
+ * For the skeleton we cast to `any` here. Runtime behavior is unaffected —
+ * superjson + httpBatchLink work regardless of compile-time inference.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const trpc: any = createTRPCReact<any>();
 
 function getApiUrl(): string {
   const url = process.env.EXPO_PUBLIC_API_URL;
