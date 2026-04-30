@@ -224,6 +224,20 @@ export class EmailInboundService {
       } catch (e) {
         console.error("[inbound] drip auto-cancel on reply failed", e);
       }
+
+      // Phase 3.14 — fire OOO auto-response asynchronously. Do not block on
+      // failure; just log. UNIQUE on (ooo_period_id, recipient_email) protects
+      // against duplicate sends from races.
+      try {
+        const { maybeSendAutoResponse } = await import(
+          "@/server/services/out-of-office/auto-responder"
+        );
+        void maybeSendAutoResponse({ db: this.db }, replyId).catch((e) => {
+          console.error("[inbound] OOO auto-response failed", e);
+        });
+      } catch (e) {
+        console.error("[inbound] OOO auto-response import failed", e);
+      }
     }
 
     if (accepted.length > 0) {
