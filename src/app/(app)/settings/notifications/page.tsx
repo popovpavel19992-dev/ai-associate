@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { NotificationPreferencesMatrix } from "@/components/notifications/notification-preferences-matrix";
 import { PushPermissionPrompt } from "@/components/notifications/push-permission-prompt";
+import { DigestPreferencesCard } from "@/components/digest/digest-preferences-card";
 
 export default function NotificationSettingsPage() {
   const utils = trpc.useUtils();
@@ -25,6 +26,8 @@ export default function NotificationSettingsPage() {
       </div>
 
       <PushPermissionPrompt />
+
+      <DigestPreferencesCard />
 
       <Card>
         <CardHeader>
