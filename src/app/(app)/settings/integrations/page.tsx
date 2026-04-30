@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar, Copy, RefreshCw, Unplug, Loader2 } from "lucide-react";
+import { AlertTriangle, Calendar, Copy, RefreshCw, Unplug, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -273,6 +273,129 @@ function IcalFeedSection() {
   );
 }
 
+// ── Conflicts Section ────────────────────────────────────────────────────────
+
+function formatRange(start: Date | string, end: Date | string) {
+  const s = new Date(start);
+  const e = new Date(end);
+  const sameDay = s.toDateString() === e.toDateString();
+  const dateFmt: Intl.DateTimeFormatOptions = {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  };
+  if (sameDay) {
+    return `${s.toLocaleString(undefined, dateFmt)}–${e.toLocaleTimeString(
+      undefined,
+      { hour: "numeric", minute: "2-digit" },
+    )}`;
+  }
+  return `${s.toLocaleString(undefined, dateFmt)} → ${e.toLocaleString(undefined, dateFmt)}`;
+}
+
+function ConflictsSection() {
+  const utils = trpc.useUtils();
+  const { data: conflicts, isLoading } =
+    trpc.calendarConnections.listConflicts.useQuery({
+      resolution: "open",
+      limit: 50,
+    });
+
+  const resolve = trpc.calendarConnections.resolveConflict.useMutation({
+    onSuccess: () => {
+      utils.calendarConnections.listConflicts.invalidate();
+      toast.success("Conflict resolved.");
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  if (isLoading) {
+    return (
+      <Card className="border-zinc-800 bg-zinc-900">
+        <CardContent className="flex justify-center py-8">
+          <Loader2 className="size-5 animate-spin text-zinc-500" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!conflicts || conflicts.length === 0) {
+    return (
+      <Card className="border-zinc-800 bg-zinc-900">
+        <CardContent className="py-6">
+          <p className="text-sm text-zinc-500">
+            No scheduling conflicts detected. We check every 15 minutes.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {conflicts.map((row) => (
+        <Card
+          key={row.conflict.id}
+          className="border-amber-500/30 bg-zinc-900"
+        >
+          <CardContent className="flex items-start gap-3 py-4">
+            <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-400" />
+            <div className="flex-1 space-y-2">
+              <p className="text-sm font-medium text-zinc-100">
+                {row.caseTitle}
+              </p>
+              <div className="space-y-1 text-xs text-zinc-400">
+                <p>
+                  <span className="text-zinc-500">Case event:</span>{" "}
+                  {row.caseEvent.title} ·{" "}
+                  {formatRange(
+                    row.caseEvent.startsAt,
+                    row.caseEvent.endsAt ?? row.caseEvent.startsAt,
+                  )}
+                </p>
+                <p>
+                  <span className="text-zinc-500">
+                    {row.provider === "google" ? "Google" : "Outlook"} (
+                    {row.providerEmail ?? "—"}):
+                  </span>{" "}
+                  {row.inbound.title ?? "(untitled)"} ·{" "}
+                  {formatRange(
+                    row.inbound.startsAt,
+                    row.inbound.endsAt ?? row.inbound.startsAt,
+                  )}
+                </p>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  onClick={() =>
+                    resolve.mutate({
+                      conflictId: row.conflict.id,
+                      resolution: "dismissed",
+                    })
+                  }
+                  disabled={resolve.isPending}
+                >
+                  Dismiss
+                </Button>
+                <a
+                  href={`/cases/${row.caseId}/calendar`}
+                  className={buttonVariants({ size: "sm" })}
+                >
+                  Open case
+                </a>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function IntegrationsPage() {
@@ -341,6 +464,13 @@ export default function IntegrationsPage() {
             />
           </div>
         )}
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">
+          Scheduling Conflicts
+        </h2>
+        <ConflictsSection />
       </section>
 
       <section className="space-y-4">
