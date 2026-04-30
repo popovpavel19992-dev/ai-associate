@@ -1,4 +1,3 @@
-import { sql } from "drizzle-orm";
 import {
   pgTable, uuid, integer, text, timestamp, customType, unique, index,
 } from "drizzle-orm/pg-core";
