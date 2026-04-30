@@ -12,6 +12,10 @@ function getClient(): Anthropic {
   return _client;
 }
 
+export function getAnthropic(): Anthropic {
+  return getClient();
+}
+
 function buildAnalysisPrompt(
   sections: string[],
   caseType: string,
