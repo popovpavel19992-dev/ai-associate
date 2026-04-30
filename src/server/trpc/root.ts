@@ -76,6 +76,7 @@ import { outOfOfficeRouter } from "./routers/out-of-office";
 import { bulkOperationsRouter } from "./routers/bulk-operations";
 import { discoveryResponsesRouter } from "./routers/discovery-responses";
 import { caseDigestRouter } from "./routers/case-digest";
+import { caseStrategyRouter } from "./routers/case-strategy";
 
 export const appRouter = router({
   users: usersRouter,
@@ -155,6 +156,7 @@ export const appRouter = router({
   bulkOperations: bulkOperationsRouter,
   discoveryResponses: discoveryResponsesRouter,
   caseDigest: caseDigestRouter,
+  caseStrategy: caseStrategyRouter,
 });
 
 export type AppRouter = typeof appRouter;
