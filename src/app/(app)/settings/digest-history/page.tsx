@@ -76,11 +76,11 @@ export default function DigestHistoryPage() {
                   {detail.data.aiSummary}
                 </div>
               )}
-              {detail.data.payload && (
+              {detail.data.payload ? (
                 <pre className="rounded bg-zinc-100 p-3 text-xs overflow-x-auto">
-                  {JSON.stringify(detail.data.payload, null, 2)}
+                  {JSON.stringify(detail.data.payload, null, 2) ?? ""}
                 </pre>
-              )}
+              ) : null}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">Loading...</p>

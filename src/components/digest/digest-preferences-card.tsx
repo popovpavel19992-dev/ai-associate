@@ -95,9 +95,12 @@ export function DigestPreferencesCard() {
                 >
                   {sendNow.isPending ? "Sending..." : "Send now"}
                 </Button>
-                <Button variant="ghost" asChild>
-                  <Link href="/settings/digest-history">View past digests</Link>
-                </Button>
+                <Link
+                  href="/settings/digest-history"
+                  className="inline-flex h-9 items-center px-3 text-sm font-medium underline-offset-4 hover:underline"
+                >
+                  View past digests
+                </Link>
               </div>
               {sendNow.data && (
                 <p className="text-xs text-muted-foreground">
