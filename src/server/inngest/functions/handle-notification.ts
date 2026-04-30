@@ -356,12 +356,18 @@ export const handleNotification = inngest.createFunction(
         return db
           .select()
           .from(pushSubscriptions)
-          .where(eq(pushSubscriptions.userId, userId));
+          .where(
+            and(
+              eq(pushSubscriptions.userId, userId),
+              eq(pushSubscriptions.isActive, true),
+            ),
+          );
       });
 
       if (subs.length > 0) {
         await step.run("send-push", async () => {
           const goneIds: string[] = [];
+          const successIds: string[] = [];
           await Promise.all(
             subs.map(async (sub) => {
               const result = await sendPushNotification(
@@ -374,15 +380,31 @@ export const handleNotification = inngest.createFunction(
               );
               if (result.gone) {
                 goneIds.push(sub.id);
+              } else if (result.success) {
+                successIds.push(sub.id);
               }
             }),
           );
 
-          // Cleanup expired subscriptions
+          // Soft-deactivate expired subscriptions so the device list still shows them
           if (goneIds.length > 0) {
             await Promise.all(
               goneIds.map((id) =>
-                db.delete(pushSubscriptions).where(eq(pushSubscriptions.id, id)),
+                db
+                  .update(pushSubscriptions)
+                  .set({ isActive: false })
+                  .where(eq(pushSubscriptions.id, id)),
+              ),
+            );
+          }
+          if (successIds.length > 0) {
+            const now = new Date();
+            await Promise.all(
+              successIds.map((id) =>
+                db
+                  .update(pushSubscriptions)
+                  .set({ lastUsedAt: now })
+                  .where(eq(pushSubscriptions.id, id)),
               ),
             );
           }

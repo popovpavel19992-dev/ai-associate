@@ -153,3 +153,5 @@ export const db = drizzle(client, {
     ...discoveryResponsesSchema,
   },
 });
+
+export type Database = typeof db;

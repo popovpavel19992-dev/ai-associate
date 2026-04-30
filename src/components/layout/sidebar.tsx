@@ -24,6 +24,7 @@ import {
   BarChart3,
   ShieldAlert,
   Inbox,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -58,6 +59,7 @@ const navItems = [
   { href: "/settings/conflict-checks", label: "Conflict Checks", icon: ShieldAlert },
   { href: "/settings/trust-accounts", label: "Trust Accounts", icon: Receipt },
   { href: "/settings/bulk-action-logs", label: "Bulk Action Log", icon: ScrollText },
+  { href: "/settings/devices", label: "Devices", icon: Smartphone },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
