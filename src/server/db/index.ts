@@ -67,6 +67,7 @@ import * as publicIntakeTemplatesSchema from "./schema/public-intake-templates";
 import * as publicIntakeSubmissionsSchema from "./schema/public-intake-submissions";
 import * as documentTemplatesSchema from "./schema/document-templates";
 import * as caseGeneratedDocumentsSchema from "./schema/case-generated-documents";
+import * as courtRulesSchema from "./schema/court-rules";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -139,5 +140,6 @@ export const db = drizzle(client, {
     ...publicIntakeSubmissionsSchema,
     ...documentTemplatesSchema,
     ...caseGeneratedDocumentsSchema,
+    ...courtRulesSchema,
   },
 });
