@@ -68,6 +68,8 @@ import * as publicIntakeSubmissionsSchema from "./schema/public-intake-submissio
 import * as documentTemplatesSchema from "./schema/document-templates";
 import * as caseGeneratedDocumentsSchema from "./schema/case-generated-documents";
 import * as courtRulesSchema from "./schema/court-rules";
+import * as userOooPeriodsSchema from "./schema/user-ooo-periods";
+import * as oooAutoResponsesLogSchema from "./schema/ooo-auto-responses-log";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -141,5 +143,7 @@ export const db = drizzle(client, {
     ...documentTemplatesSchema,
     ...caseGeneratedDocumentsSchema,
     ...courtRulesSchema,
+    ...userOooPeriodsSchema,
+    ...oooAutoResponsesLogSchema,
   },
 });
