@@ -9,6 +9,10 @@ import { calendarEventSync } from "./functions/calendar-event-sync";
 import { calendarSweep } from "./functions/calendar-sweep";
 import { calendarConnectionInit } from "./functions/calendar-connection-init";
 import { calendarConnectionCleanup } from "./functions/calendar-connection-cleanup";
+import {
+  calendarInboundSweep,
+  calendarInboundPullOne,
+} from "./functions/calendar-inbound-sweep";
 import { teamMembershipCleanup } from "./functions/team-membership-cleanup";
 import { handleNotification } from "./functions/handle-notification";
 import { notificationReminders } from "./functions/notification-reminders";
@@ -59,4 +63,4 @@ import { oooStatusSweep } from "./functions/ooo-status-sweep";
 import { discoveryDeadlineSweep } from "./functions/discovery-deadline-sweep";
 import { caseDigestSweep } from "./functions/case-digest-sweep";
 
-export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, teamMembershipCleanup, handleNotification, notificationReminders, notificationOverdueCheck, handlePortalNotification, researchEnrichOpinion, researchEnrichStatute, researchMemoGenerate, caseMessageBroadcast, documentRequestCreatedBroadcast, documentRequestItemUploadedBroadcast, documentRequestSubmittedBroadcast, documentRequestItemRejectedBroadcast, documentRequestCancelledBroadcast, documentRequestCreatedNotify, documentRequestItemUploadedNotify, documentRequestSubmittedNotify, documentRequestItemRejectedNotify, documentRequestCancelledNotify, intakeFormSentBroadcast, intakeFormSubmittedBroadcast, intakeFormCancelledBroadcast, intakeFormSentNotify, intakeFormSubmittedNotify, intakeFormCancelledNotify, milestonePublishedBroadcast, milestoneRetractedBroadcast, milestonePublishedNotify, milestoneRetractedNotify, emailReplyNotification, deadlineRemindersDaily, dripSequenceSweeper, autoBillableSuggestionSweep, publicIntakeSubmissionCreated, oooStatusSweep, discoveryDeadlineSweep, caseDigestSweep];
+export const functions = [extractDocument, caseAnalyze, contractAnalyze, contractCompare, contractGenerate, creditReset, autoDelete, calendarEventSync, calendarSweep, calendarConnectionInit, calendarConnectionCleanup, calendarInboundSweep, calendarInboundPullOne, teamMembershipCleanup, handleNotification, notificationReminders, notificationOverdueCheck, handlePortalNotification, researchEnrichOpinion, researchEnrichStatute, researchMemoGenerate, caseMessageBroadcast, documentRequestCreatedBroadcast, documentRequestItemUploadedBroadcast, documentRequestSubmittedBroadcast, documentRequestItemRejectedBroadcast, documentRequestCancelledBroadcast, documentRequestCreatedNotify, documentRequestItemUploadedNotify, documentRequestSubmittedNotify, documentRequestItemRejectedNotify, documentRequestCancelledNotify, intakeFormSentBroadcast, intakeFormSubmittedBroadcast, intakeFormCancelledBroadcast, intakeFormSentNotify, intakeFormSubmittedNotify, intakeFormCancelledNotify, milestonePublishedBroadcast, milestoneRetractedBroadcast, milestonePublishedNotify, milestoneRetractedNotify, emailReplyNotification, deadlineRemindersDaily, dripSequenceSweeper, autoBillableSuggestionSweep, publicIntakeSubmissionCreated, oooStatusSweep, discoveryDeadlineSweep, caseDigestSweep];
