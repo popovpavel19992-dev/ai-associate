@@ -10,6 +10,7 @@ import { seedMotionInLimineTemplates } from "./seed/motion-in-limine-templates";
 import { seedDocumentTemplates } from "./seed/document-templates";
 import { seedStateDeadlineRules } from "./seed/deadline-rules-states";
 import { seedStateCourtHolidays } from "./seed/court-holidays-states";
+import { seedCourtRules } from "./seed/court-rules";
 
 const SYSTEM_PRESETS = [
   {
@@ -84,6 +85,11 @@ async function seed() {
   console.log(
     `Seeded state court holidays (CA/TX/FL/NY): ${stateHolidaysRes.inserted} inserted, ${stateHolidaysRes.skipped} skipped`,
   );
+  const courtRulesRes = await seedCourtRules();
+  console.log(
+    `Seeded court rules (FRCP+FRE+CA/TX/FL/NY): ${courtRulesRes.inserted} inserted, ${courtRulesRes.updated} updated (total ${courtRulesRes.total})`,
+  );
+  console.log(`  By jurisdiction:`, courtRulesRes.byJurisdiction);
   process.exit(0);
 }
 
