@@ -35,6 +35,15 @@ export const calendarConnections = pgTable(
       .default(1)
       .notNull(),
     syncEnabled: boolean("sync_enabled").default(true).notNull(),
+    inboundSyncEnabled: boolean("inbound_sync_enabled")
+      .default(true)
+      .notNull(),
+    syncToken: text("sync_token"),
+    deltaLink: text("delta_link"),
+    lastInboundSyncAt: timestamp("last_inbound_sync_at", {
+      withTimezone: true,
+    }),
+    inboundSyncError: text("inbound_sync_error"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

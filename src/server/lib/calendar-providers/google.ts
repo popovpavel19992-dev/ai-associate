@@ -1,6 +1,11 @@
 import { google } from "googleapis";
 import { addDays } from "date-fns";
-import type { CalendarProvider, ExternalEvent } from "./types";
+import type {
+  CalendarProvider,
+  ExternalEvent,
+  InboundEvent,
+  ListEventsResult,
+} from "./types";
 
 export function mapToGoogleEvent(
   event: ExternalEvent,
@@ -86,6 +91,70 @@ export class GoogleCalendarProvider implements CalendarProvider {
 
   async deleteEvent(calendarId: string, externalEventId: string): Promise<void> {
     await this.calendar.events.delete({ calendarId, eventId: externalEventId });
+  }
+
+  async listEvents(cursor: string | null): Promise<ListEventsResult> {
+    // Inbound pull happens against the user's primary calendar — events the
+    // user creates manually, not the ClearTerms-managed sub-calendar.
+    const calendarId = "primary";
+    const events: InboundEvent[] = [];
+    let pageToken: string | undefined;
+    let nextSyncToken: string | null = null;
+
+    try {
+      do {
+        const res = await this.calendar.events.list({
+          calendarId,
+          singleEvents: true,
+          showDeleted: true,
+          maxResults: 250,
+          pageToken,
+          // Initial sync: events from now to +90 days. Subsequent calls pass
+          // syncToken which Google validates as superseding timeMin/timeMax.
+          ...(cursor
+            ? { syncToken: cursor }
+            : {
+                timeMin: new Date().toISOString(),
+                timeMax: addDays(new Date(), 90).toISOString(),
+              }),
+        });
+
+        const data = res.data;
+        for (const item of data.items ?? []) {
+          const startDateTime = item.start?.dateTime ?? item.start?.date;
+          if (!startDateTime) continue;
+          const endDateTime = item.end?.dateTime ?? item.end?.date;
+          const isAllDay = !!item.start?.date && !item.start?.dateTime;
+          events.push({
+            externalEventId: item.id!,
+            externalEtag: item.etag ?? null,
+            title: item.summary ?? null,
+            description: item.description ?? null,
+            location: item.location ?? null,
+            startsAt: new Date(startDateTime),
+            endsAt: endDateTime ? new Date(endDateTime) : null,
+            isAllDay,
+            status: item.status ?? null,
+            isDeleted: item.status === "cancelled",
+            raw: item,
+          });
+        }
+
+        pageToken = data.nextPageToken ?? undefined;
+        if (data.nextSyncToken) nextSyncToken = data.nextSyncToken;
+      } while (pageToken);
+
+      return { events, nextCursor: nextSyncToken, fullResyncRequired: false };
+    } catch (err: unknown) {
+      // Google returns 410 GONE when syncToken is invalidated (e.g., > 7 days
+      // unused). Caller should clear cursor and retry from scratch.
+      const status = (err as { code?: number; status?: number })?.code ??
+        (err as { status?: number })?.status;
+      if (status === 410) {
+        return { events: [], nextCursor: null, fullResyncRequired: true };
+      }
+      throw err;
+    }
   }
 
   async refreshToken(): Promise<{ accessToken: string; expiresAt: Date }> {

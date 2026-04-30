@@ -104,6 +104,10 @@ export async function GET(request: Request) {
     name: "calendar/connection.created",
     data: { connectionId: connection.id, userId: user.id },
   });
+  await inngest.send({
+    name: "calendar/inbound.pull",
+    data: { connectionId: connection.id },
+  });
 
   redirect("/settings/integrations");
 }
