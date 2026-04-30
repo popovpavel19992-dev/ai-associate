@@ -43,7 +43,7 @@ export const caseDiscoveryRequests = pgTable(
     ),
     check(
       "case_discovery_requests_status_check",
-      sql`${table.status} IN ('draft','final','served','closed')`,
+      sql`${table.status} IN ('draft','final','served','responses_received','overdue','closed')`,
     ),
     check(
       "case_discovery_requests_set_number_check",

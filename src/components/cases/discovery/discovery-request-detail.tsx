@@ -7,11 +7,14 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useActivityTracker } from "@/lib/activity-tracker";
 import type { DiscoveryQuestion } from "@/server/db/schema/case-discovery-requests";
+import { ResponseTrackerSection } from "./response-tracker-section";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
   final: "bg-blue-100 text-blue-800",
   served: "bg-green-100 text-green-800",
+  responses_received: "bg-emerald-100 text-emerald-800",
+  overdue: "bg-red-100 text-red-800",
   closed: "bg-zinc-100 text-zinc-700",
 };
 
@@ -422,6 +425,14 @@ export function DiscoveryRequestDetail({
           </button>
         )}
       </section>
+
+      {req && (req.status === "served" || req.status === "responses_received" || req.status === "overdue") && (
+        <ResponseTrackerSection
+          requestId={requestId}
+          status={req.status}
+          questions={(req.questions ?? []) as DiscoveryQuestion[]}
+        />
+      )}
 
       {showServedDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
