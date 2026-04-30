@@ -42,8 +42,8 @@ export const discoveryDeadlineSweep = inngest.createFunction(
           ? `ALERT: RFAs may be deemed admitted — ${r.title}`
           : `OVERDUE: Discovery responses past due — ${r.title}`;
         const body = isRfa
-          ? `Set ${r.setNumber} of ${r.title} was served on ${r.servedAt.toISOString().slice(0, 10)} and the 30-day response window has elapsed without responses. Under FRCP 36(a)(3), unanswered Requests for Admission may be deemed admitted. Review immediately.`
-          : `Set ${r.setNumber} of ${r.title} was served on ${r.servedAt.toISOString().slice(0, 10)} and the 30-day response window has elapsed without responses.`;
+          ? `Set ${r.setNumber} of ${r.title} was served on ${new Date(r.servedAt as unknown as string | Date).toISOString().slice(0, 10)} and the 30-day response window has elapsed without responses. Under FRCP 36(a)(3), unanswered Requests for Admission may be deemed admitted. Review immediately.`
+          : `Set ${r.setNumber} of ${r.title} was served on ${new Date(r.servedAt as unknown as string | Date).toISOString().slice(0, 10)} and the 30-day response window has elapsed without responses.`;
 
         try {
           await db.insert(notifications).values({
