@@ -11,16 +11,36 @@ export class NoMemosAttachedError extends Error {
 
 const MEMO_MARKER = /\[\[memo:([0-9a-fA-F-]{36})\]\]/g;
 
+export interface DraftExcerpt {
+  documentTitle: string;
+  chunkIndex: number;
+  content: string;
+  similarity: number;
+}
+
 export interface DraftInput {
   motionType: MotionType;
   sectionKey: SectionKey;
   caseFacts: string;
   attachedMemos: AttachedMemo[];
+  extraExcerpts?: DraftExcerpt[];
 }
 
 export interface DraftOutput {
   text: string;
   citations: Citation[];
+}
+
+const EXCERPT_TOP_N = 3;
+const EXCERPT_CHAR_CAP = 1500;
+
+function renderExcerptsBlock(excerpts: DraftExcerpt[]): string {
+  const top = excerpts.slice(0, EXCERPT_TOP_N);
+  if (top.length === 0) return "";
+  const lines = top.map(
+    (e) => `[${e.documentTitle}#${e.chunkIndex}] ${e.content.slice(0, EXCERPT_CHAR_CAP)}`,
+  );
+  return ["## Relevant case excerpts", ...lines, ""].join("\n");
 }
 
 export async function draftMotionSection(
@@ -31,10 +51,14 @@ export async function draftMotionSection(
     throw new NoMemosAttachedError();
   }
   const client = deps.client ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
-  const prompt = renderPrompt(input.motionType, input.sectionKey, {
+  const basePrompt = renderPrompt(input.motionType, input.sectionKey, {
     caseFacts: input.caseFacts,
     attachedMemos: input.attachedMemos,
   });
+  const excerptsBlock = input.extraExcerpts && input.extraExcerpts.length > 0
+    ? renderExcerptsBlock(input.extraExcerpts)
+    : "";
+  const prompt = excerptsBlock ? `${excerptsBlock}\n${basePrompt}` : basePrompt;
 
   const response = await client.messages.create({
     model: "claude-opus-4-7",

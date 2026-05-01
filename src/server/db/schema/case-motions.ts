@@ -5,6 +5,7 @@ import { cases } from "./cases";
 import { users } from "./users";
 import { motionTemplates } from "./motion-templates";
 import { caseTriggerEvents } from "./case-trigger-events";
+import { caseStrategyRecommendations } from "./case-strategy-recommendations";
 
 export const caseMotions = pgTable(
   "case_motions",
@@ -22,6 +23,8 @@ export const caseMotions = pgTable(
     splitMemo: boolean("split_memo").notNull().default(false),
     filedAt: timestamp("filed_at", { withTimezone: true }),
     triggerEventId: uuid("trigger_event_id").references(() => caseTriggerEvents.id, { onDelete: "set null" }),
+    drafterContextJson: jsonb("drafter_context_json"),
+    draftedFromRecommendationId: uuid("drafted_from_recommendation_id").references(() => caseStrategyRecommendations.id, { onDelete: "set null" }),
     createdBy: uuid("created_by").references(() => users.id).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

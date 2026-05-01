@@ -1,9 +1,10 @@
 import {
-  pgTable, uuid, text, integer, timestamp, jsonb, pgEnum, index,
+  pgTable, uuid, text, integer, timestamp, jsonb, pgEnum, index, numeric,
 } from "drizzle-orm/pg-core";
 import { cases } from "./cases";
 import { users } from "./users";
 import { caseStrategyRuns } from "./case-strategy-runs";
+import { motionTemplates } from "./motion-templates";
 
 export const strategyCategoryEnum = pgEnum("strategy_category", [
   "procedural", "discovery", "substantive", "client",
@@ -23,6 +24,8 @@ export const caseStrategyRecommendations = pgTable(
     citations: jsonb("citations").notNull().default([]),
     dismissedAt: timestamp("dismissed_at", { withTimezone: true }),
     dismissedBy: uuid("dismissed_by").references(() => users.id),
+    suggestedTemplateId: uuid("suggested_template_id").references(() => motionTemplates.id, { onDelete: "set null" }),
+    suggestConfidence: numeric("suggest_confidence", { precision: 3, scale: 2 }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [

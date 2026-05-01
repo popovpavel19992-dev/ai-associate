@@ -81,6 +81,34 @@ export const motionsRouter = router({
         memoIds: z.array(z.string().uuid()).default([]),
         collectionIds: z.array(z.string().uuid()).default([]),
         splitMemo: z.boolean().optional(),
+        drafterContextJson: z
+          .object({
+            chunks: z.array(
+              z.object({
+                documentId: z.string().uuid(),
+                documentTitle: z.string(),
+                chunkIndex: z.number().int(),
+                content: z.string(),
+                similarity: z.number(),
+              }),
+            ),
+            citedEntities: z.array(
+              z.object({
+                kind: z.enum([
+                  "document",
+                  "deadline",
+                  "filing",
+                  "motion",
+                  "message",
+                ]),
+                id: z.string().uuid(),
+                excerpt: z.string().optional(),
+              }),
+            ),
+            fromRecommendationId: z.string().uuid(),
+            generatedAt: z.string(),
+          })
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -127,6 +155,9 @@ export const motionsRouter = router({
           attachedMemoIds: input.memoIds,
           attachedCollectionIds: input.collectionIds,
           splitMemo: input.splitMemo ?? false,
+          drafterContextJson: input.drafterContextJson ?? null,
+          draftedFromRecommendationId:
+            input.drafterContextJson?.fromRecommendationId ?? null,
           createdBy: ctx.user.id,
         })
         .returning();
@@ -191,12 +222,23 @@ export const motionsRouter = router({
       }
 
       const { draftMotionSection, NoMemosAttachedError } = await import("@/server/services/motions/draft");
+      const drafterCtx = motion.drafterContextJson as
+        | {
+            chunks?: Array<{
+              documentTitle: string;
+              chunkIndex: number;
+              content: string;
+              similarity: number;
+            }>;
+          }
+        | null;
       try {
         const out = await draftMotionSection({
           motionType: tpl.motionType as "motion_to_dismiss" | "motion_for_summary_judgment" | "motion_to_compel",
           sectionKey: input.sectionKey,
           caseFacts: caseRow.description ?? "",
           attachedMemos,
+          extraExcerpts: drafterCtx?.chunks ?? undefined,
         });
 
         const nextSections = {

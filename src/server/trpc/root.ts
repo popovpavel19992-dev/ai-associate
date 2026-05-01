@@ -78,6 +78,7 @@ import { discoveryResponsesRouter } from "./routers/discovery-responses";
 import { caseDigestRouter } from "./routers/case-digest";
 import { caseStrategyRouter } from "./routers/case-strategy";
 import { caseStrategyChatRouter } from "./routers/case-strategy-chat";
+import { motionDrafterRouter } from "./routers/motion-drafter";
 
 export const appRouter = router({
   users: usersRouter,
@@ -159,6 +160,7 @@ export const appRouter = router({
   caseDigest: caseDigestRouter,
   caseStrategy: caseStrategyRouter,
   caseStrategyChat: caseStrategyChatRouter,
+  motionDrafter: motionDrafterRouter,
 });
 
 export type AppRouter = typeof appRouter;

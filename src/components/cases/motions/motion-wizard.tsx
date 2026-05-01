@@ -1,16 +1,24 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { MotionDrafterPreview } from "./motion-drafter-preview";
 
 export function MotionWizard({ caseId }: { caseId: string }) {
   const router = useRouter();
-  const [step, setStep] = useState<1 | 2>(1);
+  const searchParams = useSearchParams();
+  const fromRecId = searchParams.get("fromRec");
+
+  const [step, setStep] = useState<0 | 1 | 2>(fromRecId ? 0 : 1);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [selectedMemos, setSelectedMemos] = useState<string[] | null>(null);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [splitMemo, setSplitMemo] = useState<boolean>(false);
+
+  const suggest = trpc.motionDrafter.suggest.useMutation();
+  const [drafterCtx, setDrafterCtx] = useState<typeof suggest.data | null>(null);
 
   const { data: templates } = trpc.motions.listTemplates.useQuery();
   const { data: suggestions } = trpc.motions.suggestMemos.useQuery({ caseId });
@@ -18,9 +26,24 @@ export function MotionWizard({ caseId }: { caseId: string }) {
     onSuccess: (m) => router.push(`/cases/${caseId}/motions/${m.id}`),
   });
 
-  // Derive default selection from suggestions without useEffect (avoids
-  // react-hooks/set-state-in-effect cascading renders). `null` means
-  // "user has not interacted yet — fall back to suggestion defaults".
+  useEffect(() => {
+    if (!fromRecId || drafterCtx || suggest.isPending) return;
+    suggest.mutate(
+      { recommendationId: fromRecId },
+      {
+        onSuccess: (data) => {
+          setDrafterCtx(data);
+          if (data.template) setTemplateId(data.template.id);
+          setTitle(data.suggestedTitle);
+        },
+        onError: (e) => {
+          toast.error(e.message);
+          setStep(1);
+        },
+      },
+    );
+  }, [fromRecId, drafterCtx, suggest]);
+
   const effectiveSelectedMemos: string[] =
     selectedMemos ?? (suggestions?.memos.map((m) => m.id) ?? []);
 
@@ -33,6 +56,21 @@ export function MotionWizard({ caseId }: { caseId: string }) {
     });
   const toggleCollection = (id: string) =>
     setSelectedCollections((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+
+  if (step === 0) {
+    return (
+      <MotionDrafterPreview
+        isLoading={suggest.isPending || !drafterCtx}
+        template={drafterCtx?.template ?? null}
+        confidence={drafterCtx?.confidence ?? 0}
+        suggestedTitle={drafterCtx?.suggestedTitle ?? ""}
+        citedEntities={drafterCtx?.citedEntities ?? []}
+        autoPulledChunks={drafterCtx?.autoPulledChunks ?? []}
+        onConfirm={() => setStep(2)}
+        onCustomize={() => setStep(1)}
+      />
+    );
+  }
 
   if (step === 1) {
     return (
@@ -146,6 +184,14 @@ export function MotionWizard({ caseId }: { caseId: string }) {
               memoIds: effectiveSelectedMemos,
               collectionIds: selectedCollections,
               splitMemo: selectedTemplate?.supportsMemoSplit ? splitMemo : undefined,
+              drafterContextJson: drafterCtx
+                ? {
+                    chunks: drafterCtx.autoPulledChunks,
+                    citedEntities: drafterCtx.citedEntities,
+                    fromRecommendationId: fromRecId!,
+                    generatedAt: new Date().toISOString(),
+                  }
+                : undefined,
             })
           }
           className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
