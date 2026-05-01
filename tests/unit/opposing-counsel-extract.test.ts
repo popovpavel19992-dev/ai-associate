@@ -118,6 +118,48 @@ describe("extractSignatureBlock", () => {
     expect(r).toBeNull();
   });
 
+  it("returns parsed result when confidence is exactly 0.7 (boundary)", async () => {
+    const anthropic = makeAnthropic({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            name: "Boundary Bob",
+            firm: "Edge LLP",
+            barNumber: "70",
+            barState: "TX",
+            confidence: 0.7,
+          }),
+        },
+      ],
+    });
+
+    const r = await extractSignatureBlock({ text: "x" }, { anthropic });
+    expect(r).not.toBeNull();
+    expect(r?.confidence).toBe(0.7);
+    expect(r?.name).toBe("Boundary Bob");
+  });
+
+  it("returns null when confidence is 0.69 (just below boundary)", async () => {
+    const anthropic = makeAnthropic({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            name: "Just Under",
+            firm: null,
+            barNumber: null,
+            barState: null,
+            confidence: 0.69,
+          }),
+        },
+      ],
+    });
+
+    const r = await extractSignatureBlock({ text: "x" }, { anthropic });
+    expect(r).toBeNull();
+  });
+
   it("strips ```json fences before parsing", async () => {
     const anthropic = makeAnthropic({
       content: [

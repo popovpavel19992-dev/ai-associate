@@ -14,7 +14,7 @@ export type SignatureBlockResult = z.infer<typeof ResultSchema>;
 const PROMPT = `You are extracting the attorney signature block from a US legal filing OCR text.
 Return ONLY valid JSON with keys: name (string), firm (string|null), barNumber (string|null),
 barState (2-letter US state code|null), confidence (0..1, your certainty this is the AUTHORING attorney).
-If you cannot find a clear signature block, return confidence < 0.5.`;
+If you cannot find a clear signature block, return confidence < 0.7.`;
 
 const HAIKU_MODEL = "claude-haiku-4-5-20251001";
 
