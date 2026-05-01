@@ -160,7 +160,7 @@ export async function aiGenerate(
 
     const result = await db.transaction(async (tx) => {
       const nextNum = await getNextLetterNumber(tx, args.caseId);
-      const [inserted] = await (tx as typeof db)
+      const [inserted] = await (tx as unknown as typeof db)
         .insert(caseDemandLetters)
         .values({
           orgId: args.orgId,
@@ -187,7 +187,7 @@ export async function aiGenerate(
           letterNumber: caseDemandLetters.letterNumber,
         });
 
-      await (tx as typeof db)
+      await (tx as unknown as typeof db)
         .insert(caseDemandLetterSections)
         .values(
           sectionContents.map((s) => ({
@@ -216,7 +216,7 @@ async function getNextLetterNumber(
   tx: unknown,
   caseId: string,
 ): Promise<number> {
-  const rows = await (tx as typeof db)
+  const rows = await (tx as unknown as typeof db)
     .select({ n: caseDemandLetters.letterNumber })
     .from(caseDemandLetters)
     .where(eq(caseDemandLetters.caseId, caseId))

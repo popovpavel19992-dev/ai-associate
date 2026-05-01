@@ -37,7 +37,8 @@ export async function buildDemandLetterPdf(input: {
     .limit(1);
   if (!row) throw new DemandLetterNotFoundError(input.letterId);
 
-  let sections: { sectionKey: string; contentMd: string }[] | undefined;
+  type SectionKey = "header" | "facts" | "legal_basis" | "demand" | "consequences";
+  let sections: { sectionKey: SectionKey; contentMd: string }[] | undefined;
   if (row.aiGenerated) {
     const secs = await db
       .select({
@@ -46,7 +47,7 @@ export async function buildDemandLetterPdf(input: {
       })
       .from(caseDemandLetterSections)
       .where(eq(caseDemandLetterSections.letterId, row.id));
-    sections = secs;
+    sections = secs as { sectionKey: SectionKey; contentMd: string }[];
   }
 
   const [caseRow] = await db
