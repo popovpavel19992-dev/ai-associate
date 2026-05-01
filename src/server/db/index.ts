@@ -76,6 +76,9 @@ import * as discoveryResponseTokensSchema from "./schema/discovery-response-toke
 import * as discoveryResponsesSchema from "./schema/discovery-responses";
 import * as digestPreferencesSchema from "./schema/digest-preferences";
 import * as digestLogsSchema from "./schema/digest-logs";
+import * as opposingCounselProfilesSchema from "./schema/opposing-counsel-profiles";
+import * as opposingCounselPosturesSchema from "./schema/opposing-counsel-postures";
+import * as opposingCounselPredictionsSchema from "./schema/opposing-counsel-predictions";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -157,6 +160,9 @@ export const db = drizzle(client, {
     ...discoveryResponsesSchema,
     ...digestPreferencesSchema,
     ...digestLogsSchema,
+    ...opposingCounselProfilesSchema,
+    ...opposingCounselPosturesSchema,
+    ...opposingCounselPredictionsSchema,
   },
 });
 
