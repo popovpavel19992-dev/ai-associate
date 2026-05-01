@@ -25,6 +25,7 @@ export const caseMotions = pgTable(
     triggerEventId: uuid("trigger_event_id").references(() => caseTriggerEvents.id, { onDelete: "set null" }),
     drafterContextJson: jsonb("drafter_context_json"),
     draftedFromRecommendationId: uuid("drafted_from_recommendation_id").references(() => caseStrategyRecommendations.id, { onDelete: "set null" }),
+    lastCiteCheckJson: jsonb("last_cite_check_json"),
     createdBy: uuid("created_by").references(() => users.id).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
