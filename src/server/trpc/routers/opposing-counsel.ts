@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod/v4";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { protectedProcedure, router } from "../trpc";
 import { assertCaseAccess } from "../lib/permissions";
 import {
@@ -85,7 +85,7 @@ export const opposingCounselRouter = router({
           regenerateSalt: input.regenerate ? Date.now() : undefined,
         });
       } catch (e) {
-        mapErr(e);
+        return mapErr(e);
       }
     }),
 
@@ -109,7 +109,7 @@ export const opposingCounselRouter = router({
           regenerateSalt: input.regenerate ? Date.now() : undefined,
         });
       } catch (e) {
-        mapErr(e);
+        return mapErr(e);
       }
     }),
 
@@ -137,7 +137,7 @@ export const opposingCounselRouter = router({
           barState: input.barState,
         });
       } catch (e) {
-        mapErr(e);
+        return mapErr(e);
       }
     }),
 
@@ -190,6 +190,7 @@ export const opposingCounselRouter = router({
             eq(opposingCounselPredictions.targetId, input.targetId),
           ),
         )
-        .orderBy(opposingCounselPredictions.createdAt);
+        .orderBy(desc(opposingCounselPredictions.createdAt))
+        .limit(25);
     }),
 });
