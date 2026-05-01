@@ -7,6 +7,8 @@ import type { PredictionProfile } from "./predict";
 const SONNET = "claude-sonnet-4-6";
 const Conf = z.enum(["low", "med", "high"]);
 
+// Note: `settleLikelihood` is the orchestrator-derived midpoint of settleLow/settleHigh
+// and is NOT requested from Claude. See orchestrator.ts.
 const ResultSchema = z
   .object({
     aggressiveness: z.number().int().min(1).max(10),
