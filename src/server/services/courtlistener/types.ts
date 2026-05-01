@@ -55,3 +55,31 @@ export interface OpinionDetail {
   syllabusUrl?: string;
   citedByCount?: number;
 }
+
+export interface PeopleSearchParams {
+  name: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface PeoplePosition {
+  job_title?: string | null;
+  organization_name?: string | null;
+  date_start?: string | null;
+  date_termination?: string | null;
+}
+
+export interface PeoplePerson {
+  id: number;
+  name_full: string;
+  name_first?: string | null;
+  name_last?: string | null;
+  positions?: PeoplePosition[];
+}
+
+export interface PeopleResponse {
+  count: number;
+  next?: string | null;
+  previous?: string | null;
+  results: PeoplePerson[];
+}
