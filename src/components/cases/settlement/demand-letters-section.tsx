@@ -5,6 +5,7 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { formatCurrency } from "./format";
 import { NewDemandLetterDialog } from "./new-demand-letter-dialog";
+import { AiDemandLetterDialog } from "./ai-demand-letter-dialog";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -23,6 +24,8 @@ const TYPE_LABEL: Record<string, string> = {
 
 export function DemandLettersSection({ caseId }: { caseId: string }) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const utils = trpc.useUtils();
   const { data: rows, isLoading } =
     trpc.settlement.demandLetters.listForCase.useQuery({ caseId });
 
@@ -30,13 +33,22 @@ export function DemandLettersSection({ caseId }: { caseId: string }) {
     <section className="space-y-2">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-zinc-300">Demand Letters</h3>
-        <button
-          type="button"
-          onClick={() => setDialogOpen(true)}
-          className="inline-flex items-center rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700"
-        >
-          New Demand Letter
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAiDialogOpen(true)}
+            className="inline-flex items-center gap-1 rounded-md bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700"
+          >
+            ✨ Draft with AI
+          </button>
+          <button
+            type="button"
+            onClick={() => setDialogOpen(true)}
+            className="inline-flex items-center rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700"
+          >
+            New Demand Letter
+          </button>
+        </div>
       </div>
       {isLoading ? (
         <p className="text-sm text-gray-500">Loading…</p>
@@ -87,6 +99,15 @@ export function DemandLettersSection({ caseId }: { caseId: string }) {
           onClose={() => setDialogOpen(false)}
         />
       ) : null}
+      <AiDemandLetterDialog
+        caseId={caseId}
+        open={aiDialogOpen}
+        onClose={() => setAiDialogOpen(false)}
+        onCreated={() => {
+          setAiDialogOpen(false);
+          void utils.settlement.demandLetters.listForCase.invalidate({ caseId });
+        }}
+      />
     </section>
   );
 }

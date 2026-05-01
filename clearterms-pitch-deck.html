@@ -280,6 +280,48 @@
     transform: scale(1.3);
   }
 
+  /* Responsive: tablets */
+  @media (max-width: 1024px) {
+    .slide { padding: 40px 40px; }
+    h1 { font-size: 40px; letter-spacing: -1px; }
+    h2 { font-size: 30px; }
+    .stat-big { font-size: 32px; }
+    .subtitle { font-size: 17px; }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+    .flow { flex-wrap: wrap; justify-content: center; }
+    .flow-arrow { display: none; }
+    .flow-step { min-width: 120px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+  }
+
+  /* Responsive: phones */
+  @media (max-width: 600px) {
+    .slide { padding: 32px 20px; min-height: auto; min-height: 100dvh; }
+    .slide-number { top: 16px; right: 20px; font-size: 11px; }
+    h1 { font-size: 28px !important; letter-spacing: -1px; }
+    h2 { font-size: 22px; }
+    h3 { font-size: 17px; }
+    .subtitle { font-size: 15px; }
+    .subtitle-sm { font-size: 13px; }
+    .stat-big { font-size: 28px; }
+    .stat-label { font-size: 11px; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .card { padding: 18px; }
+    .flow { flex-wrap: wrap; gap: 8px; }
+    .flow-arrow { display: none; }
+    .flow-step { min-width: calc(50% - 8px); padding: 14px; }
+    .nav-dots { display: none; }
+    .pricing-card { padding: 20px 18px; }
+    .price { font-size: 36px; }
+    table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .funnel-bar { padding: 10px 14px; }
+    .funnel-bar span { font-size: 12px !important; }
+    ul li { font-size: 13px; }
+    .tag { font-size: 10px; padding: 3px 8px; }
+  }
+
   /* Print styles */
   @media print {
     .slide { page-break-after: always; min-height: auto; padding: 40px; }

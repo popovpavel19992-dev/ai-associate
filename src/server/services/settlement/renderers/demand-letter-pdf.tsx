@@ -69,6 +69,7 @@ export interface DemandLetterPdfRow {
   demandTerms: string | null;
   letterBody: string | null;
   sentAt: Date | null;
+  aiGenerated: boolean;
 }
 
 export interface DemandLetterCaption {
@@ -90,6 +91,15 @@ export interface DemandLetterPdfProps {
   letter: DemandLetterPdfRow;
   caption: DemandLetterCaption;
   firm: DemandLetterFirm;
+  sections?: Array<{
+    sectionKey:
+      | "header"
+      | "facts"
+      | "legal_basis"
+      | "demand"
+      | "consequences";
+    contentMd: string;
+  }>;
 }
 
 function formatMoneyMajor(cents: number, currency: string): string {
@@ -135,10 +145,24 @@ function paragraphsFrom(text: string): string[] {
     .filter((p) => p.length > 0);
 }
 
+const AI_SECTION_ORDER: Array<"facts" | "legal_basis" | "demand" | "consequences"> = [
+  "facts",
+  "legal_basis",
+  "demand",
+  "consequences",
+];
+
+const AI_SECTION_TITLES: Record<string, string> = {
+  facts: "Statement of Facts",
+  legal_basis: "Legal Basis",
+  demand: "Demand",
+  consequences: "Consequences",
+};
+
 export function DemandLetterPdf(
   props: DemandLetterPdfProps,
 ): React.ReactElement {
-  const { letter, caption, firm } = props;
+  const { letter, caption, firm, sections } = props;
   const dateStr = letter.sentAt
     ? formatLongDate(letter.sentAt)
     : formatLongDate(new Date());
@@ -155,6 +179,13 @@ export function DemandLetterPdf(
     letter.letterBody !== null &&
     letter.letterBody !== undefined &&
     letter.letterBody.trim().length > 0;
+
+  // AI-generated branch: render sections from case_demand_letter_sections.
+  const useAiSections =
+    !useBodyOverride &&
+    letter.aiGenerated === true &&
+    sections !== undefined &&
+    sections.length === 5;
 
   return (
     <Document>
@@ -220,6 +251,27 @@ export function DemandLetterPdf(
               {p}
             </Text>
           ))
+        ) : useAiSections ? (
+          <>
+            {AI_SECTION_ORDER.map((key) => {
+              const sec = (sections as NonNullable<typeof sections>).find(
+                (s) => s.sectionKey === key,
+              );
+              if (!sec || sec.contentMd.trim().length === 0) return null;
+              return (
+                <React.Fragment key={key}>
+                  <Text style={styles.sectionHeader}>
+                    {AI_SECTION_TITLES[key]}
+                  </Text>
+                  {paragraphsFrom(sec.contentMd).map((p, i) => (
+                    <Text key={i} style={styles.paragraph}>
+                      {p}
+                    </Text>
+                  ))}
+                </React.Fragment>
+              );
+            })}
+          </>
         ) : (
           <>
             <Text style={styles.paragraph}>

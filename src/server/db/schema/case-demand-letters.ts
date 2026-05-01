@@ -4,16 +4,27 @@ import {
   text,
   integer,
   bigint,
+  numeric,
+  boolean,
   timestamp,
   date,
   index,
   check,
   unique,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organizations } from "./organizations";
 import { cases } from "./cases";
 import { users } from "./users";
+
+export const DEMAND_CLAIM_TYPE = [
+  "contract",
+  "personal_injury",
+  "employment",
+  "debt",
+] as const;
+export type DemandClaimType = (typeof DEMAND_CLAIM_TYPE)[number];
 
 export const DEMAND_LETTER_TYPE = [
   "initial_demand",
@@ -81,6 +92,14 @@ export const caseDemandLetters = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    claimType: text("claim_type").$type<DemandClaimType | null>(),
+    claimTypeConfidence: numeric("claim_type_confidence", {
+      precision: 3,
+      scale: 2,
+    }),
+    cacheHash: text("cache_hash"),
+    aiSummary: text("ai_summary"),
+    aiGenerated: boolean("ai_generated").notNull().default(false),
   },
   (table) => [
     index("case_demand_letters_case_idx").on(table.caseId, table.status),
@@ -108,6 +127,13 @@ export const caseDemandLetters = pgTable(
       "case_demand_letters_amount_check",
       sql`${table.demandAmountCents} IS NULL OR ${table.demandAmountCents} >= 0`,
     ),
+    check(
+      "case_demand_letters_claim_type_check",
+      sql`${table.claimType} IS NULL OR ${table.claimType} IN ('contract','personal_injury','employment','debt')`,
+    ),
+    uniqueIndex("case_demand_letters_org_cache_hash_uq")
+      .on(table.orgId, table.cacheHash)
+      .where(sql`${table.cacheHash} IS NOT NULL`),
   ],
 );
 

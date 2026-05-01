@@ -36,6 +36,7 @@ describe("3.4 demand letter renderer", () => {
             demandTerms: "Wire transfer to trust account; mutual release.",
             letterBody: null,
             sentAt: null,
+            aiGenerated: false,
           },
           caption: {
             plaintiff: "Acme Corp.",
@@ -108,6 +109,7 @@ describe("3.4 demand letter renderer", () => {
             letterBody:
               "This is a fully custom letter body.\n\nIt overrides everything.",
             sentAt: null,
+            aiGenerated: false,
           },
           caption: {
             plaintiff: "P",

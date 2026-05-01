@@ -5,11 +5,23 @@
 
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
 import { protectedProcedure, router } from "@/server/trpc/trpc";
 import { assertCaseAccess } from "@/server/trpc/lib/permissions";
+import { isStrategyEnabled } from "@/server/lib/feature-flags";
+import { cases } from "@/server/db/schema/cases";
+import { documents } from "@/server/db/schema/documents";
 import * as offersService from "@/server/services/settlement/offers-service";
 import * as mediationService from "@/server/services/settlement/mediation-service";
 import * as demandLettersService from "@/server/services/settlement/demand-letters-service";
+import {
+  aiSuggest,
+  aiGenerate,
+  aiRegenerateSection,
+  aiGetSections,
+  InsufficientCreditsError,
+  NotBetaOrgError,
+} from "@/server/services/demand-letter-ai";
 
 function requireOrgId(ctx: { user: { orgId: string | null } }): string {
   const orgId = ctx.user.orgId;
@@ -637,6 +649,114 @@ const demandLettersRouter = router({
     .query(async ({ ctx, input }) => {
       await loadLetterOwned(ctx, input.letterId);
       return { url: `/api/demand-letters/${input.letterId}/pdf` };
+    }),
+
+  aiSuggest: protectedProcedure
+    .input(z.object({ caseId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user.orgId) throw new TRPCError({ code: "FORBIDDEN", message: "Org required" });
+      if (!isStrategyEnabled(ctx.user.orgId)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "AI demand letters not enabled for this organization." });
+      }
+      await assertCaseAccess(ctx, input.caseId);
+
+      const [c] = await ctx.db.select().from(cases).where(eq(cases.id, input.caseId)).limit(1);
+      if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
+
+      const docs = await ctx.db
+        .select({ filename: documents.filename })
+        .from(documents)
+        .where(eq(documents.caseId, input.caseId))
+        .limit(10);
+
+      const cAny = c as { name?: string | null; description?: string | null };
+      return aiSuggest({
+        caseId: input.caseId,
+        caseTitle: cAny.name ?? "(case)",
+        caseSummary: cAny.description ?? "",
+        documentTitles: docs.map((d) => d.filename ?? "Untitled"),
+        userId: ctx.user.id,
+        orgId: ctx.user.orgId,
+      });
+    }),
+
+  aiGenerate: protectedProcedure
+    .input(
+      z.object({
+        caseId: z.string().uuid(),
+        claimType: z.enum(["contract", "personal_injury", "employment", "debt"]),
+        claimTypeConfidence: z.number().min(0).max(1).optional(),
+        demandAmountCents: z.number().int().positive().lt(1_000_000_000_000),
+        deadlineDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((s) => {
+          const today = new Date(); today.setHours(0, 0, 0, 0);
+          const d = new Date(s + "T00:00:00Z");
+          const min = new Date(today); min.setDate(min.getDate() + 7);
+          const max = new Date(today); max.setDate(max.getDate() + 90);
+          return d >= min && d <= max;
+        }, "Deadline must be 7-90 days from today"),
+        recipientName: z.string().min(1).max(200),
+        recipientAddress: z.string().min(1).max(500),
+        recipientEmail: z.string().email().optional().nullable(),
+        summary: z.string().min(50).max(5000),
+        letterType: z.enum(["initial_demand", "pre_litigation", "pre_trial", "response_to_demand"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user.orgId) throw new TRPCError({ code: "FORBIDDEN", message: "Org required" });
+      if (!isStrategyEnabled(ctx.user.orgId)) throw new TRPCError({ code: "FORBIDDEN", message: "AI demand letters not enabled" });
+      await assertCaseAccess(ctx, input.caseId);
+
+      try {
+        return await aiGenerate({
+          ...input,
+          userId: ctx.user.id,
+          orgId: ctx.user.orgId,
+        });
+      } catch (e) {
+        if (e instanceof InsufficientCreditsError) {
+          throw new TRPCError({ code: "PAYMENT_REQUIRED", message: "Insufficient credits." });
+        }
+        if (e instanceof NotBetaOrgError) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "AI demand letters not enabled" });
+        }
+        throw e;
+      }
+    }),
+
+  aiRegenerateSection: protectedProcedure
+    .input(
+      z.object({
+        letterId: z.string().uuid(),
+        sectionKey: z.enum(["header", "facts", "legal_basis", "demand", "consequences"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user.orgId) throw new TRPCError({ code: "FORBIDDEN", message: "Org required" });
+      if (!isStrategyEnabled(ctx.user.orgId)) throw new TRPCError({ code: "FORBIDDEN", message: "AI demand letters not enabled" });
+
+      try {
+        return await aiRegenerateSection({ ...input, userId: ctx.user.id, orgId: ctx.user.orgId });
+      } catch (e) {
+        if (e instanceof Error && e.message === "NOT_FOUND") {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+        throw e;
+      }
+    }),
+
+  aiGetSections: protectedProcedure
+    .input(z.object({ letterId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.user.orgId) throw new TRPCError({ code: "FORBIDDEN", message: "Org required" });
+      if (!isStrategyEnabled(ctx.user.orgId)) throw new TRPCError({ code: "FORBIDDEN", message: "AI demand letters not enabled" });
+      try {
+        return await aiGetSections(input.letterId, ctx.user.orgId);
+      } catch (e) {
+        if (e instanceof Error && e.message === "NOT_FOUND") {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+        throw e;
+      }
     }),
 });
 
