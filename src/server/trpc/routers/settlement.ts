@@ -669,9 +669,12 @@ const demandLettersRouter = router({
         .where(eq(documents.caseId, input.caseId))
         .limit(10);
 
-      void docs; // fetched for context; service handles its own sourcing
+      const cAny = c as { name?: string | null; description?: string | null };
       return aiSuggest({
         caseId: input.caseId,
+        caseTitle: cAny.name ?? "(case)",
+        caseSummary: cAny.description ?? "",
+        documentTitles: docs.map((d) => d.filename ?? "Untitled"),
         userId: ctx.user.id,
         orgId: ctx.user.orgId,
       });

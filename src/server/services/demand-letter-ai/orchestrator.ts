@@ -53,23 +53,19 @@ function computeCacheHash(
 
 export interface AiSuggestArgs {
   caseId: string;
+  caseTitle: string;
+  caseSummary: string;
+  documentTitles: string[];
   userId: string;
   orgId: string;
 }
 
 export async function aiSuggest(args: AiSuggestArgs) {
   assertBetaOrg(args.orgId);
-  // Pull case info from existing demand letters — narrow query.
-  // The router (Task G) calls classifyClaim directly with richer case context.
-  const [caseRow] = await db
-    .select()
-    .from(caseDemandLetters)
-    .where(eq(caseDemandLetters.caseId, args.caseId))
-    .limit(1);
   return classifyClaim({
-    caseTitle: (caseRow as { caseTitle?: string } | undefined)?.caseTitle ?? (caseRow?.recipientName ?? "(case)"),
-    caseSummary: caseRow?.aiSummary ?? "",
-    documentTitles: [],
+    caseTitle: args.caseTitle,
+    caseSummary: args.caseSummary,
+    documentTitles: args.documentTitles,
   });
 }
 

@@ -146,10 +146,14 @@ describe("demand-letter-ai orchestrator", () => {
       rationale: "x",
       ranked: [{ claimType: "contract", confidence: 0.9 }],
     });
-    mocks.selectLetterMock.mockResolvedValue([
-      { caseTitle: "Acme v Beta", summary: null },
-    ]);
-    await aiSuggest({ caseId: "case-1", userId: "u1", orgId: "org-beta" });
+    await aiSuggest({
+      caseId: "case-1",
+      caseTitle: "Acme v Beta",
+      caseSummary: "Breach.",
+      documentTitles: ["MSA.pdf"],
+      userId: "u1",
+      orgId: "org-beta",
+    });
     expect(mocks.decrementMock).not.toHaveBeenCalled();
   });
 });
