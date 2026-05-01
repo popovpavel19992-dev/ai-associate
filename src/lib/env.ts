@@ -39,6 +39,11 @@ const envSchema = z.object({
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(1).optional(),
   // Client Portal (2.1.8)
   PORTAL_JWT_SECRET: z.string().min(32),
+  // AI Case Strategy Assistant (Phase 4 #2)
+  VOYAGE_API_KEY: z.string().min(1).optional(),
+  STRATEGY_BETA_ORG_IDS: z.string().default(""),
+  STRATEGY_MODEL: z.string().default("claude-sonnet-4-6"),
+  STRATEGY_TOP_K_CHUNKS: z.coerce.number().int().min(1).max(50).default(12),
 });
 
 export type Env = z.infer<typeof envSchema>;

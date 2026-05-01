@@ -115,6 +115,16 @@ export const extractDocument = inngest.createFunction(
       data: { documentId, caseId: doc.caseId },
     });
 
+    // Fan out to strategy embedding pipeline for every successfully extracted
+    // doc. v1 beta does not filter by kind because the `documents.kind` column
+    // does not yet exist; cost guard lives at the credits layer instead.
+    await step.run("dispatch-strategy-embed", async () => {
+      await inngest.send({
+        name: "strategy/embed-document",
+        data: { documentId },
+      });
+    });
+
     return { documentId, pageCount: extraction.pageCount };
   },
 );
