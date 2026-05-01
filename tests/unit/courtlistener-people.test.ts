@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { CourtListenerClient } from "../client";
+import { CourtListenerClient } from "@/server/services/courtlistener/client";
 
 const fetchMock = vi.fn();
 vi.stubGlobal("fetch", fetchMock);
