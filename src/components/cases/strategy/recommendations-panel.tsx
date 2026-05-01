@@ -108,6 +108,11 @@ export function RecommendationsPanel({ caseId }: { caseId: string }) {
                       caseId={caseId}
                       rec={{
                         id: r.id,
+                        category: r.category as
+                          | "procedural"
+                          | "discovery"
+                          | "substantive"
+                          | "client",
                         priority: r.priority,
                         title: r.title,
                         rationale: r.rationale,

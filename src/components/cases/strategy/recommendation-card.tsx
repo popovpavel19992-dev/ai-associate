@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { X } from "lucide-react";
+import { X, FileText } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CitationChip } from "./citation-chip";
@@ -16,6 +17,7 @@ interface Props {
   caseId: string;
   rec: {
     id: string;
+    category: "procedural" | "discovery" | "substantive" | "client";
     priority: number;
     title: string;
     rationale: string;
@@ -25,6 +27,7 @@ interface Props {
 }
 export function RecommendationCard({ caseId, rec, onDismissed }: Props) {
   const [hidden, setHidden] = useState(false);
+  const router = useRouter();
   const dismiss = trpc.caseStrategy.dismiss.useMutation({
     onSuccess: () => {
       setHidden(true);
@@ -66,6 +69,19 @@ export function RecommendationCard({ caseId, rec, onDismissed }: Props) {
                 {...c}
               />
             ))}
+          </div>
+        )}
+        {rec.category !== "client" && (
+          <div className="flex justify-end pt-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                router.push(`/cases/${caseId}/motions/new?fromRec=${rec.id}`)
+              }
+            >
+              <FileText className="mr-1.5 size-3" /> Draft this motion
+            </Button>
           </div>
         )}
       </CardContent>
