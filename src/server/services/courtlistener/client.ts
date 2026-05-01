@@ -129,14 +129,11 @@ export interface CourtListenerClientOptions {
 
 export class CourtListenerClient {
   private readonly apiToken: string;
-  private readonly apiKey: string;
   private readonly fetchImpl: typeof fetch;
   private readonly baseUrl: string;
 
   constructor(opts: CourtListenerClientOptions) {
-    const token = opts.apiToken ?? opts.apiKey ?? "";
-    this.apiToken = token;
-    this.apiKey = token;
+    this.apiToken = opts.apiToken ?? opts.apiKey ?? "";
     this.fetchImpl = opts.fetchImpl ?? fetch;
     this.baseUrl = opts.baseUrl ?? BASE_URL;
   }
@@ -147,13 +144,7 @@ export class CourtListenerClient {
     if (params.page) sp.set("page", String(params.page));
     if (params.pageSize) sp.set("page_size", String(params.pageSize));
     const url = `${this.baseUrl}/api/rest/v4/people/?${sp.toString()}`;
-    const res = await fetch(url, {
-      headers: this.apiKey ? { Authorization: `Token ${this.apiKey}` } : {},
-    });
-    if (!res.ok) {
-      throw new Error(`CourtListener people search failed: ${res.status}`);
-    }
-    return (await res.json()) as PeopleResponse;
+    return this.requestJson<PeopleResponse>(url);
   }
 
   async search(params: SearchParams): Promise<SearchResponse> {

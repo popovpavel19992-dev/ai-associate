@@ -17,4 +17,13 @@ describe("CourtListenerClient.people", () => {
     expect(fetchMock.mock.calls[0][0]).toContain("/api/rest/v4/people/");
     expect(fetchMock.mock.calls[0][0]).toContain("name_full__icontains=Jane+Smith");
   });
+
+  it("uses injected fetchImpl", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ count: 0, results: [] }), { status: 200 }),
+    );
+    const client = new CourtListenerClient({ apiKey: "test", fetchImpl: fetchImpl as unknown as typeof fetch });
+    await client.people({ name: "x" });
+    expect(fetchImpl).toHaveBeenCalled();
+  });
 });
