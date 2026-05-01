@@ -27,6 +27,8 @@ export async function collectFilingSources(args: {
   const k = args.k ?? 5;
   const [queryVec] = await embedTexts([args.query], "query");
   if (!queryVec || queryVec.length === 0) return [];
+  if (!queryVec.every(Number.isFinite)) return [];
+  if (queryVec.length !== 1024) return [];
   const queryLit = `[${queryVec.join(",")}]`;
 
   const rows = await db.execute<RawRow>(sql`

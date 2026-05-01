@@ -18,6 +18,7 @@ vi.mock("@/server/db", () => ({
 }));
 
 beforeEach(() => {
+  vi.resetModules();
   embedTextsMock.mockReset();
   dbExecuteMock.mockReset();
   getEnvMock.mockReset();
