@@ -128,12 +128,14 @@ export const extractDocument = inngest.createFunction(
     // Fan out to opposing-counsel signature extractor (Phase 4.7 Unit 9).
     // Lightweight Haiku call; resulting suggestion is surfaced in the case
     // documents UI in Unit 10.
-    await step.run("dispatch-opposing-counsel-signature", async () => {
-      await inngest.send({
-        name: "opposing-counsel/extract-signature",
-        data: { documentId },
+    if (doc.fileType !== "image") {
+      await step.run("dispatch-opposing-counsel-signature", async () => {
+        await inngest.send({
+          name: "opposing-counsel/extract-signature",
+          data: { documentId },
+        });
       });
-    });
+    }
 
     return { documentId, pageCount: extraction.pageCount };
   },

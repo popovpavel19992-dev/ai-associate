@@ -45,6 +45,7 @@ const fakeStep = {
 };
 
 beforeEach(() => {
+  vi.resetModules();
   Object.values(mocks).forEach((m) => m.mockReset());
 });
 

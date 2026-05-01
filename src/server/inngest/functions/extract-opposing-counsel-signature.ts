@@ -64,7 +64,8 @@ export const extractOpposingCounselSignature = inngest.createFunction(
   {
     id: "extract-opposing-counsel-signature",
     name: "Extract opposing-counsel signature block",
-    retries: 1,
+    // best-effort housekeeping; do not retry on Claude/DB failure
+    retries: 0,
     triggers: [{ event: "opposing-counsel/extract-signature" }],
   },
   async ({ event, step }) =>
