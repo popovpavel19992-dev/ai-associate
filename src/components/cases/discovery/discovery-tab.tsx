@@ -9,6 +9,7 @@ import {
 } from "./new-discovery-wizard";
 import { PrivilegeLogSection } from "./privilege-log-section";
 import { SubpoenasSection } from "./subpoenas-section";
+import { IncomingDiscoveryList } from "./incoming/incoming-discovery-list";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -18,6 +19,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export function DiscoveryTab({ caseId }: { caseId: string }) {
+  const [mode, setMode] = useState<"outgoing" | "incoming">("outgoing");
   const [wizardType, setWizardType] = useState<DiscoveryRequestType | null>(null);
   const { data: requests, isLoading } = trpc.discovery.listForCase.useQuery({ caseId });
 
@@ -48,6 +50,31 @@ export function DiscoveryTab({ caseId }: { caseId: string }) {
 
   return (
     <div className="space-y-6 px-4 py-4">
+      <div className="inline-flex rounded-md border border-zinc-800 bg-zinc-950 p-1">
+        <button
+          type="button"
+          onClick={() => setMode("outgoing")}
+          className={`rounded px-3 py-1 text-sm ${
+            mode === "outgoing" ? "bg-zinc-800 text-white" : "text-zinc-400"
+          }`}
+        >
+          Outgoing
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("incoming")}
+          className={`rounded px-3 py-1 text-sm ${
+            mode === "incoming" ? "bg-zinc-800 text-white" : "text-zinc-400"
+          }`}
+        >
+          Incoming
+        </button>
+      </div>
+
+      {mode === "incoming" ? (
+        <IncomingDiscoveryList caseId={caseId} />
+      ) : (
+        <>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-semibold">Discovery</h2>
         <div className="flex flex-wrap gap-2">
@@ -134,6 +161,8 @@ export function DiscoveryTab({ caseId }: { caseId: string }) {
           requestType={wizardType}
           onClose={() => setWizardType(null)}
         />
+      )}
+        </>
       )}
     </div>
   );
