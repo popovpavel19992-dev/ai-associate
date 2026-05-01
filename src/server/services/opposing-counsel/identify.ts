@@ -1,3 +1,4 @@
+import { getEnv } from "@/lib/env";
 import { CourtListenerClient } from "@/server/services/courtlistener/client";
 import type { PeoplePerson } from "@/server/services/courtlistener/types";
 
@@ -7,7 +8,7 @@ export function normalizeName(raw: string): string {
   return raw
     .toLowerCase()
     .replace(SUFFIX_RE, "")
-    .replace(/\b[a-z]\.\s/g, "") // strip middle initials like "a. "
+    .replace(/\b[a-z]\.(\s|$)/g, " ") // strip middle/trailing initials like "a. " or "A."
     .replace(/[^\p{L}\s]/gu, "")
     .replace(/\s+/g, " ")
     .trim();
@@ -52,7 +53,7 @@ export async function matchAttorney(
   if (!target) return null;
   const client =
     deps?.client ??
-    new CourtListenerClient({ apiToken: process.env.COURTLISTENER_API_TOKEN ?? "" });
+    new CourtListenerClient({ apiToken: getEnv().COURTLISTENER_API_TOKEN });
 
   let res;
   try {

@@ -1,3 +1,4 @@
+import { getEnv } from "@/lib/env";
 import { CourtListenerClient } from "@/server/services/courtlistener/client";
 import type { OpinionSearchHit } from "@/server/services/courtlistener/types";
 
@@ -54,12 +55,12 @@ export interface FetchEnrichmentDeps {
  * replace this with a real attorney_id query and richer aggregates.
  */
 export async function fetchEnrichment(
-  args: { clPersonId: string; name: string },
+  args: { clPersonId: string | null; name: string },
   deps?: FetchEnrichmentDeps,
 ): Promise<EnrichmentJson | null> {
   const client =
     deps?.client ??
-    new CourtListenerClient({ apiToken: process.env.COURTLISTENER_API_TOKEN ?? "" });
+    new CourtListenerClient({ apiToken: getEnv().COURTLISTENER_API_TOKEN });
 
   let hits: OpinionSearchHit[];
   try {

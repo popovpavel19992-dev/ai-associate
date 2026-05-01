@@ -22,6 +22,10 @@ describe("normalizeName", () => {
     expect(normalizeName("John Doe Jr.")).toBe("john doe");
     expect(normalizeName("Robert Roe III")).toBe("robert roe");
   });
+
+  it("strips trailing initial at end of string", () => {
+    expect(normalizeName("Jane Smith A.")).toBe("jane smith");
+  });
 });
 
 describe("matchAttorney", () => {
