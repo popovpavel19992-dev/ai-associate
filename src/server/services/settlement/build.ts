@@ -7,6 +7,7 @@ import * as React from "react";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { caseDemandLetters } from "@/server/db/schema/case-demand-letters";
+import { caseDemandLetterSections } from "@/server/db/schema/case-demand-letter-sections";
 import { cases } from "@/server/db/schema/cases";
 import { users } from "@/server/db/schema/users";
 import { organizations } from "@/server/db/schema/organizations";
@@ -35,6 +36,18 @@ export async function buildDemandLetterPdf(input: {
     .where(eq(caseDemandLetters.id, input.letterId))
     .limit(1);
   if (!row) throw new DemandLetterNotFoundError(input.letterId);
+
+  let sections: { sectionKey: string; contentMd: string }[] | undefined;
+  if (row.aiGenerated) {
+    const secs = await db
+      .select({
+        sectionKey: caseDemandLetterSections.sectionKey,
+        contentMd: caseDemandLetterSections.contentMd,
+      })
+      .from(caseDemandLetterSections)
+      .where(eq(caseDemandLetterSections.letterId, row.id));
+    sections = secs;
+  }
 
   const [caseRow] = await db
     .select()
@@ -84,6 +97,7 @@ export async function buildDemandLetterPdf(input: {
     demandTerms: row.demandTerms,
     letterBody: row.letterBody,
     sentAt: row.sentAt,
+    aiGenerated: row.aiGenerated ?? false,
   };
 
   const buf = await renderToBuffer(
@@ -91,6 +105,7 @@ export async function buildDemandLetterPdf(input: {
       letter: pdfRow,
       caption,
       firm,
+      sections,
     }) as RenderElement,
   );
   return Buffer.from(buf as unknown as Uint8Array);
