@@ -23,11 +23,27 @@ export const opposingCounselPostures = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
-    uniqueIndex("ocp_posture_cache_uq").on(table.orgId, table.cacheHash),
+    uniqueIndex("ocp_posture_cache_uq").on(table.orgId, table.cacheHash).where(sql`${table.cacheHash} IS NOT NULL`),
     index("ocp_posture_case_idx").on(table.caseId),
     check(
       "ocp_posture_confidence_check",
       sql`${table.confidenceOverall} IS NULL OR ${table.confidenceOverall} IN ('low','med','high')`,
+    ),
+    check(
+      "ocp_posture_aggressiveness_check",
+      sql`${table.aggressiveness} IS NULL OR ${table.aggressiveness} BETWEEN 1 AND 10`,
+    ),
+    check(
+      "ocp_posture_settle_likelihood_check",
+      sql`${table.settleLikelihood} IS NULL OR ${table.settleLikelihood} BETWEEN 0 AND 1`,
+    ),
+    check(
+      "ocp_posture_settle_low_check",
+      sql`${table.settleLow} IS NULL OR ${table.settleLow} BETWEEN 0 AND 1`,
+    ),
+    check(
+      "ocp_posture_settle_high_check",
+      sql`${table.settleHigh} IS NULL OR ${table.settleHigh} BETWEEN 0 AND 1`,
     ),
   ],
 );

@@ -31,7 +31,7 @@ export const opposingCounselPredictions = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
-    uniqueIndex("ocp_pred_cache_uq").on(table.orgId, table.cacheHash),
+    uniqueIndex("ocp_pred_cache_uq").on(table.orgId, table.cacheHash).where(sql`${table.cacheHash} IS NOT NULL`),
     index("ocp_pred_case_target_idx").on(table.caseId, table.targetKind, table.targetId),
     check(
       "ocp_pred_target_kind_check",
@@ -40,6 +40,18 @@ export const opposingCounselPredictions = pgTable(
     check(
       "ocp_pred_confidence_check",
       sql`${table.confidenceOverall} IS NULL OR ${table.confidenceOverall} IN ('low','med','high')`,
+    ),
+    check(
+      "ocp_pred_aggressiveness_check",
+      sql`${table.aggressiveness} IS NULL OR ${table.aggressiveness} BETWEEN 1 AND 10`,
+    ),
+    check(
+      "ocp_pred_settle_prob_low_check",
+      sql`${table.settleProbLow} IS NULL OR ${table.settleProbLow} BETWEEN 0 AND 1`,
+    ),
+    check(
+      "ocp_pred_settle_prob_high_check",
+      sql`${table.settleProbHigh} IS NULL OR ${table.settleProbHigh} BETWEEN 0 AND 1`,
     ),
   ],
 );

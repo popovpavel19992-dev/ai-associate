@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, index, uniqueIndex, numeric, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, index, uniqueIndex, numeric, jsonb, check } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organizations } from "./organizations";
 import { caseParties } from "./case-parties";
@@ -22,6 +22,10 @@ export const opposingCounselProfiles = pgTable(
   (table) => [
     uniqueIndex("ocp_org_party_uq").on(table.orgId, table.casePartyId),
     index("ocp_cl_person_idx").on(table.orgId, table.clPersonId).where(sql`${table.clPersonId} IS NOT NULL`),
+    check(
+      "ocp_profiles_match_confidence_check",
+      sql`${table.matchConfidence} IS NULL OR ${table.matchConfidence} BETWEEN 0 AND 1`,
+    ),
   ],
 );
 
