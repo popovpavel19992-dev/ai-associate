@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { SectionEditor } from "./section-editor";
 import { BuildPackageButton } from "./build-package-button";
+import { CiteCheckPanel } from "./cite-check-panel";
 import { useActivityTracker } from "@/lib/activity-tracker";
 
 export function MotionDetail({ caseId, motionId }: { caseId: string; motionId: string }) {
@@ -101,6 +102,13 @@ export function MotionDetail({ caseId, motionId }: { caseId: string; motionId: s
         initialCitations={sections.conclusion?.citations ?? []}
         onUpdated={() => refetch()}
       />
+
+      {sections.facts?.text && (
+        <CiteCheckPanel
+          motionId={motion.id}
+          motionUpdatedAt={motion.updatedAt as unknown as string | Date | null}
+        />
+      )}
 
       {showFileModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50">
