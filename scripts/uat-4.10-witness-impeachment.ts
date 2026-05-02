@@ -90,14 +90,30 @@ async function main() {
     LIMIT 2
   `);
   log(`Found ${docRows.length} extracted documents in case`);
-  if (docRows.length === 0) {
-    log("⚠️  SKIP: UAT requires ≥1 extracted document in this case. Exiting early.");
-    return;
+  let injectedDocIds: string[] = [];
+  if (docRows.length < 2) {
+    log("⚠️  Injecting 2 synthetic extracted documents for UAT (will be cleaned up)");
+    const synthA = await db.execute<{ id: string }>(sql`
+      INSERT INTO documents (case_id, user_id, filename, s3_key, checksum_sha256, file_type, file_size, status, extracted_text)
+      VALUES (${c.id}, ${userId}, '4.10-uat-depo.pdf', '4.10-uat/depo.pdf', '0000', 'pdf', 1, 'ready',
+        'Q. Where were you on March 15, 2024? A. I was in Boston attending a medical conference at Harvard Medical School. Q. The whole day? A. Yes, from 8am until late evening. Q. Did you visit any other location that day? A. No, I was at the conference the entire time. Q. Have you ever been to Cleveland? A. Once, but not in 2024.')
+      RETURNING id
+    `);
+    const synthB = await db.execute<{ id: string }>(sql`
+      INSERT INTO documents (case_id, user_id, filename, s3_key, checksum_sha256, file_type, file_size, status, extracted_text)
+      VALUES (${c.id}, ${userId}, '4.10-uat-decl.pdf', '4.10-uat/decl.pdf', '0000', 'pdf', 1, 'ready',
+        'I, Dr. UAT Witness, declare under penalty of perjury: On March 15, 2024, I personally inspected the defective equipment at the Cleveland manufacturing facility. I observed the machine running for approximately 4 hours starting at 10am and documented several safety violations. This inspection was critical to my expert opinion. Executed March 20, 2024 in Cleveland, Ohio.')
+      RETURNING id
+    `);
+    injectedDocIds = [(synthA[0] as { id: string }).id, (synthB[0] as { id: string }).id];
+    docRows.length = 0;
+    docRows.push(
+      { id: injectedDocIds[0], filename: "4.10-uat-depo.pdf" },
+      { id: injectedDocIds[1], filename: "4.10-uat-decl.pdf" },
+    );
+    log(`  injected ${injectedDocIds.length} synthetic docs`, injectedDocIds);
   }
-  const skipScanScenarios = docRows.length < 2;
-  if (skipScanScenarios) {
-    log("⚠️  Only 1 extracted doc found — UAT 1-5 will be skipped, only UAT 6-7 will run");
-  }
+  const skipScanScenarios = false;
 
   // Insert test witness list + witness
   const [list] = await db
@@ -107,6 +123,7 @@ async function main() {
       caseId: c.id,
       title: TEST_LIST_TITLE,
       status: "draft",
+      servingParty: "plaintiff",
       createdBy: userId,
     })
     .returning();
@@ -317,6 +334,12 @@ async function main() {
   // ---- Cleanup ----
   log("CLEANUP: deleting test witness list (cascades witness, statements, scans)");
   await db.delete(caseWitnessLists).where(eq(caseWitnessLists.id, list.id));
+  if (injectedDocIds.length > 0) {
+    log(`  removing ${injectedDocIds.length} synthetic docs`);
+    for (const id of injectedDocIds) {
+      await db.execute(sql`DELETE FROM documents WHERE id = ${id}`);
+    }
+  }
   log("  cleanup complete");
   // Touch unused vars to keep tsc quiet about scan1Id when scenarios skipped
   void scan1Id;
