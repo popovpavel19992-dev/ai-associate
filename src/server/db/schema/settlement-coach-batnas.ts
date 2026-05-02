@@ -45,6 +45,18 @@ export const settlementCoachBatnas = pgTable(
     index("scb_case_idx").on(table.caseId, table.createdAt),
     check("scb_confidence_check", sql`${table.confidenceOverall} IS NULL OR ${table.confidenceOverall} IN ('low','med','high')`),
     check("scb_batna_low_high_check", sql`${table.batnaLowCents} <= ${table.batnaHighCents}`),
+    check(
+      "scb_damages_low_high_check",
+      sql`${table.damagesLowCents} IS NULL OR ${table.damagesHighCents} IS NULL OR ${table.damagesLowCents} <= ${table.damagesHighCents}`,
+    ),
+    check(
+      "scb_zopa_low_high_check",
+      sql`${table.zopaLowCents} IS NULL OR ${table.zopaHighCents} IS NULL OR ${table.zopaLowCents} <= ${table.zopaHighCents}`,
+    ),
+    check(
+      "scb_winprob_range_check",
+      sql`(${table.winProbLow} IS NULL OR ${table.winProbLow} BETWEEN 0 AND 1) AND (${table.winProbLikely} IS NULL OR ${table.winProbLikely} BETWEEN 0 AND 1) AND (${table.winProbHigh} IS NULL OR ${table.winProbHigh} BETWEEN 0 AND 1)`,
+    ),
   ],
 );
 
