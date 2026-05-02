@@ -28,7 +28,7 @@ vi.mock("@/server/services/deposition-branches/generate", () => ({
 }));
 
 vi.mock("@/server/db/schema/cases", () => ({
-  cases: { _table: "cases", id: "id", name: "name", description: "description" },
+  cases: { _table: "cases", id: "id", orgId: "orgId", name: "name", description: "description" },
 }));
 vi.mock("@/server/db/schema/case-deposition-outlines", () => ({
   caseDepositionOutlines: {
@@ -138,6 +138,7 @@ import {
   InsufficientCreditsError,
   NoQuestionsError,
   TopicNotFoundError,
+  OutlineNotFoundError,
 } from "@/server/services/deposition-branches";
 
 const baseOutline = {
@@ -245,10 +246,10 @@ describe("deposition-branches orchestrator", () => {
     expect(mocks.decrementMock).not.toHaveBeenCalled();
   });
 
-  it("throws TopicNotFoundError when outline missing", async () => {
+  it("throws OutlineNotFoundError when outline missing", async () => {
     mocks.outlineRows.mockReturnValue([]);
     await expect(generateBranchesFlow(baseArgs)).rejects.toBeInstanceOf(
-      TopicNotFoundError,
+      OutlineNotFoundError,
     );
     expect(mocks.decrementMock).not.toHaveBeenCalled();
   });
@@ -321,6 +322,18 @@ describe("deposition-branches orchestrator", () => {
     mocks.generateBranchesMock.mockRejectedValueOnce(new Error("claude down"));
     await expect(generateBranchesFlow(baseArgs)).rejects.toThrow(/claude down/);
     expect(mocks.decrementMock).toHaveBeenCalledWith("u-1", 2);
+    expect(mocks.refundMock).toHaveBeenCalledWith("u-1", 2);
+  });
+
+  it("refunds credits when db.insert fails after successful generate", async () => {
+    mocks.insertBranchMock.mockImplementationOnce(() => {
+      throw new Error("insert exploded");
+    });
+    await expect(generateBranchesFlow(baseArgs)).rejects.toThrow(
+      /insert exploded/,
+    );
+    expect(mocks.decrementMock).toHaveBeenCalledWith("u-1", 2);
+    expect(mocks.generateBranchesMock).toHaveBeenCalledTimes(1);
     expect(mocks.refundMock).toHaveBeenCalledWith("u-1", 2);
   });
 });

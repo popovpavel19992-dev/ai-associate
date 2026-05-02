@@ -42,6 +42,12 @@ export class TopicNotFoundError extends Error {
     this.name = "TopicNotFoundError";
   }
 }
+export class OutlineNotFoundError extends Error {
+  constructor() {
+    super("Outline not found");
+    this.name = "OutlineNotFoundError";
+  }
+}
 
 function assertBetaOrg(orgId: string) {
   const allowed = (process.env.STRATEGY_BETA_ORG_IDS ?? "")
@@ -80,7 +86,7 @@ export async function generateBranchesFlow(
         eq(caseDepositionOutlines.caseId, args.caseId),
       ),
     );
-  if (!outline) throw new TopicNotFoundError();
+  if (!outline) throw new OutlineNotFoundError();
 
   const [topic] = await db
     .select()
@@ -125,7 +131,7 @@ export async function generateBranchesFlow(
     const [c] = await db
       .select({ name: cases.name, description: cases.description })
       .from(cases)
-      .where(eq(cases.id, args.caseId));
+      .where(and(eq(cases.id, args.caseId), eq(cases.orgId, args.orgId)));
     const caseSummary = (c?.description ?? c?.name) ?? "";
 
     const sources = await collectDeponentSources({
@@ -201,6 +207,7 @@ export async function generateBranchesFlow(
 
 export async function getBranchesForTopic(args: {
   orgId: string;
+  caseId: string;
   topicId: string;
 }): Promise<CaseDepositionTopicBranches | null> {
   const [row] = await db
@@ -209,6 +216,7 @@ export async function getBranchesForTopic(args: {
     .where(
       and(
         eq(caseDepositionTopicBranches.orgId, args.orgId),
+        eq(caseDepositionTopicBranches.caseId, args.caseId),
         eq(caseDepositionTopicBranches.topicId, args.topicId),
       ),
     )

@@ -6,5 +6,6 @@ export {
   InsufficientCreditsError,
   NoQuestionsError,
   TopicNotFoundError,
+  OutlineNotFoundError,
 } from "./orchestrator";
 export type { GenerateBranchesArgs } from "./orchestrator";
