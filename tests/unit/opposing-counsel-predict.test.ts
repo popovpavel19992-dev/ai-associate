@@ -40,8 +40,8 @@ describe("runPrediction", () => {
       },
       { anthropic },
     );
-    expect(r.settleProbLow).toBeLessThanOrEqual(r.settleProbHigh);
-    expect(r.estResponseDaysLow).toBeLessThanOrEqual(r.estResponseDaysHigh);
+    expect(r.settleProbLow!).toBeLessThanOrEqual(r.settleProbHigh!);
+    expect(r.estResponseDaysLow!).toBeLessThanOrEqual(r.estResponseDaysHigh!);
     expect(r.likelyResponse).toContain("MTD");
     expect(r.aggressiveness).toBe(7);
   });

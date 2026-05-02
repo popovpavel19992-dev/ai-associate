@@ -244,8 +244,8 @@ export async function predictResponse(args: PredictArgs) {
         cacheHash,
         likelyResponse: result.likelyResponse,
         keyObjections: result.keyObjections,
-        settleProbLow: result.settleProbLow.toString(),
-        settleProbHigh: result.settleProbHigh.toString(),
+        settleProbLow: result.settleProbLow?.toString() ?? null,
+        settleProbHigh: result.settleProbHigh?.toString() ?? null,
         estResponseDaysLow: result.estResponseDaysLow,
         estResponseDaysHigh: result.estResponseDaysHigh,
         aggressiveness: result.aggressiveness,
@@ -327,7 +327,10 @@ export async function getPosture(args: PostureArgs) {
       enrichment: (enriched.enrichmentJson as EnrichmentJson | null) ?? null,
       sources,
     });
-    const settleMid = (result.settleLow + result.settleHigh) / 2;
+    const settleMid =
+      result.settleLow !== null && result.settleHigh !== null
+        ? (result.settleLow + result.settleHigh) / 2
+        : null;
     const inserted = await db
       .insert(opposingCounselPostures)
       .values({
@@ -336,9 +339,9 @@ export async function getPosture(args: PostureArgs) {
         profileId: enriched.id,
         cacheHash,
         aggressiveness: result.aggressiveness,
-        settleLow: result.settleLow.toString(),
-        settleHigh: result.settleHigh.toString(),
-        settleLikelihood: settleMid.toString(),
+        settleLow: result.settleLow?.toString() ?? null,
+        settleHigh: result.settleHigh?.toString() ?? null,
+        settleLikelihood: settleMid?.toString() ?? null,
         typicalMotions: result.typicalMotions,
         reasoningMd: result.reasoningMd,
         sourcesJson: result.sources,

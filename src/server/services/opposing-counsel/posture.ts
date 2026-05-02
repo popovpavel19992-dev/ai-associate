@@ -9,11 +9,13 @@ const Conf = z.enum(["low", "med", "high"]);
 
 // Note: `settleLikelihood` is the orchestrator-derived midpoint of settleLow/settleHigh
 // and is NOT requested from Claude. See orchestrator.ts.
+// Numeric fields are nullable: when Claude has no signal (no CL match, no
+// opposing-authored docs), it should emit nulls rather than fabricated values.
 const ResultSchema = z
   .object({
-    aggressiveness: z.number().int().min(1).max(10),
-    settleLow: z.number().min(0).max(1),
-    settleHigh: z.number().min(0).max(1),
+    aggressiveness: z.number().int().min(1).max(10).nullable(),
+    settleLow: z.number().min(0).max(1).nullable(),
+    settleHigh: z.number().min(0).max(1).nullable(),
     typicalMotions: z.array(
       z.object({
         label: z.string(),
@@ -25,9 +27,10 @@ const ResultSchema = z
     confidenceOverall: Conf,
     sources: z.array(z.object({ id: z.string(), title: z.string() })),
   })
-  .refine((v) => v.settleLow <= v.settleHigh, {
-    message: "settle low must be <= high",
-  });
+  .refine(
+    (v) => v.settleLow === null || v.settleHigh === null || v.settleLow <= v.settleHigh,
+    { message: "settle low must be <= high when both present" },
+  );
 
 export type PostureResult = z.infer<typeof ResultSchema>;
 
@@ -37,7 +40,10 @@ export interface PostureDeps {
 
 const SYSTEM = `You are a litigation strategist generating a GENERAL posture readout for opposing
 counsel based on their public filing history (CourtListener) and their conduct in this case.
-Express settle posture as a RANGE. Tag every typical-motion entry with confidence. Return ONLY JSON.`;
+Express settle posture as a RANGE. Tag every typical-motion entry with confidence. Return ONLY JSON.
+If you have insufficient signal (no CL match, no opposing-authored documents), return null for
+numeric fields (aggressiveness, settleLow, settleHigh) rather than guessing — be honest about
+data gaps. Always emit reasoningMd explaining what data you had and didn't have.`;
 
 export async function runPosture(
   args: {

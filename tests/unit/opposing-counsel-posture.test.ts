@@ -36,7 +36,7 @@ describe("runPosture", () => {
       { anthropic },
     );
     expect(r.aggressiveness).toBe(8);
-    expect(r.settleLow).toBeLessThanOrEqual(r.settleHigh);
+    expect(r.settleLow!).toBeLessThanOrEqual(r.settleHigh!);
     expect(r.typicalMotions[0].label).toBe("MTD");
   });
 

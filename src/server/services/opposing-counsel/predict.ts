@@ -7,17 +7,20 @@ const SONNET = "claude-sonnet-4-6";
 
 const Conf = z.enum(["low", "med", "high"]);
 
+// Numeric fields are nullable: when Claude has insufficient signal, it should
+// emit null rather than fabricate values. The likelyResponse + reasoningMd
+// fields stay required so the lawyer always gets a narrative.
 const ResultSchema = z
   .object({
     likelyResponse: z.string().min(1),
     keyObjections: z
       .array(z.object({ point: z.string(), confidence: Conf }))
       .min(1),
-    settleProbLow: z.number().min(0).max(1),
-    settleProbHigh: z.number().min(0).max(1),
-    estResponseDaysLow: z.number().int().min(0),
-    estResponseDaysHigh: z.number().int().min(0),
-    aggressiveness: z.number().int().min(1).max(10),
+    settleProbLow: z.number().min(0).max(1).nullable(),
+    settleProbHigh: z.number().min(0).max(1).nullable(),
+    estResponseDaysLow: z.number().int().min(0).nullable(),
+    estResponseDaysHigh: z.number().int().min(0).nullable(),
+    aggressiveness: z.number().int().min(1).max(10).nullable(),
     recommendedPrep: z.array(
       z.object({ point: z.string(), confidence: Conf }),
     ),
@@ -27,9 +30,13 @@ const ResultSchema = z
   })
   .refine(
     (v) =>
-      v.settleProbLow <= v.settleProbHigh &&
-      v.estResponseDaysLow <= v.estResponseDaysHigh,
-    { message: "low must be <= high" },
+      (v.settleProbLow === null ||
+        v.settleProbHigh === null ||
+        v.settleProbLow <= v.settleProbHigh) &&
+      (v.estResponseDaysLow === null ||
+        v.estResponseDaysHigh === null ||
+        v.estResponseDaysLow <= v.estResponseDaysHigh),
+    { message: "low must be <= high when both present" },
   );
 
 export type PredictionResult = z.infer<typeof ResultSchema>;
