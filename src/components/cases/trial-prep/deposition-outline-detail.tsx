@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useActivityTracker } from "@/lib/activity-tracker";
+import { TopicBranchesSection } from "./topic-branches-section";
 
 type Category =
   | "background"
@@ -95,6 +96,8 @@ export function DepositionOutlineDetail({
   const { data, isLoading, refetch } = trpc.depositionPrep.getOutline.useQuery({
     outlineId,
   });
+  const betaEnabled =
+    !!trpc.opposingCounsel.isBetaEnabled.useQuery().data?.enabled;
 
   const [addTopicOpen, setAddTopicOpen] = useState(false);
   const [addQuestionFor, setAddQuestionFor] = useState<string | null>(null);
@@ -379,6 +382,7 @@ export function DepositionOutlineDetail({
             )}
 
             {isOpen && (
+              <>
               <ul className="divide-y divide-zinc-800 border-t border-zinc-800">
                 {topic.questions.map((q, qIdx) => {
                   const qOpen = expandedQuestions.has(q.id);
@@ -482,6 +486,20 @@ export function DepositionOutlineDetail({
                   </li>
                 )}
               </ul>
+              <div className="border-t border-zinc-800 p-3">
+                <TopicBranchesSection
+                  caseId={caseId}
+                  outlineId={outline.id}
+                  topicId={topic.id}
+                  questions={topic.questions.map((q) => ({
+                    id: q.id,
+                    text: q.text,
+                    number: q.questionOrder,
+                  }))}
+                  betaEnabled={betaEnabled}
+                />
+              </div>
+              </>
             )}
           </section>
         );
