@@ -4,29 +4,43 @@ import { getAnthropic } from "@/server/services/claude";
 const SONNET = "claude-sonnet-4-6";
 const Conf = z.enum(["low", "med", "high"]);
 
-const ComponentSchema = z.object({
-  label: z.string().min(1),
-  lowCents: z.number().int().nonnegative(),
-  likelyCents: z.number().int().nonnegative(),
-  highCents: z.number().int().nonnegative(),
-  source: z.string(),
-});
+const ComponentSchema = z
+  .object({
+    label: z.string().min(1),
+    lowCents: z.number().int().nonnegative(),
+    likelyCents: z.number().int().nonnegative(),
+    highCents: z.number().int().nonnegative(),
+    source: z.string(),
+  })
+  .refine(
+    (c) => c.lowCents <= c.likelyCents && c.likelyCents <= c.highCents,
+    { message: "component low <= likely <= high required" },
+  );
 
-const ResultSchema = z.object({
-  damagesLowCents: z.number().int().nonnegative(),
-  damagesLikelyCents: z.number().int().nonnegative(),
-  damagesHighCents: z.number().int().nonnegative(),
-  damagesComponents: z.array(ComponentSchema),
-  winProbLow: z.number().min(0).max(1),
-  winProbLikely: z.number().min(0).max(1),
-  winProbHigh: z.number().min(0).max(1),
-  costsRemainingCents: z.number().int().nonnegative(),
-  timeToTrialMonths: z.number().int().nonnegative(),
-  discountRateAnnual: z.number().min(0).max(1),
-  reasoningMd: z.string().min(1),
-  confidenceOverall: Conf,
-  sources: z.array(z.object({ id: z.string(), title: z.string() })),
-});
+const ResultSchema = z
+  .object({
+    damagesLowCents: z.number().int().nonnegative(),
+    damagesLikelyCents: z.number().int().nonnegative(),
+    damagesHighCents: z.number().int().nonnegative(),
+    damagesComponents: z.array(ComponentSchema),
+    winProbLow: z.number().min(0).max(1),
+    winProbLikely: z.number().min(0).max(1),
+    winProbHigh: z.number().min(0).max(1),
+    costsRemainingCents: z.number().int().nonnegative(),
+    timeToTrialMonths: z.number().int().nonnegative(),
+    discountRateAnnual: z.number().min(0).max(1),
+    reasoningMd: z.string().min(1),
+    confidenceOverall: Conf,
+    sources: z.array(z.object({ id: z.string(), title: z.string() })),
+  })
+  .refine(
+    (v) =>
+      v.damagesLowCents <= v.damagesLikelyCents &&
+      v.damagesLikelyCents <= v.damagesHighCents &&
+      v.winProbLow <= v.winProbLikely &&
+      v.winProbLikely <= v.winProbHigh,
+    { message: "low <= likely <= high required for all range fields" },
+  );
 
 export type ExtractResult = z.infer<typeof ResultSchema>;
 

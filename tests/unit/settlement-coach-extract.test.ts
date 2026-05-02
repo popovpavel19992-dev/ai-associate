@@ -59,4 +59,50 @@ describe("extractDamages", () => {
       extractDamages({ caseSummary: "x", sources: [] }, { anthropic: anthropic as never }),
     ).rejects.toThrow();
   });
+
+  it("throws when top-level damages range is out of order (high < low)", async () => {
+    const json = {
+      damagesLowCents: 500_00,
+      damagesLikelyCents: 200_00,
+      damagesHighCents: 100_00,
+      damagesComponents: [],
+      winProbLow: 0.3,
+      winProbLikely: 0.5,
+      winProbHigh: 0.7,
+      costsRemainingCents: 0,
+      timeToTrialMonths: 12,
+      discountRateAnnual: 0.08,
+      reasoningMd: "x",
+      confidenceOverall: "low",
+      sources: [],
+    };
+    const anthropic = makeAnthropic(JSON.stringify(json));
+    await expect(
+      extractDamages({ caseSummary: "x", sources: [] }, { anthropic: anthropic as never }),
+    ).rejects.toThrow();
+  });
+
+  it("throws when a component's range is out of order (low > high)", async () => {
+    const json = {
+      damagesLowCents: 100_00,
+      damagesLikelyCents: 200_00,
+      damagesHighCents: 400_00,
+      damagesComponents: [
+        { label: "Bad component", lowCents: 50_00, likelyCents: 30_00, highCents: 20_00, source: "x" },
+      ],
+      winProbLow: 0.3,
+      winProbLikely: 0.5,
+      winProbHigh: 0.7,
+      costsRemainingCents: 0,
+      timeToTrialMonths: 12,
+      discountRateAnnual: 0.08,
+      reasoningMd: "x",
+      confidenceOverall: "low",
+      sources: [],
+    };
+    const anthropic = makeAnthropic(JSON.stringify(json));
+    await expect(
+      extractDamages({ caseSummary: "x", sources: [] }, { anthropic: anthropic as never }),
+    ).rejects.toThrow();
+  });
 });
