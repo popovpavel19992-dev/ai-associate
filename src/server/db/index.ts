@@ -37,6 +37,8 @@ import * as caseDiscoveryRequestsSchema from "./schema/case-discovery-requests";
 import * as casePrivilegeLogEntriesSchema from "./schema/case-privilege-log-entries";
 import * as caseWitnessListsSchema from "./schema/case-witness-lists";
 import * as caseWitnessesSchema from "./schema/case-witnesses";
+import * as caseWitnessStatementsSchema from "./schema/case-witness-statements";
+import * as caseWitnessImpeachmentScansSchema from "./schema/case-witness-impeachment-scans";
 import * as caseExhibitListsSchema from "./schema/case-exhibit-lists";
 import * as caseExhibitsSchema from "./schema/case-exhibits";
 import * as juryInstructionTemplatesSchema from "./schema/jury-instruction-templates";
@@ -124,6 +126,8 @@ export const db = drizzle(client, {
     ...casePrivilegeLogEntriesSchema,
     ...caseWitnessListsSchema,
     ...caseWitnessesSchema,
+    ...caseWitnessStatementsSchema,
+    ...caseWitnessImpeachmentScansSchema,
     ...caseExhibitListsSchema,
     ...caseExhibitsSchema,
     ...juryInstructionTemplatesSchema,

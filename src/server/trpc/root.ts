@@ -84,6 +84,7 @@ import { discoveryResponseDrafterRouter } from "./routers/discovery-response-dra
 import { opposingCounselRouter } from "./routers/opposing-counsel";
 import { settlementCoachRouter } from "./routers/settlement-coach";
 import { depositionBranchesRouter } from "./routers/deposition-branches";
+import { witnessImpeachmentRouter } from "./routers/witness-impeachment";
 
 export const appRouter = router({
   users: usersRouter,
@@ -171,6 +172,7 @@ export const appRouter = router({
   opposingCounsel: opposingCounselRouter,
   settlementCoach: settlementCoachRouter,
   depositionBranches: depositionBranchesRouter,
+  witnessImpeachment: witnessImpeachmentRouter,
 });
 
 export type AppRouter = typeof appRouter;
