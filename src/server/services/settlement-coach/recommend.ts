@@ -2,7 +2,14 @@ import { z } from "zod";
 import { getAnthropic } from "@/server/services/claude";
 
 const SONNET = "claude-sonnet-4-6";
-const Conf = z.enum(["low", "med", "high"]);
+
+// Claude sometimes emits "medium" instead of "med". Pre-normalize then enum-validate.
+const Conf = z.preprocess((v) => {
+  if (typeof v !== "string") return v;
+  const s = v.toLowerCase().trim();
+  if (s === "medium" || s === "moderate") return "med";
+  return s;
+}, z.enum(["low", "med", "high"]));
 const Tag = z.enum(["aggressive", "standard", "conciliatory"]);
 
 const VariantSchema = z.object({
@@ -46,6 +53,8 @@ your numbers should land within bounds when correctly reasoned.
 "aggressive" = test ceiling, slow movement, accept higher breakdown risk.
 "standard"   = midpoint movement with a concession step, balanced risk.
 "conciliatory" = close gap fast, low risk of breakdown, signals desire to close.
+
+For confidence fields use EXACTLY one of: "low", "med", "high" (three letters for "med", not "medium").
 
 Return ONLY valid JSON matching the requested schema.`;
 

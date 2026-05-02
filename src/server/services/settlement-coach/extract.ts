@@ -2,7 +2,13 @@ import { z } from "zod";
 import { getAnthropic } from "@/server/services/claude";
 
 const SONNET = "claude-sonnet-4-6";
-const Conf = z.enum(["low", "med", "high"]);
+// Claude sometimes emits "medium" instead of "med". Pre-normalize then enum-validate.
+const Conf = z.preprocess((v) => {
+  if (typeof v !== "string") return v;
+  const s = v.toLowerCase().trim();
+  if (s === "medium" || s === "moderate") return "med";
+  return s;
+}, z.enum(["low", "med", "high"]));
 
 const ComponentSchema = z
   .object({
