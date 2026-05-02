@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useActivityTracker } from "@/lib/activity-tracker";
 import { WitnessFormDialog, type WitnessFormValues } from "./witness-form-dialog";
+import { WitnessImpeachmentSection } from "./witness-impeachment-section";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -56,6 +57,8 @@ export function WitnessListDetail({
   const utils = trpc.useUtils();
   useActivityTracker(caseId, "witness_list_edit", { listId });
   const { data, isLoading, refetch } = trpc.witnessLists.getList.useQuery({ listId });
+  const betaQ = trpc.opposingCounsel.isBetaEnabled.useQuery();
+  const betaEnabled = betaQ.data?.enabled === true;
 
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<Witness | null>(null);
@@ -385,6 +388,15 @@ export function WitnessListDetail({
                             ? "Drafting…"
                             : "Draft testimony with AI"}
                         </button>
+                      </div>
+                    )}
+                    {betaEnabled && (
+                      <div className="pl-10">
+                        <WitnessImpeachmentSection
+                          caseId={caseId}
+                          witnessId={w.id}
+                          betaEnabled={betaEnabled}
+                        />
                       </div>
                     )}
                   </li>
