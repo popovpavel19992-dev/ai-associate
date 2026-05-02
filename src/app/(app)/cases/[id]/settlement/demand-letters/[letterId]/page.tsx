@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { formatCurrency } from "@/components/cases/settlement/format";
+import { PredictResponseButton } from "@/components/cases/opposing-counsel/predict-response-button";
 
 type Method = "email" | "mail" | "certified_mail" | "courier";
 
@@ -92,6 +93,18 @@ export default function DemandLetterDetailPage({
               Download PDF
             </a>
           ) : null}
+          <PredictResponseButton
+            caseId={caseId}
+            kind="demand_letter"
+            targetId={letterId}
+            targetTitle={`Demand Letter #${letter.letterNumber}`}
+            targetBody={
+              letter.letterBody ??
+              [letter.keyFacts, letter.legalBasis, letter.demandTerms]
+                .filter(Boolean)
+                .join("\n\n")
+            }
+          />
         </div>
       </div>
 

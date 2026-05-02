@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { SectionEditor } from "./section-editor";
 import { BuildPackageButton } from "./build-package-button";
 import { CiteCheckPanel } from "./cite-check-panel";
+import { PredictResponseButton } from "@/components/cases/opposing-counsel/predict-response-button";
 import { useActivityTracker } from "@/lib/activity-tracker";
 
 export function MotionDetail({ caseId, motionId }: { caseId: string; motionId: string }) {
@@ -36,6 +37,13 @@ export function MotionDetail({ caseId, motionId }: { caseId: string; motionId: s
   const sections = motion.sections as Record<string, { text: string; citations: Array<{ memoId: string; snippet: string }> } | undefined>;
   const isFiled = motion.status === "filed";
   const noMemos = motion.attachedMemoIds.length === 0;
+  const motionBody = [
+    sections.facts?.text,
+    sections.argument?.text,
+    sections.conclusion?.text,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6">
@@ -48,6 +56,14 @@ export function MotionDetail({ caseId, motionId }: { caseId: string; motionId: s
           <a href={`/api/motions/${motionId}/docx`} className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
             Export DOCX
           </a>
+          <PredictResponseButton
+            caseId={caseId}
+            kind="motion"
+            targetId={motionId}
+            targetTitle={motion.title}
+            targetBody={motionBody}
+            enabled={motionBody.length > 0}
+          />
           {isFiled && (
             <BuildPackageButton caseId={caseId} motionId={motionId} />
           )}
