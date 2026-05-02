@@ -83,13 +83,22 @@ export function PredictionDialog(props: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-6 text-zinc-100">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="predict-dialog-title"
+        className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-6 text-zinc-100"
+      >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Predict opposing response</h2>
+          <h2 id="predict-dialog-title" className="text-lg font-semibold">
+            Predict opposing response
+          </h2>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="text-zinc-400 hover:text-zinc-100"
+            disabled={predict.isPending}
+            aria-label="Close dialog"
+            className="text-zinc-400 hover:text-zinc-100 disabled:opacity-50"
           >
             ✕
           </button>
@@ -119,6 +128,7 @@ export function PredictionDialog(props: Props) {
             <div className="h-6 w-1/2 animate-pulse rounded bg-zinc-800" />
             <div className="h-32 w-full animate-pulse rounded bg-zinc-800" />
             <p className="text-xs text-zinc-500">Analyzing… ~10 seconds.</p>
+            <p className="text-xs text-zinc-500">Closing won&apos;t cancel the prediction.</p>
           </div>
         )}
 

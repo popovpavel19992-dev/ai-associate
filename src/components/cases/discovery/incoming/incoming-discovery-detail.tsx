@@ -125,13 +125,14 @@ export function IncomingDiscoveryDetail({ requestId }: Props) {
               kind="discovery_set"
               targetId={requestId}
               targetTitle={`${request.requestType.toUpperCase()} — Set ${request.setNumber}`}
-              targetBody={drafts
-                .map(
-                  (d, i) =>
-                    `Q${questions[i]?.number ?? i + 1}: ${
-                      questions[i]?.text ?? ""
-                    }\nA: ${d.responseText ?? ""}`,
-                )
+              targetBody={questions
+                .map((q, i) => {
+                  const d = draftsByIndex.get(i);
+                  return d
+                    ? `Q${q.number}: ${q.text}\nA: ${d.responseText ?? ""}`
+                    : null;
+                })
+                .filter(Boolean)
                 .join("\n\n")}
             />
           )}

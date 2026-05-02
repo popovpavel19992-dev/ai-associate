@@ -77,12 +77,20 @@ export function AttorneyAttachDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900 p-6 text-zinc-100">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="attach-dialog-title"
+        className="w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900 p-6 text-zinc-100"
+      >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Add opposing counsel</h2>
+          <h2 id="attach-dialog-title" className="text-lg font-semibold">
+            Add opposing counsel
+          </h2>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
+            aria-label="Close dialog"
             className="text-zinc-400 hover:text-zinc-100"
           >
             ✕
