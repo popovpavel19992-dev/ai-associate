@@ -7,7 +7,8 @@ interface Row {
   batnaHighCents: number;
 }
 
-function formatUsd(cents: number): string {
+function formatUsd(cents: number | null | undefined): string {
+  if (cents == null) return "—";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -43,7 +44,7 @@ export function SensitivityPanel({
                   {Math.round(r.winProb * 100)}%
                 </td>
                 <td>
-                  {formatUsd(r.batnaLowCents ?? 0)} – {formatUsd(r.batnaHighCents ?? 0)}
+                  {formatUsd(r.batnaLowCents)} – {formatUsd(r.batnaHighCents)}
                   {isLikely ? "    ← AI estimate" : ""}
                 </td>
               </tr>

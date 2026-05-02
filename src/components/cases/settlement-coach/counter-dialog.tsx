@@ -190,6 +190,12 @@ export function CounterDialog(props: {
                 </div>
               </div>
             ))}
+            {data.anyClamped && (
+              <p className="text-xs text-amber-400">
+                One or more variants were clamped to bounds:{" "}
+                {formatUsd(data.boundsLowCents)} – {formatUsd(data.boundsHighCents)}
+              </p>
+            )}
             {data.reasoningMd && (
               <details>
                 <summary className="cursor-pointer text-sm">

@@ -160,6 +160,7 @@ export function BatnaZopaCard({
       )}
 
       <ComponentsEditor
+        key={row.id}
         open={editorOpen}
         onOpenChange={setEditorOpen}
         caseId={caseId}
