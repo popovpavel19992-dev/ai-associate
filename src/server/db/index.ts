@@ -48,6 +48,7 @@ import * as caseVoirDireQuestionsSchema from "./schema/case-voir-dire-questions"
 import * as depositionTopicTemplatesSchema from "./schema/deposition-topic-templates";
 import * as caseDepositionOutlinesSchema from "./schema/case-deposition-outlines";
 import * as caseDepositionTopicsSchema from "./schema/case-deposition-topics";
+import * as caseDepositionTopicBranchesSchema from "./schema/case-deposition-topic-branches";
 import * as caseDepositionQuestionsSchema from "./schema/case-deposition-questions";
 import * as motionInLimineTemplatesSchema from "./schema/motion-in-limine-templates";
 import * as caseMotionsInLimineSetsSchema from "./schema/case-motions-in-limine-sets";
@@ -134,6 +135,7 @@ export const db = drizzle(client, {
     ...depositionTopicTemplatesSchema,
     ...caseDepositionOutlinesSchema,
     ...caseDepositionTopicsSchema,
+    ...caseDepositionTopicBranchesSchema,
     ...caseDepositionQuestionsSchema,
     ...motionInLimineTemplatesSchema,
     ...caseMotionsInLimineSetsSchema,
