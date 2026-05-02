@@ -21,7 +21,10 @@ describe("collectEvidenceSources", () => {
     const r = await collectEvidenceSources({
       caseId: "c1",
       witnessName: "Dr. Smith",
-      excludeDocumentIds: ["s1", "s2"],
+      excludeDocumentIds: [
+        "11111111-1111-1111-1111-111111111111",
+        "22222222-2222-2222-2222-222222222222",
+      ],
       query: "back pain history",
     });
     expect(r).toHaveLength(1);
@@ -29,8 +32,8 @@ describe("collectEvidenceSources", () => {
     // Verify the SQL includes the exclude filter.
     const sqlArg = (db.execute as never as ReturnType<typeof vi.fn>).mock.calls[0][0];
     const serialized = JSON.stringify(sqlArg);
-    expect(serialized).toContain("s1");
-    expect(serialized).toContain("s2");
+    expect(serialized).toContain("11111111-1111-1111-1111-111111111111");
+    expect(serialized).toContain("22222222-2222-2222-2222-222222222222");
   });
 
   it("returns [] when VOYAGE_API_KEY missing", async () => {

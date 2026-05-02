@@ -74,6 +74,8 @@ function sha(input: string): string {
 }
 
 async function caseStateHash(caseId: string, orgId: string): Promise<string> {
+  // documents has no orgId column — case scoping is enforced upstream via the case→org FK.
+  // orgId is mixed into the hash below to keep cross-org cache namespaces distinct.
   const [row] = await db
     .select({ latest: max(documents.createdAt) })
     .from(documents)
@@ -279,6 +281,7 @@ export async function runScanFlow(
     .where(
       and(
         eq(caseWitnessImpeachmentScans.orgId, args.orgId),
+        eq(caseWitnessImpeachmentScans.witnessId, args.witnessId),
         eq(caseWitnessImpeachmentScans.cacheHash, cacheHash),
       ),
     );
@@ -394,7 +397,15 @@ export async function runScanFlow(
       .returning();
     return row;
   } catch (e) {
-    await refundCredits(args.userId, COST);
+    try {
+      await refundCredits(args.userId, COST);
+    } catch (refundErr) {
+      console.error(
+        "[witness-impeachment] refund failed after scan error",
+        refundErr,
+      );
+      // Original error preserved — do not let refund failure mask it
+    }
     throw e;
   }
 }

@@ -27,10 +27,13 @@ export async function collectEvidenceSources(args: {
   if (queryVec.length !== 1024) return [];
   const queryLit = `[${queryVec.join(",")}]`;
   // sql.raw is safe here: excludeDocumentIds are uuids from caseWitnessStatements.documentId
-  // (our own schema), validated upstream by the orchestrator. Drizzle's array binding for IN
-  // with raw `sql` is awkward, so we serialize the IN-list directly.
-  const excludeClause = args.excludeDocumentIds.length > 0
-    ? sql`AND d.id NOT IN ${sql.raw(`('${args.excludeDocumentIds.join("','")}')`)}`
+  // (our own schema). We additionally filter through a strict UUID regex before serializing,
+  // as defense-in-depth against any future caller passing un-validated IDs. Drizzle's array
+  // binding for IN with raw `sql` is awkward, so we serialize the IN-list directly.
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const safeExclude = args.excludeDocumentIds.filter((id) => UUID_RE.test(id));
+  const excludeClause = safeExclude.length > 0
+    ? sql`AND d.id NOT IN ${sql.raw(`('${safeExclude.join("','")}')`)}`
     : sql``;
   const rows = await db.execute<{ document_id: string; filename: string; content: string }>(sql`
     WITH q AS (SELECT ${queryLit}::vector AS v)
