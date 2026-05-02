@@ -56,7 +56,20 @@ function mapErr(e: unknown): never {
   throw e;
 }
 
+function isBetaOrg(orgId: string | null | undefined): boolean {
+  if (!orgId) return false;
+  const allowed = (process.env.STRATEGY_BETA_ORG_IDS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return allowed.includes(orgId);
+}
+
 export const opposingCounselRouter = router({
+  isBetaEnabled: protectedProcedure.query(({ ctx }) => {
+    return { enabled: isBetaOrg(ctx.user.orgId) };
+  }),
+
   predictResponse: protectedProcedure
     .input(
       z.object({
