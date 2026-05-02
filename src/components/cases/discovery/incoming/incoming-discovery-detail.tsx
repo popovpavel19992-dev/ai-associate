@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { ResponseRow } from "./response-row";
+import { PredictResponseButton } from "@/components/cases/opposing-counsel/predict-response-button";
 
 interface Props {
   requestId: string;
@@ -117,6 +118,23 @@ export function IncomingDiscoveryDetail({ requestId }: Props) {
             >
               <CheckCircle className="mr-1.5 size-3" /> Mark as served
             </Button>
+          )}
+          {hasDrafts && (
+            <PredictResponseButton
+              caseId={request.caseId}
+              kind="discovery_set"
+              targetId={requestId}
+              targetTitle={`${request.requestType.toUpperCase()} — Set ${request.setNumber}`}
+              targetBody={questions
+                .map((q, i) => {
+                  const d = draftsByIndex.get(i);
+                  return d
+                    ? `Q${q.number}: ${q.text}\nA: ${d.responseText ?? ""}`
+                    : null;
+                })
+                .filter(Boolean)
+                .join("\n\n")}
+            />
           )}
         </div>
       </header>

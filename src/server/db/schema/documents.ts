@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, integer, timestamp, pgEnum, jsonb } from "drizzle-orm/pg-core";
 import { cases } from "./cases";
 import { users } from "./users";
 
@@ -19,5 +19,7 @@ export const documents = pgTable("documents", {
   extractedText: text("extracted_text"),
   creditsConsumed: integer("credits_consumed").default(1).notNull(),
   uploadedByPortalUserId: uuid("uploaded_by_portal_user_id"),
+  suggestedAttorneyJson: jsonb("suggested_attorney_json"),
+  suggestedAttorneyAt: timestamp("suggested_attorney_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });

@@ -5,6 +5,8 @@ import type {
   SearchResponse,
   OpinionSearchHit,
   OpinionDetail,
+  PeopleSearchParams,
+  PeopleResponse,
 } from "./types";
 
 const BASE_URL = "https://www.courtlistener.com";
@@ -117,7 +119,10 @@ export class CourtListenerError extends Error {
 }
 
 export interface CourtListenerClientOptions {
-  apiToken: string;
+  /** Preferred field. `apiKey` is accepted as an alias. */
+  apiToken?: string;
+  /** Alias for `apiToken`. Either may be provided. */
+  apiKey?: string;
   fetchImpl?: typeof fetch;
   baseUrl?: string;
 }
@@ -128,9 +133,18 @@ export class CourtListenerClient {
   private readonly baseUrl: string;
 
   constructor(opts: CourtListenerClientOptions) {
-    this.apiToken = opts.apiToken;
+    this.apiToken = opts.apiToken ?? opts.apiKey ?? "";
     this.fetchImpl = opts.fetchImpl ?? fetch;
     this.baseUrl = opts.baseUrl ?? BASE_URL;
+  }
+
+  async people(params: PeopleSearchParams): Promise<PeopleResponse> {
+    const sp = new URLSearchParams();
+    sp.set("name_full__icontains", params.name);
+    if (params.page) sp.set("page", String(params.page));
+    if (params.pageSize) sp.set("page_size", String(params.pageSize));
+    const url = `${this.baseUrl}/api/rest/v4/people/?${sp.toString()}`;
+    return this.requestJson<PeopleResponse>(url);
   }
 
   async search(params: SearchParams): Promise<SearchResponse> {

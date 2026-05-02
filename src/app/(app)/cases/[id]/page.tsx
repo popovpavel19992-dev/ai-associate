@@ -33,6 +33,7 @@ import { DocumentsTab } from "@/components/cases/documents/documents-tab";
 import { SettlementTab } from "@/components/cases/settlement/settlement-tab";
 import { TrustTab } from "@/components/cases/trust-tab";
 import { StrategyTab } from "@/components/cases/strategy/strategy-tab";
+import { OpposingCounselTab } from "@/components/cases/opposing-counsel/opposing-counsel-tab";
 import { useActivityTracker } from "@/lib/activity-tracker";
 import { cn } from "@/lib/utils";
 
@@ -58,6 +59,7 @@ const TABS = [
   { key: "filings", label: "Filings" },
   { key: "discovery", label: "Discovery" },
   { key: "strategy", label: "Strategy" },
+  { key: "opposing-counsel", label: "Opposing Counsel" },
   { key: "trial-prep", label: "Trial Prep" },
   { key: "documents", label: "Documents" },
 ] as const;
@@ -296,6 +298,7 @@ export default function CaseDetailPage({
         {activeTab === "filings" && <FilingsTab caseId={caseData.id} highlightId={highlightParam} />}
         {activeTab === "discovery" && <DiscoveryTab caseId={caseData.id} />}
         {activeTab === "strategy" && <StrategyTab caseId={caseData.id} />}
+        {activeTab === "opposing-counsel" && <OpposingCounselTab caseId={caseData.id} />}
         {activeTab === "trial-prep" && <TrialPrepTab caseId={caseData.id} />}
         {activeTab === "documents" && <DocumentsTab caseId={caseData.id} clientId={caseData.clientId ?? null} />}
         {activeTab === "settlement" && <SettlementTab caseId={caseData.id} />}
