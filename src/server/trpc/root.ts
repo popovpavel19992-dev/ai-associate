@@ -83,6 +83,7 @@ import { motionCiteCheckRouter } from "./routers/motion-cite-check";
 import { discoveryResponseDrafterRouter } from "./routers/discovery-response-drafter";
 import { opposingCounselRouter } from "./routers/opposing-counsel";
 import { settlementCoachRouter } from "./routers/settlement-coach";
+import { depositionBranchesRouter } from "./routers/deposition-branches";
 
 export const appRouter = router({
   users: usersRouter,
@@ -169,6 +170,7 @@ export const appRouter = router({
   discoveryResponseDrafter: discoveryResponseDrafterRouter,
   opposingCounsel: opposingCounselRouter,
   settlementCoach: settlementCoachRouter,
+  depositionBranches: depositionBranchesRouter,
 });
 
 export type AppRouter = typeof appRouter;
