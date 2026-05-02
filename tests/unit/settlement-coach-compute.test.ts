@@ -26,8 +26,8 @@ describe("computeBatna", () => {
     expect(r.batnaLowCents).toBeLessThanOrEqual(r.batnaLikelyCents);
     expect(r.batnaLikelyCents).toBeLessThanOrEqual(r.batnaHighCents);
     // sanity: likely = 0.5 * 200_00 - 30_00 - timeDiscount(12mo @ 8% on EV)
-    // EV_likely = 100_00; timeDiscount ≈ 100_00 * (1 - 1/1.08) ≈ 7407
-    // batnaLikely ≈ 100_00 - 30_00 - 7407 ≈ 62_593 (cents)
+    // EV_likely = 100_00 cents; timeDiscount ≈ 100_00 * (1 - 1/1.08) ≈ 741 cents
+    // batnaLikely ≈ 100_00 - 30_00 - 741 ≈ 6_259 cents (= $62.59)
     expect(r.batnaLikelyCents).toBeGreaterThan(50_00);
     expect(r.batnaLikelyCents).toBeLessThan(80_00);
   });
