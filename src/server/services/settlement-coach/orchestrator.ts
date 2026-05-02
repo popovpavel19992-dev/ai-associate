@@ -64,7 +64,7 @@ function sha(input: string): string {
   return createHash("sha256").update(input).digest("hex");
 }
 
-async function caseStateHash(caseId: string): Promise<string> {
+async function caseStateHash(caseId: string, orgId: string): Promise<string> {
   const docRows = await db
     .select({ latest: max(documents.createdAt) })
     .from(documents)
@@ -72,7 +72,12 @@ async function caseStateHash(caseId: string): Promise<string> {
   const offerRows = await db
     .select({ latest: max(caseSettlementOffers.offeredAt) })
     .from(caseSettlementOffers)
-    .where(eq(caseSettlementOffers.caseId, caseId));
+    .where(
+      and(
+        eq(caseSettlementOffers.caseId, caseId),
+        eq(caseSettlementOffers.orgId, orgId),
+      ),
+    );
   const docLatest = docRows[0]?.latest;
   const offerLatest = offerRows[0]?.latest;
   const docTime =
@@ -117,7 +122,7 @@ export async function computeBatnaFlow(
 ): Promise<SettlementCoachBatna> {
   assertBetaOrg(args.orgId);
 
-  const stateHash = await caseStateHash(args.caseId);
+  const stateHash = await caseStateHash(args.caseId, args.orgId);
   const overrideHash = sha(JSON.stringify(args.overrides ?? null));
   const cacheHash = sha(
     `${args.caseId}:${stateHash}:${overrideHash}:${args.regenerateSalt ?? 0}`,
@@ -272,6 +277,7 @@ export async function recommendCounterFlow(
     SELECT MAX(amount_cents)::bigint AS max
     FROM case_settlement_offers
     WHERE case_id = ${args.caseId}
+      AND org_id = ${args.orgId}
       AND from_party = 'plaintiff'
       AND offer_type IN ('opening_demand','counter_offer')
   `);
@@ -305,7 +311,12 @@ export async function recommendCounterFlow(
     const recentOffers = await db
       .select()
       .from(caseSettlementOffers)
-      .where(eq(caseSettlementOffers.caseId, args.caseId))
+      .where(
+        and(
+          eq(caseSettlementOffers.caseId, args.caseId),
+          eq(caseSettlementOffers.orgId, args.orgId),
+        ),
+      )
       .orderBy(desc(caseSettlementOffers.offeredAt))
       .limit(10);
 
