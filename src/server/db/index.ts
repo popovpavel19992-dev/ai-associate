@@ -79,6 +79,8 @@ import * as digestLogsSchema from "./schema/digest-logs";
 import * as opposingCounselProfilesSchema from "./schema/opposing-counsel-profiles";
 import * as opposingCounselPosturesSchema from "./schema/opposing-counsel-postures";
 import * as opposingCounselPredictionsSchema from "./schema/opposing-counsel-predictions";
+import * as settlementCoachBatnasSchema from "./schema/settlement-coach-batnas";
+import * as settlementCoachCountersSchema from "./schema/settlement-coach-counters";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -163,6 +165,8 @@ export const db = drizzle(client, {
     ...opposingCounselProfilesSchema,
     ...opposingCounselPosturesSchema,
     ...opposingCounselPredictionsSchema,
+    ...settlementCoachBatnasSchema,
+    ...settlementCoachCountersSchema,
   },
 });
 
