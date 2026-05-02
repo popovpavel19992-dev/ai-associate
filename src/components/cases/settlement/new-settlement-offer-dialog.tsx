@@ -23,15 +23,27 @@ const OFFER_TYPE_LABELS: Record<OfferType, string> = {
 export function NewSettlementOfferDialog({
   caseId,
   onClose,
+  prefillAmountCents,
+  prefillFromParty,
+  prefillOfferType,
 }: {
   caseId: string;
   onClose: () => void;
+  prefillAmountCents?: number;
+  prefillFromParty?: FromParty;
+  prefillOfferType?: OfferType;
 }) {
   const utils = trpc.useUtils();
-  const [amountStr, setAmountStr] = useState("");
+  const [amountStr, setAmountStr] = useState(
+    prefillAmountCents != null ? (prefillAmountCents / 100).toFixed(2) : "",
+  );
   const [currency, setCurrency] = useState("USD");
-  const [offerType, setOfferType] = useState<OfferType>("counter_offer");
-  const [fromParty, setFromParty] = useState<FromParty>("defendant");
+  const [offerType, setOfferType] = useState<OfferType>(
+    prefillOfferType ?? "counter_offer",
+  );
+  const [fromParty, setFromParty] = useState<FromParty>(
+    prefillFromParty ?? "defendant",
+  );
   const [terms, setTerms] = useState("");
   const [conditions, setConditions] = useState("");
   const [expiresAt, setExpiresAt] = useState("");

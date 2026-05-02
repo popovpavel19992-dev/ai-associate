@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { formatCurrency } from "./format";
 import { NewSettlementOfferDialog } from "./new-settlement-offer-dialog";
+import { CounterRecommenderButton } from "@/components/cases/settlement-coach/counter-recommender-button";
 
 const RESPONSE_BADGE: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -22,8 +23,17 @@ const TYPE_LABEL: Record<string, string> = {
   walkaway: "Walkaway",
 };
 
-export function SettlementOffersSection({ caseId }: { caseId: string }) {
+export function SettlementOffersSection({
+  caseId,
+  betaEnabled = false,
+}: {
+  caseId: string;
+  betaEnabled?: boolean;
+}) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [prefillAmountCents, setPrefillAmountCents] = useState<
+    number | undefined
+  >(undefined);
   const utils = trpc.useUtils();
   const { data: rows, isLoading } = trpc.settlement.offers.listForCase.useQuery({
     caseId,
@@ -52,6 +62,16 @@ export function SettlementOffersSection({ caseId }: { caseId: string }) {
     respondMut.mutate({ offerId, response });
   }
 
+  function openNewOfferDialog(amountCents?: number) {
+    setPrefillAmountCents(amountCents);
+    setDialogOpen(true);
+  }
+
+  function closeNewOfferDialog() {
+    setDialogOpen(false);
+    setPrefillAmountCents(undefined);
+  }
+
   return (
     <section className="space-y-2">
       <div className="flex items-center justify-between">
@@ -60,7 +80,7 @@ export function SettlementOffersSection({ caseId }: { caseId: string }) {
         </h3>
         <button
           type="button"
-          onClick={() => setDialogOpen(true)}
+          onClick={() => openNewOfferDialog()}
           className="inline-flex items-center rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700"
         >
           New Offer
@@ -110,7 +130,7 @@ export function SettlementOffersSection({ caseId }: { caseId: string }) {
                 </p>
               ) : null}
               {o.response === "pending" && (
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-2 items-center">
                   <button
                     type="button"
                     onClick={() => respond(o.id, "accepted")}
@@ -143,6 +163,17 @@ export function SettlementOffersSection({ caseId }: { caseId: string }) {
                   >
                     Delete
                   </button>
+                  {o.fromParty === "defendant" && (
+                    <CounterRecommenderButton
+                      caseId={caseId}
+                      offerId={o.id}
+                      offerAmountCents={o.amountCents}
+                      betaEnabled={betaEnabled}
+                      onUseVariant={(counterCents) =>
+                        openNewOfferDialog(counterCents)
+                      }
+                    />
+                  )}
                 </div>
               )}
             </li>
@@ -152,7 +183,10 @@ export function SettlementOffersSection({ caseId }: { caseId: string }) {
       {dialogOpen ? (
         <NewSettlementOfferDialog
           caseId={caseId}
-          onClose={() => setDialogOpen(false)}
+          onClose={closeNewOfferDialog}
+          prefillAmountCents={prefillAmountCents}
+          prefillFromParty="plaintiff"
+          prefillOfferType="counter_offer"
         />
       ) : null}
     </section>
