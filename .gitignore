@@ -56,3 +56,4 @@ mobile/.expo
 mobile/.env
 mobile/dist
 mobile/web-build
+.claude/
